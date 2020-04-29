@@ -18,5 +18,4 @@ __pycache__/
 .idea_modules/
 
 # output files
-*.csv
-*.json
+contextual_out/
