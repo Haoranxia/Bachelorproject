@@ -15,9 +15,9 @@ def main():
     # from here.
     # dx : Analysis object; Contains special classes, which link information about classes.dex and can handle multiple
     # DEX files. (Extension of d object basically)
-    a, d, dx = AnalyzeAPK("./apks/WhatsApp.apk")
-    analyzeManifest(a)
+    a, d, dx = AnalyzeAPK("../apks/WhatsApp.apk")
+    #analyzeManifest(a)
     analyzeDex(d, dx)
-    run_contextual()
+    #run_contextual()
 
 main()
