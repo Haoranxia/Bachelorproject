@@ -2,9 +2,9 @@ import os
 
 from androguard.misc import AnalyzeAPK
 from androguard.core.analysis import analysis
-from src.manifest_analysis import analyzeManifest
-from src.sourcecode_analysis import analyzeDex
-# from src.contextual_feat_extraction import run_contextual
+from manifest_analysis import analyzeManifest
+from sourcecode_analysis import analyzeDex
+from contextual_feat_extraction import run_contextual
 
 
 def main():

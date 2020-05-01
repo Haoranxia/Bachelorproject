@@ -1,6 +1,7 @@
 import re
 import math
 import collections
+import logging
 
 from androguard.core import bytecodes
 from androguard.core import androconf
