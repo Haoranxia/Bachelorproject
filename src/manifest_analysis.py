@@ -18,7 +18,7 @@ def analyzeManifest(a):
     dict_static_features["features"] = a.get_features()
 
     # Activities 
-    dict_static_features["main-activity"] = a.get_main_activity()
+    dict_static_features["main-activities"] = a.get_main_activities()
     dict_static_features["activities"] = a.get_activities()
 
     # Services
@@ -27,11 +27,25 @@ def analyzeManifest(a):
     # Receivers
     dict_static_features["receivers"] = a.get_receivers()
 
+    # (Content) providers
+    dict_static_features["providers"] = a.get_providers()
+
     # Intent filters
-    extract_intent_filters(a, dict_static_features)
-    print_featureList(dict_static_features["activity-intents"])
-    print_featureList(dict_static_features["service-intents"])
-    print_featureList(dict_static_features["receiver-intents"])
+    dict_static_features = extract_intent_filters(a, dict_static_features)
+
+    # Libraries
+    dict_static_features["libraries"] = a.get_libraries()
+
+    # Ad networks
+
+    # Trackers
+
+    # Print
+    # print(dict_static_features["activity-intents"])
+    # print(dict_static_features["service-intents"])
+    # print(dict_static_features["receiver-intents"])
+    print(dict_static_features["providers"])
+    print(dict_static_features["libraries"])
     
 # Each type of parent item (activities, services, receivers) can have intent filters. Thus we loop over those and extract all intent filters
 def extract_intent_filters(a, dict_static_features):
@@ -44,17 +58,19 @@ def extract_intent_filters(a, dict_static_features):
     # Receiver intents
     dict_static_features["receiver-intents"] = get_intents(a, dict_static_features["receivers"], "receiver")
 
+    return dict_static_features
+
 
 # Returns a list of intents for the type of feature
 def get_intents(a, components, componenttype):
-    # intents = list()
-    # for component in components:
-    #     intent = a.get_intent_filters(componenttype, component)
-    #     if not intent:
-    #         intents.append(a.get_intent_filters(componenttype, component))
+    intents = list()
+    for component in components:
+        intent = a.get_intent_filters(componenttype, component)
+        if intent:
+            intents.append(intent)
 
-    # return intents
-    return [a.get_intent_filters(componenttype, component) for component in components]
+    return intents
+
 
 def print_featureList(features):
     for feature in features:

@@ -22,8 +22,6 @@ def analyzeDex(d, dx):
     print(opcodes_dict)
     print(obfuscations_dict)
 
-
-
 # Return a dictionairy of opcodes and the nr of occurrences of that opcode 
 # src: http://blog.k3170makan.com/2014/11/automated-dex-decompilation-using.html
 def get_opcodes(app, opcodes_dict):
