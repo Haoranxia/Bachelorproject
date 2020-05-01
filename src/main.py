@@ -2,12 +2,10 @@ import os
 
 from androguard.misc import AnalyzeAPK
 from androguard.core.analysis import analysis
-from manifest_analysis import analyzeManifest
-from sourcecode_analysis import analyzeDex
-from contextual_feat_extraction import run_contextual
+from src.manifest_analysis import analyzeManifest
+from src.sourcecode_analysis import analyzeDex
+# from src.contextual_feat_extraction import run_contextual
 
-# from manifest_analysis import *
-# from sourcecode_analysis import *
 
 def main():
     # a : APK object; We can obtain all information about the APK here (manifest file stuff)
@@ -16,8 +14,9 @@ def main():
     # dx : Analysis object; Contains special classes, which link information about classes.dex and can handle multiple
     # DEX files. (Extension of d object basically)
     a, d, dx = AnalyzeAPK("../apks/flashlight.apk")
-    #analyzeManifest(a)
+    # analyzeManifest(a)
     analyzeDex(d, dx)
-    #run_contextual()
+    # run_contextual()
+
 
 main()

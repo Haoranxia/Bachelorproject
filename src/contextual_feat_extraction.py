@@ -74,7 +74,7 @@ def get_virus_total_positives():
     :return: the number of positives and list of anti-virus scanners that detected the positive
     """
     url = 'https://www.virustotal.com/vtapi/v2/file/report'
-    file = '../apks/WhatsApp.apk'
+    file = './apks/WhatsApp.apk'
     params = {'apikey': API_KEY, 'resource': calculate_sha256(file)}
     response = requests.get(url, params=params)
 
@@ -105,7 +105,7 @@ def run_contextual():
     :return:
     """
     app_id = 'com.whatsapp'
-    output_filename = '../contextual_out/contextual_features_' + app_id.replace('.', '_')
+    output_filename = './contextual_out/contextual_features_' + app_id.replace('.', '_')
 
     app_details = play_scraper.details(app_id)
     app_details['positives'], app_details['positives_list'] = get_virus_total_positives()
@@ -113,6 +113,3 @@ def run_contextual():
 
     write_to_csv(output_filename, formatted_app_details)
     write_to_json(output_filename, formatted_app_details)
-
-
-run_contextual()
