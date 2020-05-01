@@ -25,7 +25,7 @@ def analyzeDex(d, dx):
 
     # print(opcodes_dict)
     print(obfuscations_dict)
-    print(obfuscation_score)
+    print("obfuscation score: " + str(obfuscation_score))
     # print(kotlin_dict)
 
 
@@ -46,11 +46,16 @@ def get_opcodes(app, opcodes_dict):
     return opcodes_dict
 
 
-# Get number of (possible) obfuscated names
-# We check for several common obfuscation techniques:
-# 1) Check for keywords with < 4 characters
-# 2) Check whether non ASCII characters are used
 def get_obfuscation_naming_total(app, obfuscations_dict):
+    """
+    Get number of (possible) obfuscated names
+    We check for several common obfuscation techniques:
+    1) Check for keywords with < 4 characters
+    2) Check whether non ASCII characters are used
+    :param app:
+    :param obfuscations_dict:
+    :return:
+    """
     obfuscation_score = 0
     total_evaluated = 0
     for c in app.get_classes():
@@ -68,12 +73,18 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
     return (obfuscation_score/total_evaluated), obfuscations_dict
 
 
-def add_to_obfuscation_histogram(classname, obfuscations_dict):
-    if len(classname) < 4:
-        obfuscations_dict = add_to_dict_unique(classname, obfuscations_dict)
+def add_to_obfuscation_histogram(name, obfuscations_dict):
+    """
+    add obfuscated count using class name, field name or method name to ordered dictionary
+    :param name: class, field or method name
+    :param obfuscations_dict: ordered dictionary
+    :return:
+    """
+    if len(name) < 4:
+        obfuscations_dict = add_to_dict_unique(name, obfuscations_dict)
         return obfuscations_dict
-    if androconf.is_ascii_problem(classname):
-        obfuscations_dict = add_to_dict_unique(classname, obfuscations_dict)
+    if androconf.is_ascii_problem(name):
+        obfuscations_dict = add_to_dict_unique(name, obfuscations_dict)
     return obfuscations_dict
 
 
@@ -81,16 +92,24 @@ def obfuscation_evaluator(name):
     """
     evaluates if a given class name, field name or method name is obfuscated with single letter alphabets or non-ascii
     characters
-    :param name:
+    :param name: class, field or method name
     :return:
     """
     if androconf.is_ascii_problem(name):
         return 1
     name_len = len(name)
-    return math.exp(1 - name_len)
+    if name_len < 4:
+        return math.exp(1 - name_len)
+    return 0
 
 
 def add_to_dict_unique(name, dictionary):
+    """
+    adds a tally to an occurrence of an obfuscated class, field or method name
+    :param name: class, field or method name
+    :param dictionary: contains the tally
+    :return:
+    """
     if name not in dictionary:
         dictionary[name] = 1
     else:
@@ -110,14 +129,17 @@ def count_overlapping_distinct(pattern, text):
     there = re.compile(pattern)
     while True:
         mo = there.search(text, start)
-        print(mo)
         if mo is None: return total
         total += 1
         start = 1 + mo.start()
 
 
-# We scan the source code for kotlin keyword usage
 def get_kotlin_usage(app):
+    """
+    Scan the source code for kotlin keyword/pattern usage
+    :param app: app containing the source code
+    :return:
+    """
     key_patterns = [r'String v[\d]*_[\d] = new StringBuilder();$', r'\bkotlin\b', r'\b.kotlin\b']
     keyword_usages = {key_pattern: 0 for key_pattern in key_patterns}
 
