@@ -46,8 +46,10 @@ def analyzeManifest(a):
     # print(dict_static_features["receiver-intents"])
     print(dict_static_features["providers"])
     print(dict_static_features["libraries"])
-    
-# Each type of parent item (activities, services, receivers) can have intent filters. Thus we loop over those and extract all intent filters
+
+
+# Each type of parent item (activities, services, receivers) can have intent filters. Thus we loop over those and
+# extract all intent filters
 def extract_intent_filters(a, dict_static_features):
     # Activity intents
     dict_static_features["activity-intents"] = get_intents(a, dict_static_features["activities"], "activity")
@@ -72,8 +74,6 @@ def get_intents(a, components, componenttype):
     return intents
 
 
-
-def print_featureList(features):
+def print_feature_list(features):
     for feature in features:
         print(feature)
-

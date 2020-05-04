@@ -9,13 +9,15 @@ from androguard.core import androconf
 # TODO: Look for common obfuscation techniques and pattern match for that
 # TODO: Look for more kotlin code patterns and pattern match for that
 
-# parameters:
-# d: list of dalvikVMformat objects
-# dx: Analysis object 
 def analyzeDex(d, dx):
+    """
+    analyze Dex file
+    :param d: list of dalvikVMformat objects
+    :param dx: Analysis object
+    :return:
+    """
     # Initialization
-
-    # opcodes_dict = collections.OrderedDict()
+    opcodes_dict = collections.OrderedDict()
     obfuscation_score = 0
     obfuscations_dict = collections.OrderedDict()
     # kotlin_dict = collections.OrderedDict()
@@ -30,6 +32,7 @@ def analyzeDex(d, dx):
     print(obfuscations_dict)
     print("obfuscation score: " + str(obfuscation_score))
     # print(kotlin_dict)
+    print(get_string_obfuscation(dx))
 
 
 # Return a dictionary of opcodes and the nr of occurrences of that opcode
@@ -47,6 +50,7 @@ def get_opcodes(app, opcodes_dict):
                     else:
                         opcodes_dict[instr_name] += 1
     return opcodes_dict
+
 
 def get_obfuscation_naming_total(app, obfuscations_dict):
     """
@@ -74,8 +78,7 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
             total_evaluated += 1
             add_to_obfuscation_histogram(method.get_name(), obfuscations_dict)
             obfuscation_score += obfuscation_evaluator(method.get_name())
-
-    return (obfuscation_score/total_evaluated), obfuscations_dict
+    return (obfuscation_score / total_evaluated), obfuscations_dict
 
 
 def add_to_obfuscation_histogram(name, obfuscations_dict):
@@ -170,7 +173,40 @@ def get_kotlin_usage(app):
             
     return keyword_usages_kotlin, keyword_usages_reflection
 
+def has_uncommon_chars(string):
+    """
+    returns true if string contains ascii control characters (non-printable chars) or otherwise non-ascii characters
+    :param string: string to be evaluated
+    :return:
+    """
+    return all(32 > ord(c) or ord(c) >= 128 for c in string)
+
+
+def get_string_obfuscation(dx):
+    """
+    checks for a possible obfuscated code within string constants
+    :param dx: Analysis object
+    :return: a count of strings that have possible string obfuscation
+    """
+    code_sentinels = ['{', ';', 'void', '[', 'if (', 'while(', 'for(']
+    possible_str_obfs_cnt = 0
+    break_flag = False
+    for string in dx.strings.keys():
+        for sentinel in code_sentinels:
+            if break_flag:
+                break_flag = False
+                break
+            for _, method in dx.strings[string].get_xref_from():
+                # excluding toString() methods to minimize false positives
+                if sentinel in string and method.name != "toString" or has_uncommon_chars(string):
+                    # print(string)
+                    # print("Class name: {} -- Method name: {}".format(method.class_name, method.name))
+                    possible_str_obfs_cnt += 1
+                    break_flag = True
+                    break
+    return possible_str_obfs_cnt
+
+
 def print_feature_list(features):
     for feature in features:
         print(feature)
-
