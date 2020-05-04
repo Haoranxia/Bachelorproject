@@ -6,6 +6,8 @@ import logging
 from androguard.core import bytecodes
 from androguard.core import androconf
 
+# TODO: Look for common obfuscation techniques and pattern match for that
+# TODO: Look for more kotlin code patterns and pattern match for that
 
 def analyzeDex(d, dx):
     """
@@ -18,18 +20,18 @@ def analyzeDex(d, dx):
     opcodes_dict = collections.OrderedDict()
     obfuscation_score = 0
     obfuscations_dict = collections.OrderedDict()
-    kotlin_dict = collections.OrderedDict()
+    # kotlin_dict = collections.OrderedDict()
 
     # Logic
     for dex in d:
-        opcodes_dict = get_opcodes(dex, opcodes_dict)
+        # opcodes_dict = get_opcodes(dex, opcodes_dict)
         obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
-        kotlin_dict["kotlin"] = get_kotlin_usage(dex)
+        # kotlin_dict["kotlin"] = get_kotlin_usage(dex)
 
-    print(opcodes_dict)
+    # print(opcodes_dict)
     print(obfuscations_dict)
     print("obfuscation score: " + str(obfuscation_score))
-    print(kotlin_dict)
+    # print(kotlin_dict)
     print(get_string_obfuscation(dx))
 
 
@@ -66,10 +68,12 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
         total_evaluated += 1
         obfuscations_dict = add_to_obfuscation_histogram(c.get_name(), obfuscations_dict)
         obfuscation_score += obfuscation_evaluator(c.get_name())
+
         for field in c.get_fields():
             total_evaluated += 1
             add_to_obfuscation_histogram(field.get_name(), obfuscations_dict)
             obfuscation_score += obfuscation_evaluator(field.get_name())
+
         for method in c.get_methods():
             total_evaluated += 1
             add_to_obfuscation_histogram(method.get_name(), obfuscations_dict)
@@ -87,8 +91,10 @@ def add_to_obfuscation_histogram(name, obfuscations_dict):
     if len(name) < 4:
         obfuscations_dict = add_to_dict_unique(name, obfuscations_dict)
         return obfuscations_dict
+
     if androconf.is_ascii_problem(name):
         obfuscations_dict = add_to_dict_unique(name, obfuscations_dict)
+
     return obfuscations_dict
 
 
@@ -101,9 +107,11 @@ def obfuscation_evaluator(name):
     """
     if androconf.is_ascii_problem(name):
         return 1
+
     name_len = len(name)
     if name_len < 4:
         return math.exp(1 - name_len)
+
     return 0
 
 
@@ -118,6 +126,7 @@ def add_to_dict_unique(name, dictionary):
         dictionary[name] = 1
     else:
         dictionary[name] += 1
+
     return dictionary
 
 
@@ -131,6 +140,7 @@ def count_overlapping_distinct(pattern, text):
     total = 0
     start = 0
     there = re.compile(pattern)
+
     while True:
         mo = there.search(text, start)
         if mo is None: return total
