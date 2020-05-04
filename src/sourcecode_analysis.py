@@ -7,26 +7,30 @@ from androguard.core import bytecodes
 from androguard.core import androconf
 
 
-# parameters:
-# d: list of dalvikVMformat objects
-# dx: Analysis object 
 def analyzeDex(d, dx):
+    """
+    analyze Dex file
+    :param d: list of dalvikVMformat objects
+    :param dx: Analysis object
+    :return:
+    """
     # Initialization
-    # opcodes_dict = collections.OrderedDict()
+    opcodes_dict = collections.OrderedDict()
     obfuscation_score = 0
     obfuscations_dict = collections.OrderedDict()
-    # kotlin_dict = collections.OrderedDict()
+    kotlin_dict = collections.OrderedDict()
 
     # Logic
     for dex in d:
-        # opcodes_dict = get_opcodes(dex, opcodes_dict)
+        opcodes_dict = get_opcodes(dex, opcodes_dict)
         obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
-        # kotlin_dict["kotlin"] = get_kotlin_usage(dex)
+        kotlin_dict["kotlin"] = get_kotlin_usage(dex)
 
-    # print(opcodes_dict)
+    print(opcodes_dict)
     print(obfuscations_dict)
     print("obfuscation score: " + str(obfuscation_score))
-    # print(kotlin_dict)
+    print(kotlin_dict)
+    print(get_string_obfuscation(dx))
 
 
 # Return a dictionary of opcodes and the nr of occurrences of that opcode
@@ -70,7 +74,7 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
             total_evaluated += 1
             add_to_obfuscation_histogram(method.get_name(), obfuscations_dict)
             obfuscation_score += obfuscation_evaluator(method.get_name())
-    return (obfuscation_score/total_evaluated), obfuscations_dict
+    return (obfuscation_score / total_evaluated), obfuscations_dict
 
 
 def add_to_obfuscation_histogram(name, obfuscations_dict):
@@ -140,7 +144,7 @@ def get_kotlin_usage(app):
     :param app: app containing the source code
     :return:
     """
-    key_patterns = [r'String v[\d]*_[\d] = new StringBuilder();$', r'\bkotlin\b', r'\b.kotlin\b']
+    key_patterns = [r'String v[\d]*_[\d] = new StringBuilder\(\);', r'\bkotlin\b', r'\b.kotlin\b']
     keyword_usages = {key_pattern: 0 for key_pattern in key_patterns}
 
     for cl in app.get_classes():
@@ -150,7 +154,40 @@ def get_kotlin_usage(app):
     return keyword_usages
 
 
+def has_uncommon_chars(string):
+    """
+    returns true if string contains ascii control characters (non-printable chars) or otherwise non-ascii characters
+    :param string: string to be evaluated
+    :return:
+    """
+    return all(32 > ord(c) or ord(c) >= 128 for c in string)
+
+
+def get_string_obfuscation(dx):
+    """
+    checks for a possible obfuscated code within string constants
+    :param dx: Analysis object
+    :return: a count of strings that have possible string obfuscation
+    """
+    code_sentinels = ['{', ';', 'void', '[', 'if (', 'while(', 'for(']
+    possible_str_obfs_cnt = 0
+    break_flag = False
+    for string in dx.strings.keys():
+        for sentinel in code_sentinels:
+            if break_flag:
+                break_flag = False
+                break
+            for _, method in dx.strings[string].get_xref_from():
+                # excluding toString() methods to minimize false positives
+                if sentinel in string and method.name != "toString" or has_uncommon_chars(string):
+                    # print(string)
+                    # print("Class name: {} -- Method name: {}".format(method.class_name, method.name))
+                    possible_str_obfs_cnt += 1
+                    break_flag = True
+                    break
+    return possible_str_obfs_cnt
+
+
 def print_feature_list(features):
     for feature in features:
         print(feature)
-
