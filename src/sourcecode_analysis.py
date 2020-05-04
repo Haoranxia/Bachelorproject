@@ -151,15 +151,24 @@ def get_kotlin_usage(app):
     :param app: app containing the source code
     :return:
     """
-    key_patterns = [r'String v[\d]*_[\d] = new StringBuilder();$', r'\bkotlin\b', r'\b.kotlin\b']
-    keyword_usages = {key_pattern: 0 for key_pattern in key_patterns}
+    key_patterns_kotlin = [r'String v[\d]*_[\d] = new StringBuilder();$', r'\bkotlin\b', r'\b.kotlin\b']
+    keyword_usages_kotlin = {key_pattern: 0 for key_pattern in key_patterns_kotlin}
+
+    key_patterns_reflection = [r'java.lang.reflect']
+    keyword_usages_reflection = {key_pattern: 0 for key_pattern in key_patterns_reflection}
 
     for cl in app.get_classes():
         src = cl.get_source()
-        for key_pattern in key_patterns:
-            keyword_usages[key_pattern] += count_overlapping_distinct(key_pattern, src)
-    return keyword_usages
 
+        # Kotlin keyword analysis
+        for key_pattern in key_patterns_kotlin:
+            keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
+
+        # Java reflection usage analysis
+        for key_pattern in key_patterns_reflection:
+            keyword_usages_kotlin[key_pattern] += src.count(key_pattern)
+            
+    return keyword_usages_kotlin, keyword_usages_reflection
 
 def print_feature_list(features):
     for feature in features:
