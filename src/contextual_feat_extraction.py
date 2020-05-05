@@ -68,14 +68,13 @@ def calculate_sha256(filepath):
 
 
 # TODO:: extract the api key, make the user sign in with creds?
-def get_virus_total_positives():
+def get_virus_total_positives(apk_file):
     """
     Sends request to get a report from TotalVirus by sending sha256 hash value of an apk file
     :return: the number of positives and list of anti-virus scanners that detected the positive
     """
     url = 'https://www.virustotal.com/vtapi/v2/file/report'
-    file = './apks/WhatsApp.apk'
-    params = {'apikey': API_KEY, 'resource': calculate_sha256(file)}
+    params = {'apikey': API_KEY, 'resource': calculate_sha256(apk_file)}
     response = requests.get(url, params=params)
 
     if response.json()['response_code'] == 0:  # apk hash is not found in virusTotal database
@@ -83,7 +82,7 @@ def get_virus_total_positives():
         # send the file itself
         url = 'https://www.virustotal.com/vtapi/v2/file/scan'
         params = {'apikey': API_KEY}
-        files = {'file': (file, open(file, 'rb'))}
+        files = {'file': (apk_file, open(apk_file, 'rb'))}
         response = requests.post(url, files=files, params=params)
 
     try:
@@ -99,16 +98,15 @@ def get_virus_total_positives():
     return response.json()['positives'], positives_list
 
 
-def run_contextual():
+def run_contextual(apk_file, app_id):
     """
     runs the contextual component, get contextual details from google play and also request report from VirusTotal
     :return:
     """
-    app_id = 'com.whatsapp'
     output_filename = './contextual_out/contextual_features_' + app_id.replace('.', '_')
 
     app_details = play_scraper.details(app_id)
-    app_details['positives'], app_details['positives_list'] = get_virus_total_positives()
+    app_details['positives'], app_details['positives_list'] = get_virus_total_positives(apk_file)
     formatted_app_details = reformat_dictionary(app_details)
 
     write_to_csv(output_filename, formatted_app_details)

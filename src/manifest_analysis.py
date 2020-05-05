@@ -5,7 +5,7 @@ from androguard.core.analysis import analysis
 
 # Features we want from the manifest file:
 # Package-id, app components, intent filters, features used, trackers, ad-networks, Types of app components
-def analyzeManifest(a):
+def analyze_manifest(a):
     dict_static_features = collections.OrderedDict()
 
     # Package-id

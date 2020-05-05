@@ -6,10 +6,10 @@ import logging
 from androguard.core import bytecodes
 from androguard.core import androconf
 
+
 # TODO: Look for common obfuscation techniques and pattern match for that
 # TODO: Look for more kotlin code patterns and pattern match for that
-
-def analyzeDex(d, dx):
+def analyze_dex(d, dx):
     """
     analyze Dex file
     :param d: list of dalvikVMformat objects
@@ -182,6 +182,7 @@ def get_string_obfuscation(dx):
     code_sentinels = ['{', ';', 'void', '[', 'if (', 'while(', 'for(']
     possible_str_obfs_cnt = 0
     break_flag = False
+    # TODO:: https://stackoverflow.com/questions/8571501/how-to-check-whether-a-string-is-base64-encoded-or-not
     for string in dx.strings.keys():
         for sentinel in code_sentinels:
             if break_flag:
