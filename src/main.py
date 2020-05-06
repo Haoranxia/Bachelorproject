@@ -3,9 +3,11 @@ import argparse
 from os import listdir
 from os.path import isfile, join
 from androguard.misc import AnalyzeAPK
-from src.sourcecode_analysis import analyze_dex
-from src.manifest_analysis import analyze_manifest
-from src.contextual_feat_extraction import run_contextual
+
+from to_csv import *
+from sourcecode_analysis import analyze_dex
+from manifest_analysis import analyze_manifest
+from contextual_feat_extraction import run_contextual
 
 
 def main():
@@ -18,13 +20,27 @@ def main():
     :return:
     """
 
+    # Argument parsing
     apk_files = parse_arguments()
+
+    # CSV initialization
+    manifestcsv = "../static_out/manifest_features.csv"
+    sourcecodecsv = "../static_out/manifest_features.csv"
 
     for apk_file in apk_files:
         a, d, dx = AnalyzeAPK(apk_file)
-        # analyze_manifest(a)
-        # analyze_dex(d, dx)
-        run_contextual(apk_file=apk_file, app_id=a.get_package())
+
+        # Manifest features
+        manifest_dict = analyze_manifest(a)
+        initialize_csv(manifestcsv, manifest_dict)
+        write_csv(manifestcsv, manifest_dict)
+
+        # Source code features
+        # sourcecode_dict = analyze_dex(d, dx)
+        # write_csv(sourcecodecsv, sourcecode_dict)
+
+        # Contextual features
+        #run_contextual(apk_file=apk_file, app_id=a.get_package())
 
 
 def init_args_parser():

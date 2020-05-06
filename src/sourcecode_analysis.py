@@ -3,6 +3,7 @@ import math
 import collections
 import logging
 
+from to_csv import *
 from androguard.core import bytecodes
 from androguard.core import androconf
 
@@ -169,7 +170,7 @@ def get_kotlin_usage(app):
 
         # Java reflection usage analysis
         for key_pattern in key_patterns_reflection:
-            keyword_usages_kotlin[key_pattern] += src.count(key_pattern)
+            keyword_usages_reflection[key_pattern] += src.count(key_pattern)
             
     return keyword_usages_kotlin, keyword_usages_reflection
 
