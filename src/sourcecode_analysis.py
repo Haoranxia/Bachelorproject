@@ -20,19 +20,25 @@ def analyze_dex(d, dx):
     opcodes_dict = collections.OrderedDict()
     obfuscation_score = 0
     obfuscations_dict = collections.OrderedDict()
-    # kotlin_dict = collections.OrderedDict()
+    kotlin_dict = collections.OrderedDict()
 
     # Logic
     for dex in d:
-        # opcodes_dict = get_opcodes(dex, opcodes_dict)
+        opcodes_dict = get_opcodes(dex, opcodes_dict)
         obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
-        # kotlin_dict["kotlin"] = get_kotlin_usage(dex)
+        kotlin_dict["kotlin"] = get_kotlin_usage(dex)
+
+    obfuscations_dict["obfuscation-score"] = obfuscation_score
 
     # print(opcodes_dict)
-    print(obfuscations_dict)
-    print("obfuscation score: " + str(obfuscation_score))
+    # print(obfuscations_dict)
+    # print("obfuscation score: " + str(obfuscation_score))
     # print(kotlin_dict)
-    print(get_string_obfuscation(dx))
+    # print(get_string_obfuscation(dx))
+
+    # Merge dictionaries
+    opcodes_dict.update(obfuscations_dict).update(kotlin_dict)
+    return opcodes_dict
 
 
 # Return a dictionary of opcodes and the nr of occurrences of that opcode

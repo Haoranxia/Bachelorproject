@@ -1,5 +1,8 @@
 import csv
 import shutil
+import json
+import hashlib
+
 from tempfile import NamedTemporaryFile
 from os import path
 
