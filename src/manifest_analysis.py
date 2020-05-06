@@ -36,7 +36,8 @@ def analyze_manifest(a):
     # Libraries
     dict_manifest_features["libraries"] = a.get_libraries()
 
-    # Meta data
+    # TODO Meta data
+    dict_manifest_features["meta-data"] = a.get_attribute_value("meta-data", "android:name")
 
     return dict_manifest_features
     

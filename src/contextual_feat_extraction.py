@@ -4,22 +4,9 @@ import hashlib
 import requests
 import play_scraper
 
+from util import write_to_json, write_to_csv, calculate_sha256
+
 API_KEY = '5cad0bcd69749612edce15f291d2e3a2b800c063446593360d7f4ed57f46c5a2'
-
-
-def write_to_csv(filename, app_details):
-    """
-    Writes contextual data to csv file, creates the file if it does not exist
-    :param filename: the csv file destination
-    :param app_details: the contextual features dictionary
-    :return:
-    """
-    file = open(filename + ".csv", 'w+')
-    with file:
-        writer = csv.DictWriter(file, fieldnames=app_details.keys())
-        writer.writeheader()
-        writer.writerow(app_details)
-
 
 def reformat_dictionary(app_details):
     """
@@ -37,34 +24,6 @@ def reformat_dictionary(app_details):
             val.encode('utf-8')
             updated_dict[key] = val.replace('\n', '\\n')
     return updated_dict
-
-
-def write_to_json(filename, app_details):
-    """
-    writes contextual features to a json file, creates the file if it does not exist
-    :param filename: the output filename to write dictionary to
-    :param app_details: the contextual features as a dictionary
-    :return:
-    """
-    app_details['description_html'] = str(app_details['description_html'])
-    dictionary_json = json.dumps(app_details)
-    f = open(filename + '.json', "w+", encoding='utf-8')
-    f.write(dictionary_json)
-    f.close()
-
-
-def calculate_sha256(filepath):
-    """
-    calculates the sha256 hash value of a given file
-    :param filepath: the path of given file
-    :return:
-    """
-    sha256_hash = hashlib.sha256()
-    with open(filepath, "rb") as f:
-        # Read and update hash string value in blocks of 4K
-        for byte_block in iter(lambda: f.read(4096), b""):
-            sha256_hash.update(byte_block)
-        return sha256_hash.hexdigest()
 
 
 # TODO:: extract the api key, make the user sign in with creds?

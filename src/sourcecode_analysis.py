@@ -3,7 +3,6 @@ import math
 import collections
 import logging
 
-from to_csv import *
 from androguard.core import bytecodes
 from androguard.core import androconf
 

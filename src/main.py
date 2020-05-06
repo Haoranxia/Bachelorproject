@@ -4,7 +4,7 @@ from os import listdir
 from os.path import isfile, join
 from androguard.misc import AnalyzeAPK
 
-from to_csv import *
+from util import write_to_csv
 from sourcecode_analysis import analyze_dex
 from manifest_analysis import analyze_manifest
 from contextual_feat_extraction import run_contextual
@@ -32,8 +32,7 @@ def main():
 
         # Manifest features
         manifest_dict = analyze_manifest(a)
-        initialize_csv(manifestcsv, manifest_dict)
-        write_csv(manifestcsv, manifest_dict)
+        write_to_csv(manifestcsv, manifest_dict)
 
         # Source code features
         # sourcecode_dict = analyze_dex(d, dx)
