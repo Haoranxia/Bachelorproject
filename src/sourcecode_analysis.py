@@ -21,23 +21,18 @@ def analyze_dex(d, dx):
     obfuscation_score = 0
     obfuscations_dict = collections.OrderedDict()
     kotlin_dict = collections.OrderedDict()
+    reflection_dict = collections.OrderedDict()
 
     # Logic
     for dex in d:
         opcodes_dict = get_opcodes(dex, opcodes_dict)
         obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
-        kotlin_dict = get_kotlin_usage(dex)
+        kotlin_dict, reflection_dict = get_kotlin_usage(dex)
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 
-    # print(opcodes_dict)
-    # print(obfuscations_dict)
-    # print("obfuscation score: " + str(obfuscation_score))
-    # print(kotlin_dict)
-    # print(get_string_obfuscation(dx))
-
     # Merge dictionaries
-    opcodes_dict.update(obfuscations_dict).update(kotlin_dict)
+    opcodes_dict.update(obfuscations_dict).update(kotlin_dict).update(reflection_dict)
     return opcodes_dict
 
 
@@ -161,7 +156,7 @@ def get_kotlin_usage(app):
     :param app: app containing the source code
     :return:
     """
-    key_patterns_kotlin = [r'String v[\d]*_[\d] = new StringBuilder();$', r'\bkotlin\b', r'\b.kotlin\b']
+    key_patterns_kotlin = [r'String v[\d]*_[\d] = new StringBuilder();$', r'\bkotlin\b', r'\b.kotlin\b', r'@NotNull']
     keyword_usages_kotlin = {key_pattern: 0 for key_pattern in key_patterns_kotlin}
 
     key_patterns_reflection = [r'java.lang.reflect']
