@@ -26,7 +26,7 @@ def analyze_dex(d, dx):
     for dex in d:
         opcodes_dict = get_opcodes(dex, opcodes_dict)
         obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
-        kotlin_dict["kotlin"] = get_kotlin_usage(dex)
+        kotlin_dict = get_kotlin_usage(dex)
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 
@@ -68,6 +68,7 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
     :param obfuscations_dict:
     :return:
     """
+    # TODO explain how obfuscation score is calculated
     obfuscation_score = 0
     total_evaluated = 0
     for c in app.get_classes():
