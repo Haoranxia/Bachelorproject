@@ -27,7 +27,7 @@ def analyze_dex(d, dx):
     for dex in d:
         opcodes_dict = get_opcodes(dex, opcodes_dict)
         obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
-        kotlin_dict, reflection_dict = get_kotlin_usage(dex)
+        kotlin_dict, reflection_dict = get_keyword_usage(dex)
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 
@@ -150,7 +150,7 @@ def count_overlapping_distinct(pattern, text):
         start = 1 + mo.start()
 
 
-def get_kotlin_usage(app):
+def get_keyword_usage(app):
     """
     Scan the source code for kotlin keyword/pattern usage
     :param app: app containing the source code

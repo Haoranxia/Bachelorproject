@@ -1,5 +1,6 @@
 import sys
 import argparse
+import configparser
 from os import listdir
 from os.path import isfile, join
 from androguard.misc import AnalyzeAPK
@@ -27,19 +28,30 @@ def main():
     manifestcsv = "../static_out/manifest_features.csv"
     sourcecodecsv = "../static_out/manifest_features.csv"
 
+    # Config file parsing
+    config = configparser.ConfigParser()
+    config.read("../settings.ini")
+
+    enable_contextual = (config["Settings"]["Contextual"] == "yes")
+    enable_manifest = (config["Settings"]["Manifest"] == "yes")
+    enable_sourcecode = (config["Settings"]["Sourcecode"] == "yes")
+
     for apk_file in apk_files:
         a, d, dx = AnalyzeAPK(apk_file)
 
         # Manifest features
-        manifest_dict = analyze_manifest(a)
-        write_to_csv(manifestcsv, manifest_dict)
+        if enable_manifest:
+            manifest_dict = analyze_manifest(a)
+            write_to_csv(manifestcsv, manifest_dict)
 
         # Source code features
-        #sourcecode_dict = analyze_dex(d, dx)
-        #write_to_csv(sourcecodecsv, sourcecode_dict)
+        if enable_sourcecode:
+            sourcecode_dict = analyze_dex(d, dx)
+            write_to_csv(sourcecodecsv, sourcecode_dict)
 
         # Contextual features
-        #run_contextual(apk_file=apk_file, app_id=a.get_package())
+        if enable_contextual:
+            run_contextual(apk_file=apk_file, app_id=a.get_package())
 
 
 def init_args_parser():
