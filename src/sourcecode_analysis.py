@@ -175,6 +175,7 @@ def get_kotlin_usage(app):
             
     return keyword_usages_kotlin, keyword_usages_reflection
 
+
 def has_uncommon_chars(string):
     """
     returns true if string contains ascii control characters (non-printable chars) or otherwise non-ascii characters

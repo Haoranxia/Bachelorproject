@@ -15,8 +15,6 @@ def write_to_csv(file, file_dict):
     :param file_dict: the dictionary to be written to csv
     :return:
     """
-    row_exists = False
-    temp_file = NamedTemporaryFile(delete=False, mode='w', newline='')
 
     if not path.exists(file):
         # Create a new file
@@ -47,18 +45,36 @@ def write_to_csv(file, file_dict):
         shutil.move(temp_file.name, file)
 
 
-def write_to_json(filename, app_details):
+def write_to_json(filename, app_details):  # TODO:: RUN TESTS FOR APPENDING TO JSON
     """
     writes contextual features to a json file, creates the file if it does not exist
-    :param filename: the output filename to write dictionary to
+    :param filename: the output filename
     :param app_details: the contextual features as a dictionary
     :return:
     """
-    app_details['description_html'] = str(app_details['description_html'])
-    dictionary_json = json.dumps(app_details)
-    f = open(filename + '.json', "w+", encoding='utf-8')
-    f.write(dictionary_json)
-    f.close()
+    if path.exists(filename):
+        # Modify existing file
+        json_file = open(filename)
+        data = json.load(json_file)
+        data_app_details = data['app_details']
+
+        # Replace the entry if it already exists
+        have_replaced = False
+        for idx, app_detail in enumerate(data_app_details):
+            if app_detail['package-name'] == app_details['package-name']:
+                data_app_details[idx] = app_details
+                have_replaced = True
+
+        # If entry is not replaced, then simply append
+        if not have_replaced:
+            data_app_details.append(app_details)
+        f = open(filename, "w")
+        json.dump(data, f, indent=4, sort_keys=True)
+    else:
+        # Create a new file
+        f = open(filename, "w+", encoding='utf-8')
+        output_dict = {'app_details': [app_details]}
+        json.dump(output_dict, f, indent=4, sort_keys=True)
 
 
 def calculate_sha256(filepath):
