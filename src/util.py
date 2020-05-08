@@ -8,24 +8,29 @@ from tempfile import NamedTemporaryFile
 
 def write_to_csv(file, file_dict):
     """
-    Writes dictionary data to csv file, creates the file if it does not exist
-    :param file: the csv file destination
-    :param file_dict: the dictionary containing features
+    Writes the data in file_dict to a csv file where the fieldnames are the keys of the dictionary.
+    If the file does not exist it will be created. If it already exists we will use a temporary file
+    to update the csv data accordingly and then this file will become the new primary csv file.
+    :param file: the path of the csv file (relative or full path)
+    :param file_dict: the dictionary to be written to csv
     :return:
     """
     row_exists = False
     temp_file = NamedTemporaryFile(delete=False, mode='w', newline='')
 
     if not path.exists(file):
-        # create
+        # Create a new file
         with open(file, 'w+', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=file_dict.keys())
             writer.writeheader()
             writer.writerow(file_dict)
-
+        return
     else:
-        # edit
-        with open(file, 'r') as readf, temp_file:
+        rowexists = False
+        tempfile = NamedTemporaryFile(delete=False, mode='w', newline='')
+
+        # Modify existing file
+        with open(file, 'r') as readf, tempfile:
             reader = csv.DictReader(readf, fieldnames=file_dict.keys())
             writer = csv.DictWriter(temp_file, fieldnames=file_dict.keys())
 

@@ -14,16 +14,16 @@ def main():
     """
     a : APK object; We can obtain all information about the APK here (manifest file stuff)
     d : array of DalvikVMFormat objects; Corresponds to the DEX file. We can obtain classes, methods, strings etc.
-        from here.
+        from here. The array contains a d object for each dex file found in the apk
     dx : Analysis object; Contains special classes, which link information about classes.dex and can handle multiple
-        DEX files. (Extension of d object basically)
+        dex files meaning that it contains information about all the dex files in the apk
     :return:
     """
 
     # Argument parsing
     apk_files = parse_arguments()
 
-    # CSV initialization
+    # CSV initialization (Relative path to this file)
     manifestcsv = "../static_out/manifest_features.csv"
     sourcecodecsv = "../static_out/manifest_features.csv"
 
@@ -35,8 +35,8 @@ def main():
         write_to_csv(manifestcsv, manifest_dict)
 
         # Source code features
-        # sourcecode_dict = analyze_dex(d, dx)
-        # write_csv(sourcecodecsv, sourcecode_dict)
+        #sourcecode_dict = analyze_dex(d, dx)
+        #write_to_csv(sourcecodecsv, sourcecode_dict)
 
         # Contextual features
         #run_contextual(apk_file=apk_file, app_id=a.get_package())
