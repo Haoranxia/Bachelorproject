@@ -1,21 +1,19 @@
-import csv
-import json
-import hashlib
 import requests
 import play_scraper
 
-from util import write_to_json, write_to_csv, calculate_sha256
+from src.util import write_to_json, write_to_csv, calculate_sha256
 
 API_KEY = '5cad0bcd69749612edce15f291d2e3a2b800c063446593360d7f4ed57f46c5a2'
 
+
 def reformat_dictionary(app_details):
     """
-    format the order of dictionary to have package id (pkgname) as the first column and
+    format the order of dictionary to have package id (package-name) as the first column and
     insert escaping for new lines
     :param app_details: a dictionary that contains the contextual features
     :return:
     """
-    updated_dict = {"pkgname": app_details["app_id"]}
+    updated_dict = {"package-name": app_details["app_id"]}
     del app_details["app_id"]
     updated_dict.update(app_details)
     for key, val in updated_dict.items():
@@ -23,6 +21,8 @@ def reformat_dictionary(app_details):
         if isinstance(val, str):
             val.encode('utf-8')
             updated_dict[key] = val.replace('\n', '\\n')
+    if 'description_html' in updated_dict:
+        updated_dict['description_html'] = str(updated_dict['description_html'])
     return updated_dict
 
 
@@ -62,11 +62,11 @@ def run_contextual(apk_file, app_id):
     runs the contextual component, get contextual details from google play and also request report from VirusTotal
     :return:
     """
-    output_filename = './contextual_out/contextual_features_' + app_id.replace('.', '_')
+    output_filename = './contextual_out/contextual_features'
 
     app_details = play_scraper.details(app_id)
     app_details['positives'], app_details['positives_list'] = get_virus_total_positives(apk_file)
     formatted_app_details = reformat_dictionary(app_details)
 
-    write_to_csv(output_filename, formatted_app_details)
-    write_to_json(output_filename, formatted_app_details)
+    write_to_csv(output_filename + '.csv', formatted_app_details)
+    write_to_json(output_filename + '.json', formatted_app_details)
