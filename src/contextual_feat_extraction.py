@@ -1,12 +1,10 @@
-import csv
-import json
-import hashlib
 import requests
 import play_scraper
 
-from util import write_to_json, write_to_csv, calculate_sha256
+from src.util import write_to_json, write_to_csv, calculate_sha256
 
 API_KEY = '5cad0bcd69749612edce15f291d2e3a2b800c063446593360d7f4ed57f46c5a2'
+
 
 def reformat_dictionary(app_details):
     """

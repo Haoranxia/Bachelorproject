@@ -1,11 +1,20 @@
 import csv
+import json
 import shutil
-from tempfile import NamedTemporaryFile
+import hashlib
 from os import path
+from tempfile import NamedTemporaryFile
+
 
 def write_to_csv(file, file_dict):
-    rowexists = False
-    tempfile = NamedTemporaryFile(delete=False, mode='w', newline='')
+    """
+    Writes dictionary data to csv file, creates the file if it does not exist
+    :param file: the csv file destination
+    :param file_dict: the dictionary containing features
+    :return:
+    """
+    row_exists = False
+    temp_file = NamedTemporaryFile(delete=False, mode='w', newline='')
 
     if not path.exists(file):
         # create
@@ -13,24 +22,25 @@ def write_to_csv(file, file_dict):
             writer = csv.DictWriter(f, fieldnames=file_dict.keys())
             writer.writeheader()
             writer.writerow(file_dict)
-            
+
     else:
         # edit
-        with open(file, 'r') as readf, tempfile:
+        with open(file, 'r') as readf, temp_file:
             reader = csv.DictReader(readf, fieldnames=file_dict.keys())
-            writer = csv.DictWriter(tempfile, fieldnames=file_dict.keys())
+            writer = csv.DictWriter(temp_file, fieldnames=file_dict.keys())
 
             for row in reader:
                 if str(row['package-name']) == str(file_dict['package-name']):
                     writer.writerow(file_dict)
-                    rowexists = True
+                    row_exists = True
                 else:
                     writer.writerow(row)
 
-            if not rowexists:
+            if not row_exists:
                 writer.writerow(file_dict)
         
-        shutil.move(tempfile.name, file)
+        shutil.move(temp_file.name, file)
+
 
 def write_to_json(filename, app_details):
     """
@@ -58,10 +68,3 @@ def calculate_sha256(filepath):
         for byte_block in iter(lambda: f.read(4096), b""):
             sha256_hash.update(byte_block)
         return sha256_hash.hexdigest()
-
-
-
-
-
-
-
