@@ -26,11 +26,11 @@ def write_to_csv(file, file_dict):
             writer.writerow(file_dict)
         return
     else:
-        rowexists = False
-        tempfile = NamedTemporaryFile(delete=False, mode='w', newline='')
+        row_exists = False
+        temp_file = NamedTemporaryFile(delete=False, mode='w', newline='')
 
         # Modify existing file
-        with open(file, 'r') as readf, tempfile:
+        with open(file, 'r') as readf, temp_file:
             reader = csv.DictReader(readf, fieldnames=file_dict.keys())
             writer = csv.DictWriter(temp_file, fieldnames=file_dict.keys())
 
