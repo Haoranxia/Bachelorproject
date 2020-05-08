@@ -88,4 +88,5 @@ def parse_arguments():
     return apk_files
 
 
-main()
+if __name__ == '__main__':
+    main()
