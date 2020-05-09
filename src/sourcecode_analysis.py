@@ -185,23 +185,36 @@ def has_uncommon_chars(string):
     return all(32 > ord(c) or ord(c) >= 128 for c in string)
 
 
+def is_base64_encoded(string):
+    """
+    returns true if given string is encoded in base64
+    :param string: string to be evaluated
+    :return:
+    """
+    pattern = re.compile("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$")
+    return pattern.match(string)
+
+
 def get_string_obfuscation(dx):
     """
     checks for a possible obfuscated code within string constants
     :param dx: Analysis object
     :return: a count of strings that have possible string obfuscation
     """
-    code_sentinels = ['{', ';', 'void', '[', 'if (', 'while(', 'for(']
+    code_sentinels = ['{', ';', 'void', '[', 'if (', 'while(', 'for(']  # <- TODO:: MAKE THESE REGEX
     possible_str_obfs_cnt = 0
     break_flag = False
-    # TODO:: https://stackoverflow.com/questions/8571501/how-to-check-whether-a-string-is-base64-encoded-or-not
     for string in dx.strings.keys():
+        # count base64 encoded string constants as possible obfuscations
+        if is_base64_encoded(string):
+            possible_str_obfs_cnt += 1
+            continue
         for sentinel in code_sentinels:
             if break_flag:
                 break_flag = False
                 break
             for _, method in dx.strings[string].get_xref_from():
-                # excluding toString() methods to minimize false positives
+                # excluding toString() methods to minimize false detection of string encrypted code
                 if sentinel in string and method.name != "toString" or has_uncommon_chars(string):
                     # print(string)
                     # print("Class name: {} -- Method name: {}".format(method.class_name, method.name))

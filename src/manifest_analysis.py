@@ -45,8 +45,6 @@ def analyze_manifest(a):
     
     return dict_manifest_features
     
-    
-
 
 # Each type of parent item (activities, services, receivers) can have intent filters. Thus we loop over those and
 # extract all intent filters
