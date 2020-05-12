@@ -3,8 +3,7 @@ import json
 import shutil
 import hashlib
 import sys
-import os
-
+from os import path, devnull
 from tempfile import NamedTemporaryFile
 
 
@@ -93,7 +92,7 @@ def calculate_sha256(filepath):
         return sha256_hash.hexdigest()
 
 def blockPrint():
-    sys.stdout = open(os.devnull, 'w')
+    sys.stdout = open(devnull, 'w')
 
 def enablePrint():
     sys.stdout = sys.__stdout__
