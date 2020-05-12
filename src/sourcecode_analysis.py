@@ -3,10 +3,10 @@ import math
 import collections
 import logging
 import configparser
-
 from androguard.core import bytecodes
 from androguard.core import androconf
 
+from util import blockPrint, enablePrint
 
 # TODO: Look for common obfuscation techniques and pattern match for that
 # TODO: Look for more kotlin code patterns and pattern match for that
@@ -38,10 +38,13 @@ def analyze_dex(d, dx):
         if enable_opcodes:
             opcodes_dict = get_opcodes(dex, opcodes_dict)
         
+        # Temporary solution to supress the printing of "multiple exit nodes found" 
+        blockPrint()
         if enable_obfuscation:
             obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
         
         kotlin_dict, reflection_dict = get_keyword_usage(dex, enable_kotlin, enable_reflection)
+        enablePrint()
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 

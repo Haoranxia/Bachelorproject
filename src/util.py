@@ -2,6 +2,7 @@ import csv
 import json
 import shutil
 import hashlib
+import sys
 from os import path
 from tempfile import NamedTemporaryFile
 
@@ -89,3 +90,9 @@ def calculate_sha256(filepath):
         for byte_block in iter(lambda: f.read(4096), b""):
             sha256_hash.update(byte_block)
         return sha256_hash.hexdigest()
+
+def blockPrint():
+    sys.stdout = open(os.devnull, 'w')
+
+def enablePrint():
+    sys.stdout = sys.__stdout__
