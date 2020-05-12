@@ -3,7 +3,8 @@ import json
 import shutil
 import hashlib
 import sys
-from os import path
+import os
+
 from tempfile import NamedTemporaryFile
 
 
