@@ -2,6 +2,7 @@ import re
 import math
 import collections
 import logging
+import configparser
 
 from androguard.core import bytecodes
 from androguard.core import androconf
@@ -23,11 +24,24 @@ def analyze_dex(d, dx):
     kotlin_dict = collections.OrderedDict()
     reflection_dict = collections.OrderedDict()
 
+    # Config file parsing
+    config = configparser.ConfigParser()
+    config.read("../settings.ini")
+
+    enable_opcodes = (config["Sourcecode_Settigs"]["Opcodes"] == "yes")
+    enable_obfuscation = (config["Sourcecode_Settigs"]["Obfuscation"] == "yes")
+    enable_kotlin = (config["Sourcecode_Settigs"]["Kotlin"] == "yes")
+    enable_reflection = (config["Sourcecode_Settigs"]["Reflection"] == "yes")
+
     # Logic
     for dex in d:
-        opcodes_dict = get_opcodes(dex, opcodes_dict)
-        obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
-        kotlin_dict, reflection_dict = get_keyword_usage(dex)
+        if enable_opcodes:
+            opcodes_dict = get_opcodes(dex, opcodes_dict)
+        
+        if enable_obfuscation:
+            obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
+        
+        kotlin_dict, reflection_dict = get_keyword_usage(dex, enable_kotlin, enable_reflection)
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 
@@ -150,28 +164,37 @@ def count_overlapping_distinct(pattern, text):
         start = 1 + mo.start()
 
 
-def get_keyword_usage(app):
+def get_keyword_usage(app, enable_kotlin, enable_reflection):
     """
     Scan the source code for kotlin keyword/pattern usage
     :param app: app containing the source code
     :return:
     """
+    
+    # Kotlin 
     key_patterns_kotlin = [r'String v[\d]*_[\d] = new StringBuilder();$', r'\bkotlin\b', r'\b.kotlin\b', r'@NotNull']
-    keyword_usages_kotlin = {key_pattern: 0 for key_pattern in key_patterns_kotlin}
-
+    keyword_usages_kotlin = collections.OrderedDict()
+    if enable_kotlin:
+        keyword_usages_kotlin = {key_pattern: 0 for key_pattern in key_patterns_kotlin}
+    
+    # Reflection
     key_patterns_reflection = [r'java.lang.reflect']
-    keyword_usages_reflection = {key_pattern: 0 for key_pattern in key_patterns_reflection}
+    keyword_usages_reflection = collections.OrderedDict()
+    if enable_reflection:
+        keyword_usages_reflection = {key_pattern: 0 for key_pattern in key_patterns_reflection}
 
     for cl in app.get_classes():
         src = cl.get_source()
 
         # Kotlin keyword analysis
-        for key_pattern in key_patterns_kotlin:
-            keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
+        if enable_kotlin:
+            for key_pattern in key_patterns_kotlin:
+                keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
 
         # Java reflection usage analysis
-        for key_pattern in key_patterns_reflection:
-            keyword_usages_reflection[key_pattern] += src.count(key_pattern)
+        if enable_reflection:
+            for key_pattern in key_patterns_reflection:
+                keyword_usages_reflection[key_pattern] += src.count(key_pattern)
             
     return keyword_usages_kotlin, keyword_usages_reflection
 
