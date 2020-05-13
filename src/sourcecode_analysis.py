@@ -117,6 +117,7 @@ def get_keyword_usage(app, enable_kotlin, enable_reflection):
         keyword_usages_reflection = {key_pattern: 0 for key_pattern in key_patterns_reflection}
 
     for cl in app.get_classes():
+        # FIXME Cant get into the sourcecode???
         src = cl.get_source()
 
         # Kotlin keyword analysis
