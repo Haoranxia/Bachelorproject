@@ -96,3 +96,6 @@ def blockPrint():
 
 def enablePrint():
     sys.stdout = sys.__stdout__
+
+def testPrint():
+    print("testprint")

@@ -6,11 +6,10 @@ import configparser
 from androguard.core import bytecodes
 from androguard.core import androconf
 
-from util import blockPrint, enablePrint
 
 # TODO: Look for common obfuscation techniques and pattern match for that
 # TODO: Look for more kotlin code patterns and pattern match for that
-def analyze_dex(d, dx):
+def analyze_dex(d):
     """
     analyze Dex file
     :param d: list of dalvikVMformat objects
@@ -28,29 +27,25 @@ def analyze_dex(d, dx):
     config = configparser.ConfigParser()
     config.read("../settings.ini")
 
-    enable_opcodes = (config["Sourcecode_Settigs"]["Opcodes"] == "yes")
-    enable_obfuscation = (config["Sourcecode_Settigs"]["Obfuscation"] == "yes")
-    enable_kotlin = (config["Sourcecode_Settigs"]["Kotlin"] == "yes")
-    enable_reflection = (config["Sourcecode_Settigs"]["Reflection"] == "yes")
+    enable_opcodes = (config["Sourcecode_Settings"]["Opcodes"] == "yes")
+    enable_obfuscation = (config["Sourcecode_Settings"]["Obfuscation"] == "yes")
+    enable_kotlin = (config["Sourcecode_Settings"]["Kotlin"] == "yes")
+    enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
 
     # Logic
     for dex in d:
         if enable_opcodes:
             opcodes_dict = get_opcodes(dex, opcodes_dict)
         
-        # Temporary solution to supress the printing of "multiple exit nodes found" 
-        blockPrint()
         if enable_obfuscation:
             obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
         
-        kotlin_dict, reflection_dict = get_keyword_usage(dex, enable_kotlin, enable_reflection)
-        enablePrint()
+        if enable_kotlin or enable_reflection:
+            kotlin_dict, reflection_dict = get_keyword_usage(dex, enable_kotlin, enable_reflection)
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 
-    # Merge dictionaries
-    opcodes_dict.update(obfuscations_dict).update(kotlin_dict).update(reflection_dict)
-    return opcodes_dict
+    return opcodes_dict, obfuscations_dict, kotlin_dict, reflection_dict
 
 
 # Return a dictionary of opcodes and the nr of occurrences of that opcode
@@ -70,6 +65,7 @@ def get_opcodes(app, opcodes_dict):
     return opcodes_dict
 
 
+# Function that checks of common obfuscation techniques
 def get_obfuscation_naming_total(app, obfuscations_dict):
     """
     Get number of (possible) obfuscated names
@@ -100,6 +96,43 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
     return (obfuscation_score / total_evaluated), obfuscations_dict
 
 
+# Function that checks for certain keywords in the sourcecode
+def get_keyword_usage(app, enable_kotlin, enable_reflection):
+    """
+    Scan the source code for kotlin keyword/pattern usage
+    :param app: app containing the source code
+    :return:
+    """
+    
+    # Kotlin 
+    key_patterns_kotlin = [r'String v[\d]*_[\d] = new StringBuilder();$', r'\bkotlin\b', r'\b.kotlin\b', r'@NotNull']
+    keyword_usages_kotlin = collections.OrderedDict()
+    if enable_kotlin:
+        keyword_usages_kotlin = {key_pattern: 0 for key_pattern in key_patterns_kotlin}
+    
+    # Reflection
+    key_patterns_reflection = [r'java.lang.reflect']
+    keyword_usages_reflection = collections.OrderedDict()
+    if enable_reflection:
+        keyword_usages_reflection = {key_pattern: 0 for key_pattern in key_patterns_reflection}
+
+    for cl in app.get_classes():
+        src = cl.get_source()
+
+        # Kotlin keyword analysis
+        if enable_kotlin:
+            for key_pattern in key_patterns_kotlin:
+                keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
+
+        # Java reflection usage analysis
+        if enable_reflection:
+            for key_pattern in key_patterns_reflection:
+                keyword_usages_reflection[key_pattern] += src.count(key_pattern)
+            
+    return keyword_usages_kotlin, keyword_usages_reflection
+
+
+# Obfuscation helper functions
 def add_to_obfuscation_histogram(name, obfuscations_dict):
     """
     add obfuscated count using class name, field name or method name to ordered dictionary
@@ -167,41 +200,6 @@ def count_overlapping_distinct(pattern, text):
         start = 1 + mo.start()
 
 
-def get_keyword_usage(app, enable_kotlin, enable_reflection):
-    """
-    Scan the source code for kotlin keyword/pattern usage
-    :param app: app containing the source code
-    :return:
-    """
-    
-    # Kotlin 
-    key_patterns_kotlin = [r'String v[\d]*_[\d] = new StringBuilder();$', r'\bkotlin\b', r'\b.kotlin\b', r'@NotNull']
-    keyword_usages_kotlin = collections.OrderedDict()
-    if enable_kotlin:
-        keyword_usages_kotlin = {key_pattern: 0 for key_pattern in key_patterns_kotlin}
-    
-    # Reflection
-    key_patterns_reflection = [r'java.lang.reflect']
-    keyword_usages_reflection = collections.OrderedDict()
-    if enable_reflection:
-        keyword_usages_reflection = {key_pattern: 0 for key_pattern in key_patterns_reflection}
-
-    for cl in app.get_classes():
-        src = cl.get_source()
-
-        # Kotlin keyword analysis
-        if enable_kotlin:
-            for key_pattern in key_patterns_kotlin:
-                keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
-
-        # Java reflection usage analysis
-        if enable_reflection:
-            for key_pattern in key_patterns_reflection:
-                keyword_usages_reflection[key_pattern] += src.count(key_pattern)
-            
-    return keyword_usages_kotlin, keyword_usages_reflection
-
-
 def has_uncommon_chars(string):
     """
     returns true if string contains ascii control characters (non-printable chars) or otherwise non-ascii characters
@@ -248,8 +246,3 @@ def get_string_obfuscation(dx):
                     break_flag = True
                     break
     return possible_str_obfs_cnt
-
-
-def print_feature_list(features):
-    for feature in features:
-        print(feature)
