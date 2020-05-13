@@ -3,9 +3,13 @@ import argparse
 import configparser
 from os import listdir
 from os.path import isfile, join
-from androguard.misc import AnalyzeAPK
 
-from util import write_to_csv
+from androguard.core.bytecodes import dvm, apk
+from androguard.misc import AnalyzeDex
+from androguard.decompiler.dad.graph import logger as glogger
+from androguard.decompiler.dad.decompile import logger as dlogger
+
+from util import write_to_csv, blockPrint, enablePrint
 from sourcecode_analysis import analyze_dex
 from manifest_analysis import analyze_manifest
 from contextual_feat_extraction import run_contextual
@@ -26,7 +30,7 @@ def main():
 
     # CSV initialization (Relative path to this file)
     manifestcsv = "../static_out/manifest_features.csv"
-    sourcecodecsv = "../static_out/manifest_features.csv"
+    sourcecodecsv = "../static_out/sourcecode_features.csv"
 
     # Config file parsing
     config = configparser.ConfigParser()
@@ -37,8 +41,15 @@ def main():
     enable_sourcecode = (config["Settings"]["Sourcecode"] == "yes")
 
     for apk_file in apk_files:
-        a, d, dx = AnalyzeAPK(apk_file)
+        #glogger.disabled = True
+        #dlogger.disabled = True
 
+        a = apk.APK(apk_file)
+
+        # Contextual features
+        if enable_contextual:
+            run_contextual(apk_file=apk_file, app_id=a.get_package())
+            
         # Manifest features
         if enable_manifest:
             manifest_dict = analyze_manifest(a)
@@ -46,12 +57,23 @@ def main():
 
         # Source code features
         if enable_sourcecode:
-            sourcecode_dict = analyze_dex(d, dx)
-            write_to_csv(sourcecodecsv, sourcecode_dict)
+            # Get the DalvikVMFormat objects for each dex file in the apk so that we can analyze them
+            d = [dvm.DalvikVMFormat(dex) for dex in a.get_all_dex()]
+            opcodes_dict, obfuscations_dict, kotlin_dict, reflection_dict = analyze_dex(d)
+            print(opcodes_dict)
+            print(obfuscations_dict)
+            print(kotlin_dict)
+            print(reflection_dict)
+            #write_to_csv(sourcecodecsv, sourcecode_dict)
 
-        # Contextual features
-        if enable_contextual:
-            run_contextual(apk_file=apk_file, app_id=a.get_package())
+       
+        
+        #glogger.disabled = False
+        #dlogger.disabled = False
+
+    print("Finished")
+        
+        
 
 
 def init_args_parser():
