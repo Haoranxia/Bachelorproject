@@ -3,7 +3,8 @@ import play_scraper
 from requests.exceptions import HTTPError
 from util import write_to_json, write_to_csv, calculate_sha256
 
-API_KEY = '5cad0bcd69749612edce15f291d2e3a2b800c063446593360d7f4ed57f46c5a2'
+VT_API_KEY = '5cad0bcd69749612edce15f291d2e3a2b800c063446593360d7f4ed57f46c5a2'
+OPSWAT_API_KEY = 'f6ccaaa2ba7d467906cacb303572ef96'
 
 
 def reformat_dictionary(app_details, app_id):
@@ -34,7 +35,7 @@ def get_virus_total_positives(apk_file):
     :return: the number of positives and list of anti-virus scanners that detected the positive
     """
     url = 'https://www.virustotal.com/vtapi/v2/file/report'
-    params = {'apikey': API_KEY, 'resource': calculate_sha256(apk_file)}
+    params = {'apikey': VT_API_KEY, 'resource': calculate_sha256(apk_file)}
     response = requests.get(url, params=params)
 
     # TODO:: Disable or remove apk file upload to virus total
@@ -60,6 +61,14 @@ def get_virus_total_positives(apk_file):
     return response.json()['positives'], positives_list
 
 
+def get_opswat_positives(apk_file):
+    url = "https://api.metadefender.com/v4/hash/" + str(calculate_sha256(apk_file))
+    headers = {'apikey': OPSWAT_API_KEY}
+    response = requests.request("GET", url, headers=headers)
+    # print(response.text)
+    return response.json()['process_info']['result']
+
+
 def get_app_stores_availability(app_id, app_name):
     available_stores = []
     app_stores = ['Google Play', 'F-Droid', 'Uptodown']
@@ -79,24 +88,32 @@ def get_app_stores_availability(app_id, app_name):
     return available_stores
 
 
+def write_to_output_files(apk_file, app_id, app_details, output_filename):
+    """
+    adds results from virus scanners and writes to csv and json
+    :param apk_file: the apk file for contextual features
+    :param app_id: the application id
+    :param app_details: a dictionary object containing available contextual features
+    :param output_filename: the name of output file with directory
+    :return:
+    """
+    app_details['vt_positives'], app_details['vt_positives_list'] = get_virus_total_positives(apk_file)
+    app_details['opswat_result'] = get_opswat_positives(apk_file)
+    formatted_app_details = reformat_dictionary(app_details, app_id)
+    write_to_csv(output_filename + '.csv', formatted_app_details)
+    write_to_json(output_filename + '.json', formatted_app_details)
+
+
 def run_contextual(apk_file, app_id):
     """
     runs the contextual component, get contextual details from google play and also request report from VirusTotal
     :return:
     """
     output_filename = '../contextual_out/contextual_features'
-
     try:
         app_details = play_scraper.details(app_id)
-        app_details['positives'], app_details['positives_list'] = get_virus_total_positives(apk_file)
-        formatted_app_details = reformat_dictionary(app_details, app_id)
-        write_to_csv(output_filename + '.csv', formatted_app_details)
-        write_to_json(output_filename + '.json', formatted_app_details)
+        write_to_output_files(apk_file, app_id, app_details, output_filename)
     except ValueError:
         print('AppID not found in the Google Play store')
         empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
-        empty_app_details['positives'], empty_app_details['positives_list'] = get_virus_total_positives(apk_file)
-        empty_app_details = reformat_dictionary(empty_app_details, app_id)
-        write_to_csv(output_filename + '.csv', empty_app_details)
-        write_to_json(output_filename + '.json', empty_app_details)
-        return
+        write_to_output_files(apk_file, app_id, empty_app_details, output_filename)
