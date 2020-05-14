@@ -1,9 +1,12 @@
 .vscode
+
+# Input/Output files
 apks/*
+static_out/*
+contextual_out/*
 
 # Pycharm
 .idea/
-
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
