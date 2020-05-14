@@ -8,6 +8,8 @@ from androguard.core.bytecodes import dvm, apk
 from androguard.misc import AnalyzeDex
 from androguard.decompiler.dad.graph import logger as glogger
 from androguard.decompiler.dad.decompile import logger as dlogger
+from androguard.core.analysis.analysis import Analysis
+from androguard.decompiler.decompiler import DecompilerDAD
 
 from util import write_to_csv, blockPrint, enablePrint
 from sourcecode_analysis import analyze_dex
@@ -31,6 +33,9 @@ def main():
     # CSV initialization (Relative path to this file)
     manifestcsv = "../static_out/manifest_features.csv"
     sourcecodecsv = "../static_out/sourcecode_features.csv"
+    opcodescsv = "../static_out/sourcecode_opcodes.csv"
+    obfuscationscsv = "../static_out/sourcecode_obfuscations.csv"
+    keywordscsv = "../static_out/sourcecode_keywords.csv"
 
     # Config file parsing
     config = configparser.ConfigParser()
@@ -41,11 +46,8 @@ def main():
     enable_sourcecode = (config["Settings"]["Sourcecode"] == "yes")
 
     for apk_file in apk_files:
-        #glogger.disabled = True
-        #dlogger.disabled = True
-
         a = apk.APK(apk_file)
-
+        
         # Contextual features
         if enable_contextual:
             run_contextual(apk_file=apk_file, app_id=a.get_package())
@@ -57,24 +59,38 @@ def main():
 
         # Source code features
         if enable_sourcecode:
-            # Get the DalvikVMFormat objects for each dex file in the apk so that we can analyze them
-            d = [dvm.DalvikVMFormat(dex) for dex in a.get_all_dex()]
-            opcodes_dict, obfuscations_dict, kotlin_dict, reflection_dict = analyze_dex(d)
-            print(opcodes_dict)
-            print(obfuscations_dict)
-            print(kotlin_dict)
-            print(reflection_dict)
-            #write_to_csv(sourcecodecsv, sourcecode_dict)
+            # FIXME Disabled glogger due to "Multiple exit nodes error" in androguard. This seems to be a bug related to
+            # the androguard framework so we can't do much about it
+            glogger.disabled = True
 
-       
-        
-        #glogger.disabled = False
-        #dlogger.disabled = False
+            # Create the d (DalvikVMFormat object) for each dex, and dx (Analysis object) 
+            # for all dex files for sourcecode analysis
+            ds = [dvm.DalvikVMFormat(dex) for dex in a.get_all_dex()]
+            dx = Analysis()
+
+            for d in ds:
+                dx.add(d)
+
+            # TODO use JADX instead of DAD
+            decompiler = DecompilerDAD(d, dx)
+
+            for d in ds:
+                d.set_decompiler(decompiler)
+           
+            opcodes_dict, obfuscations_dict, kotlin_dict, reflection_dict = analyze_dex(d, dx)
+            keywords_dict = kotlin_dict.update(reflection_dict)
+
+            print(reflection_dict)
+            print(kotlin_dict)
+            print(keywords_dict)
+
+            glogger.enabled = True
+            #write_to_csv(opcodescsv, opcodes_dict)
+            #write_to_csv(obfuscationscsv, obfuscations_dict)
+            #write_to_csv(keywordscsv, keywords_dict)
 
     print("Finished")
         
-        
-
 
 def init_args_parser():
     """

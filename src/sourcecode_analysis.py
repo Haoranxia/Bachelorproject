@@ -9,7 +9,7 @@ from androguard.core import androconf
 
 # TODO: Look for common obfuscation techniques and pattern match for that
 # TODO: Look for more kotlin code patterns and pattern match for that
-def analyze_dex(d):
+def analyze_dex(d, dx):
     """
     analyze Dex file
     :param d: list of dalvikVMformat objects
@@ -33,15 +33,18 @@ def analyze_dex(d):
     enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
 
     # Logic
+
+    # Use d object
     for dex in d:
         if enable_opcodes:
             opcodes_dict = get_opcodes(dex, opcodes_dict)
         
         if enable_obfuscation:
             obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
-        
-        if enable_kotlin or enable_reflection:
-            kotlin_dict, reflection_dict = get_keyword_usage(dex, enable_kotlin, enable_reflection)
+    
+    # Use dx object
+    if enable_kotlin or enable_reflection:
+        kotlin_dict, reflection_dict = get_keyword_usage(dx, enable_kotlin, enable_reflection)
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 
@@ -118,17 +121,18 @@ def get_keyword_usage(app, enable_kotlin, enable_reflection):
 
     for cl in app.get_classes():
         # FIXME Cant get into the sourcecode???
-        src = cl.get_source()
+        src = cl.get_vm_class().get_source()
+        
+        if src:
+            # Kotlin keyword analysis
+            if enable_kotlin:
+                for key_pattern in key_patterns_kotlin:
+                    keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
 
-        # Kotlin keyword analysis
-        if enable_kotlin:
-            for key_pattern in key_patterns_kotlin:
-                keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
-
-        # Java reflection usage analysis
-        if enable_reflection:
-            for key_pattern in key_patterns_reflection:
-                keyword_usages_reflection[key_pattern] += src.count(key_pattern)
+            # Java reflection usage analysis
+            if enable_reflection:
+                for key_pattern in key_patterns_reflection:
+                    keyword_usages_reflection[key_pattern] += src.count(key_pattern)
             
     return keyword_usages_kotlin, keyword_usages_reflection
 
