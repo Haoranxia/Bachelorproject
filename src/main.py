@@ -46,14 +46,8 @@ def main():
     enable_sourcecode = (config["Settings"]["Sourcecode"] == "yes")
 
     for apk_file in apk_files:
-<<<<<<< HEAD
         a = apk.APK(apk_file)
         
-=======
-        # glogger.disabled = True
-        # dlogger.disabled = True
-
->>>>>>> 13ebcb8a16b9cfde0efe890cd396f6a242b32a8d
         # Contextual features
         if enable_contextual:
             a = apk.APK(apk_file)
@@ -67,7 +61,6 @@ def main():
 
         # Source code features
         if enable_sourcecode:
-<<<<<<< HEAD
             # FIXME Disabled glogger due to "Multiple exit nodes error" in androguard. This seems to be a bug related to
             # the androguard framework so we can't do much about it
             glogger.disabled = True
@@ -80,7 +73,7 @@ def main():
             for d in ds:
                 dx.add(d)
 
-            # TODO use JADX instead of DAD
+            # TODO use JADX instead of DAD because DAD might have issues with decompiling certain sections of code
             decompiler = DecompilerDAD(d, dx)
 
             for d in ds:
@@ -100,24 +93,6 @@ def main():
 
     print("Finished")
         
-=======
-            # Get the DalvikVMFormat objects for each dex file in the apk so that we can analyze them
-            _, d, _ = AnalyzeAPK(apk_file)
-            # d = [dvm.DalvikVMFormat(dex) for dex in a.get_all_dex()]
-
-            opcodes_dict, obfuscations_dict, kotlin_dict, reflection_dict = analyze_dex(d)
-            print(opcodes_dict)
-            print(obfuscations_dict)
-            print(kotlin_dict)
-            print(reflection_dict)
-            # write_to_csv(sourcecodecsv, sourcecode_dict)
-
-        # glogger.disabled = False
-        # dlogger.disabled = False
-
-    print("Finished")
-
->>>>>>> 13ebcb8a16b9cfde0efe890cd396f6a242b32a8d
 
 def init_args_parser():
     """
