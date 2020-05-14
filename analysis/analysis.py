@@ -22,19 +22,19 @@ def LVQ(prototypes, data):
 def move_prototype(datapoint, distance, prototype):
     factor = 0.1
 
-    if datapoint.malicious == prototype.malicious:
+    # if datapoint.malicious == prototype.malicious:
         
 
 
-[a,b,c,d,e,f,g] 
-[1,2,3,4,5,6,7]
-[a-1, b-2, c-3,...]
-
-p[1] = p[1] + d[1],
-
-for coord1 in prototype:
-    for coord2 in data:
-
+# [a,b,c,d,e,f,g]
+# [1,2,3,4,5,6,7]
+# [a-1, b-2, c-3,...]
+#
+# p[1] = p[1] + d[1],
+#
+# for coord1 in prototype:
+#     for coord2 in data:
+#
 
         
 

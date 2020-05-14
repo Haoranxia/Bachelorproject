@@ -5,7 +5,7 @@ from os import listdir
 from os.path import isfile, join
 
 from androguard.core.bytecodes import dvm, apk
-from androguard.misc import AnalyzeDex
+from androguard.misc import AnalyzeAPK
 from androguard.decompiler.dad.graph import logger as glogger
 from androguard.decompiler.dad.decompile import logger as dlogger
 from androguard.core.analysis.analysis import Analysis
@@ -46,19 +46,28 @@ def main():
     enable_sourcecode = (config["Settings"]["Sourcecode"] == "yes")
 
     for apk_file in apk_files:
+<<<<<<< HEAD
         a = apk.APK(apk_file)
         
+=======
+        # glogger.disabled = True
+        # dlogger.disabled = True
+
+>>>>>>> 13ebcb8a16b9cfde0efe890cd396f6a242b32a8d
         # Contextual features
         if enable_contextual:
+            a = apk.APK(apk_file)
             run_contextual(apk_file=apk_file, app_id=a.get_package())
-            
+
         # Manifest features
         if enable_manifest:
+            a = apk.APK(apk_file)
             manifest_dict = analyze_manifest(a)
             write_to_csv(manifestcsv, manifest_dict)
 
         # Source code features
         if enable_sourcecode:
+<<<<<<< HEAD
             # FIXME Disabled glogger due to "Multiple exit nodes error" in androguard. This seems to be a bug related to
             # the androguard framework so we can't do much about it
             glogger.disabled = True
@@ -91,6 +100,24 @@ def main():
 
     print("Finished")
         
+=======
+            # Get the DalvikVMFormat objects for each dex file in the apk so that we can analyze them
+            _, d, _ = AnalyzeAPK(apk_file)
+            # d = [dvm.DalvikVMFormat(dex) for dex in a.get_all_dex()]
+
+            opcodes_dict, obfuscations_dict, kotlin_dict, reflection_dict = analyze_dex(d)
+            print(opcodes_dict)
+            print(obfuscations_dict)
+            print(kotlin_dict)
+            print(reflection_dict)
+            # write_to_csv(sourcecodecsv, sourcecode_dict)
+
+        # glogger.disabled = False
+        # dlogger.disabled = False
+
+    print("Finished")
+
+>>>>>>> 13ebcb8a16b9cfde0efe890cd396f6a242b32a8d
 
 def init_args_parser():
     """
