@@ -9,7 +9,7 @@ from androguard.core import androconf
 
 # TODO: Look for common obfuscation techniques and pattern match for that
 # TODO: Look for more kotlin code patterns and pattern match for that
-def analyze_dex(d, dx):
+def analyze_dex(ds, dx):
     """
     analyze Dex file
     :param d: list of dalvikVMformat objects
@@ -35,7 +35,7 @@ def analyze_dex(d, dx):
     # Logic
 
     # Use d object
-    for dex in d:
+    for dex in ds:
         if enable_opcodes:
             opcodes_dict = get_opcodes(dex, opcodes_dict)
         
@@ -121,19 +121,21 @@ def get_keyword_usage(app, enable_kotlin, enable_reflection):
 
     for cl in app.get_classes():
         # FIXME Cant get into the sourcecode???
-        src = cl.get_vm_class().get_source()
-        
-        if src:
-            # Kotlin keyword analysis
-            if enable_kotlin:
-                for key_pattern in key_patterns_kotlin:
-                    keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
-
-            # Java reflection usage analysis
-            if enable_reflection:
-                for key_pattern in key_patterns_reflection:
-                    keyword_usages_reflection[key_pattern] += src.count(key_pattern)
             
+        for m in cl.get_vm_class().get_methods():
+            if m:
+                src = m.get_source()
+                if src:
+                    # Kotlin keyword analysis
+                    if enable_kotlin:
+                        for key_pattern in key_patterns_kotlin:
+                            keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
+
+                    # Java reflection usage analysis
+                    if enable_reflection:
+                        for key_pattern in key_patterns_reflection:
+                            keyword_usages_reflection[key_pattern] += src.count(key_pattern)
+                
     return keyword_usages_kotlin, keyword_usages_reflection
 
 

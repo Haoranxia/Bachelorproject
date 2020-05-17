@@ -10,6 +10,7 @@ from androguard.decompiler.dad.graph import logger as glogger
 from androguard.decompiler.dad.decompile import logger as dlogger
 from androguard.core.analysis.analysis import Analysis
 from androguard.decompiler.decompiler import DecompilerDAD
+from androguard.decompiler.decompiler import DecompilerJADX
 
 from util import write_to_csv, blockPrint, enablePrint
 from sourcecode_analysis import analyze_dex
@@ -50,12 +51,10 @@ def main():
         
         # Contextual features
         if enable_contextual:
-            a = apk.APK(apk_file)
             run_contextual(apk_file=apk_file, app_id=a.get_package())
 
         # Manifest features
         if enable_manifest:
-            a = apk.APK(apk_file)
             manifest_dict = analyze_manifest(a)
             write_to_csv(manifestcsv, manifest_dict)
 
@@ -73,13 +72,14 @@ def main():
             for d in ds:
                 dx.add(d)
 
-            # TODO use JADX instead of DAD because DAD might have issues with decompiling certain sections of code
-            decompiler = DecompilerDAD(d, dx)
-
             for d in ds:
+                # TODO use JADX instead of DAD because DAD might have issues with decompiling certain sections of code
+                decompiler = DecompilerDAD(d, dx)
+                # decompiler = DecompilerJADX(d, dx)
                 d.set_decompiler(decompiler)
-           
-            opcodes_dict, obfuscations_dict, kotlin_dict, reflection_dict = analyze_dex(d, dx)
+
+            print("Executing src")
+            opcodes_dict, obfuscations_dict, kotlin_dict, reflection_dict = analyze_dex(ds, dx)
             keywords_dict = kotlin_dict.update(reflection_dict)
 
             print(reflection_dict)

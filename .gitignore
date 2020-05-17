@@ -20,5 +20,6 @@ __pycache__/
 # mpeltonen/sbt-idea plugin
 .idea_modules/
 
-# output files
-contextual_out/
+# Misc
+dex2jar-2.0/*
+jd-core/*
