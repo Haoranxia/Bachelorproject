@@ -80,7 +80,9 @@ def unpack_jar_test(file_path):
         # TODO
         print("")
 
-
+# txt = "import whatever.lmao; import secondClass; class SomeClass{}"
+# java_ident = r"[A-Za-z\_\$]+[0-9]*[A-Za-z\_\$]*"
+# x = re.findall(r"import " + java_ident + r"(\." + java_ident + r")*;", txt)
 unpack_jar(outputfile)
         
 
