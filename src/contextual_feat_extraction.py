@@ -111,6 +111,10 @@ def run_contextual(apk_file, app_id):
     runs the contextual component, get contextual details from google play and also request report from VirusTotal
     :return:
     """
+
+    # TODO:: GET CONFIG ITEMS, -> appid, API KEYS, vt on/off, opswat on/off, opswat file upload on/off,
+    #  vt file upload on/off
+    #  error when vt or opswat quota is reached
     output_filename = '../contextual_out/contextual_features'
     try:
         app_details = play_scraper.details(app_id)

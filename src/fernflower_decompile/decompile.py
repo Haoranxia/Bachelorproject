@@ -22,6 +22,7 @@ d2j_path = config["Paths"]["dex2jar_path"]
 fernflower_path = config["Paths"]["fernflower_path"]
 outputfile = "./fernflower_out/dex2jar_out.jar"
 
+
 def decompile(apk):
     if d2j_path:
         # dex2jar
@@ -34,17 +35,21 @@ def decompile(apk):
 
 def dex2jar(apk):
     if isWindows:
-        p = subprocess.Popen([d2j_path, "-o", outputfile, apk])
-        stdout, stderr = p.communicate()
+        d2j_args = [d2j_path, "-o", outputfile, apk]
+    else:
+        d2j_args = ["sh", d2j_path, "-o", outputfile, apk]
 
-        if stdout:
-            print(stdout)
-        if stderr:
-            print(stderr)
+    p = subprocess.Popen(d2j_args)
+    stdout, stderr = p.communicate()
+
+    if stdout:
+        print(stdout)
+    if stderr:
+        print(stderr)
 
 
 def fernflower_decompile(file_path):
-    if isWindows:
+    if True:  # if isWindows:
         p = subprocess.Popen(["java", "-jar", fernflower_path, file_path, "./fernflower_out"])
         stdout, stderr = p.communicate()
 
@@ -54,11 +59,11 @@ def fernflower_decompile(file_path):
             print(stderr)
 
 
-
 def unpack_jar(file_path):
     # import regex: "import <anything>;"
-    import_regex = r"import [+];"
-    import_regex_count = 0
+    import_regex = r'import (.*?);\n'
+    # import_regex_count = 0
+    imports_list = []
 
     if path.exists(file_path):
         # if folder: go into folder
@@ -68,11 +73,9 @@ def unpack_jar(file_path):
             if filename.endswith(".java"):
                 with archive.open(filename) as javafile:
                     src_string = javafile.read().decode("utf-8")
-                    import_regex_count += src_string.count(import_regex)
-                    print(src_string)
-                    break
-    
-    print(import_regex_count)
+                    imports = re.findall(import_regex, src_string)
+                    imports_list.extend(imports)
+    print(imports_list)
 
         
 def unpack_jar_test(file_path):
@@ -80,9 +83,10 @@ def unpack_jar_test(file_path):
         # TODO
         print("")
 
-# txt = "import whatever.lmao; import secondClass; class SomeClass{}"
-# java_ident = r"[A-Za-z\_\$]+[0-9]*[A-Za-z\_\$]*"
-# x = re.findall(r"import " + java_ident + r"(\." + java_ident + r")*;", txt)
+
+# decompile("/home/yona/PycharmProjects/Bachelorproject/apks/flashlight.apk")
+
 unpack_jar(outputfile)
-        
+
+
 
