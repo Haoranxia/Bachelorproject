@@ -25,6 +25,8 @@ def reformat_dictionary(app_details, app_id):
             updated_dict[key] = val.replace('\n', '\\n')
     if 'description_html' in updated_dict:
         updated_dict['description_html'] = str(updated_dict['description_html'])
+        # TODO:: try this \/
+        # updated_dict['description_html'] = updated_dict['description_html'].decode("utf-8")
     return updated_dict
 
 
