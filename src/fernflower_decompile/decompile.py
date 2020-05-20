@@ -8,7 +8,8 @@
 # fernflower -> jar with .java files
 
 from os import path, devnull 
-import platform, subprocess, zipfile, configparser, re 
+import platform, subprocess, zipfile, configparser, re
+import collections
 
 isWindows = False
 if platform.system() == 'Windows':
@@ -54,11 +55,19 @@ def fernflower_decompile(file_path):
             print(stderr)
 
 
-
+# import [starting_symbol-any char].
 def unpack_jar(file_path):
-    # import regex: "import <anything>;"
-    import_regex = r"import [+];"
-    import_regex_count = 0
+    
+    key_patterns_kotlin = [r'String v[\d]*_[\d] = new StringBuilder();$', r'\bkotlin\b', r'\b.kotlin\b', r'@NotNull']
+    keyword_usages_kotlin = collections.OrderedDict()
+    keyword_usages_kotlin = {key_pattern: 0 for key_pattern in key_patterns_kotlin}
+    
+    key_patterns_reflection = [r'java.lang.reflect']
+    keyword_usages_reflection = collections.OrderedDict()
+    keyword_usages_reflection = {key_pattern: 0 for key_pattern in key_patterns_reflection}
+    
+    key_patterns_imports = [r'import']
+    keyword_usages_imports = {key_pattern: 0 for key_pattern in key_patterns_imports}
 
     if path.exists(file_path):
         # if folder: go into folder
@@ -68,17 +77,47 @@ def unpack_jar(file_path):
             if filename.endswith(".java"):
                 with archive.open(filename) as javafile:
                     src_string = javafile.read().decode("utf-8")
-                    import_regex_count += src_string.count(import_regex)
-                    print(src_string)
-                    break
+
+                    # kotlin
+                    for key_pattern in key_patterns_kotlin:
+                        keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src_string)
+
+                    # reflection
+                    for key_pattern in key_patterns_reflection:
+                        keyword_usages_reflection[key_pattern] += src_string.count(key_pattern)
+                    
+                    # imports
+                    for key_pattern in key_patterns_imports:
+                        keyword_usages_imports[key_pattern] += src_string.count(key_pattern)
+                              
     
-    print(import_regex_count)
+    print(keyword_usages_kotlin)
+    print(keyword_usages_reflection)
+    print(keyword_usages_imports)
 
         
 def unpack_jar_test(file_path):
     if path.exists(file_path):
         # TODO
         print("")
+
+
+def count_overlapping_distinct(pattern, text):
+    """
+    counts the number of patterns found in text
+    :param pattern: regex pattern
+    :param text: the source text to be searched
+    :return:
+    """
+    total = 0
+    start = 0
+    there = re.compile(pattern)
+
+    while True:
+        mo = there.search(text, start)
+        if mo is None: return total
+        total += 1
+        start = 1 + mo.start()
 
 
 unpack_jar(outputfile)
