@@ -8,7 +8,8 @@
 # fernflower -> jar with .java files
 
 from os import path, devnull 
-import platform, subprocess, zipfile, configparser, re 
+import platform, subprocess, zipfile, configparser, re
+import collections
 
 isWindows = False
 if platform.system() == 'Windows':
@@ -85,6 +86,28 @@ def unpack_jar_test(file_path):
 
 
 # decompile("/home/yona/PycharmProjects/Bachelorproject/apks/flashlight.apk")
+
+
+def count_overlapping_distinct(pattern, text):
+    """
+    counts the number of patterns found in text
+    :param pattern: regex pattern
+    :param text: the source text to be searched
+    :return:
+    """
+    total = 0
+    start = 0
+    there = re.compile(pattern)
+
+    while True:
+        mo = there.search(text, start)
+        if mo is None: return total
+        total += 1
+        start = 1 + mo.start()
+
+# txt = "import whatever.lmao; import secondClass; class SomeClass{}"
+# java_ident = r"[A-Za-z\_\$]+[0-9]*[A-Za-z\_\$]*"
+# x = re.findall(r"import " + java_ident + r"(\." + java_ident + r")*;", txt)
 
 unpack_jar(outputfile)
 
