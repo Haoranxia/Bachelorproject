@@ -1,6 +1,7 @@
 import sys
 import argparse
 import configparser
+import collections
 from os import listdir
 from os.path import isfile, join
 
@@ -12,7 +13,7 @@ from androguard.core.analysis.analysis import Analysis
 from androguard.decompiler.decompiler import DecompilerDAD
 from androguard.decompiler.decompiler import DecompilerJADX
 
-from util import write_to_csv, blockPrint, enablePrint
+from util import write_to_csv, read_headers, create_complete_dict, get_full_header, blockPrint, enablePrint
 from sourcecode_analysis import analyze_dex
 from manifest_analysis import analyze_manifest
 from contextual_feat_extraction import run_contextual
@@ -33,6 +34,7 @@ def main():
 
     # CSV initialization (Relative path to this file)
     manifestcsv = "../static_out/manifest_features.csv"
+    permissionscsv = "../static_out/permissions.csv"
     sourcecodecsv = "../static_out/sourcecode_features.csv"
     opcodescsv = "../static_out/sourcecode_opcodes.csv"
     obfuscationscsv = "../static_out/sourcecode_obfuscations.csv"
@@ -57,6 +59,19 @@ def main():
         if enable_manifest:
             manifest_dict = analyze_manifest(a)
             write_to_csv(manifestcsv, manifest_dict)
+
+            # TODO Permissions csv
+            permissions = manifest_dict["permissions"]
+            
+            permissions_header = get_full_header("../static_out/allpermissions.txt")
+            permissions_dict = create_complete_dict(permissions, permissions_header, manifest_dict['package-name'])
+            write_to_csv(permissionscsv, permissions_dict, header=permissions_header)
+
+            # TODO Features csv
+            #features = manifest_dict["features"]
+            #print(features)
+            #write_to_features_csv()
+
 
         # Source code features
         if enable_sourcecode:

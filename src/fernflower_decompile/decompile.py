@@ -69,6 +69,9 @@ def unpack_jar(file_path):
     key_patterns_imports = [r'import']
     keyword_usages_imports = {key_pattern: 0 for key_pattern in key_patterns_imports}
 
+    key_patterns_decompile = [r"// $FF: Couldn't be decompiled"]
+    keyword_usages_decompile = {key_pattern: 0 for key_pattern in key_patterns_decompile}
+
     if path.exists(file_path):
         # if folder: go into folder
         archive = zipfile.ZipFile(file_path, 'r')
@@ -78,22 +81,28 @@ def unpack_jar(file_path):
                 with archive.open(filename) as javafile:
                     src_string = javafile.read().decode("utf-8")
 
-                    # kotlin
-                    for key_pattern in key_patterns_kotlin:
-                        keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src_string)
+                    # # kotlin
+                    # for key_pattern in key_patterns_kotlin:
+                    #     keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src_string)
 
-                    # reflection
-                    for key_pattern in key_patterns_reflection:
-                        keyword_usages_reflection[key_pattern] += src_string.count(key_pattern)
+                    # # reflection
+                    # for key_pattern in key_patterns_reflection:
+                    #     keyword_usages_reflection[key_pattern] += src_string.count(key_pattern)
                     
-                    # imports
-                    for key_pattern in key_patterns_imports:
-                        keyword_usages_imports[key_pattern] += src_string.count(key_pattern)
+                    # # imports
+                    # for key_pattern in key_patterns_imports:
+                    #     keyword_usages_imports[key_pattern] += src_string.count(key_pattern)
+                    #print(src_string)
+
+                    # Decompile
+                    for key_pattern in key_patterns_decompile:
+                        keyword_usages_decompile[key_pattern] += src_string.count(key_pattern)
                               
     
-    print(keyword_usages_kotlin)
-    print(keyword_usages_reflection)
-    print(keyword_usages_imports)
+    #print(keyword_usages_kotlin)
+    #print(keyword_usages_reflection)
+    #print(keyword_usages_imports)
+    print(keyword_usages_decompile)
 
         
 def unpack_jar_test(file_path):
