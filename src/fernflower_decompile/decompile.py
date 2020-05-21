@@ -23,6 +23,7 @@ d2j_path = config["Paths"]["dex2jar_path"]
 fernflower_path = config["Paths"]["fernflower_path"]
 outputfile = "./fernflower_out/dex2jar_out.jar"
 
+
 def decompile(apk):
     if d2j_path:
         # dex2jar
@@ -35,17 +36,21 @@ def decompile(apk):
 
 def dex2jar(apk):
     if isWindows:
-        p = subprocess.Popen([d2j_path, "-o", outputfile, apk])
-        stdout, stderr = p.communicate()
+        d2j_args = [d2j_path, "-o", outputfile, apk]
+    else:
+        d2j_args = ["sh", d2j_path, "-o", outputfile, apk]
 
-        if stdout:
-            print(stdout)
-        if stderr:
-            print(stderr)
+    p = subprocess.Popen(d2j_args)
+    stdout, stderr = p.communicate()
+
+    if stdout:
+        print(stdout)
+    if stderr:
+        print(stderr)
 
 
 def fernflower_decompile(file_path):
-    if isWindows:
+    if True:  # if isWindows:
         p = subprocess.Popen(["java", "-jar", fernflower_path, file_path, "./fernflower_out"])
         stdout, stderr = p.communicate()
 
@@ -55,19 +60,11 @@ def fernflower_decompile(file_path):
             print(stderr)
 
 
-# import [starting_symbol-any char].
 def unpack_jar(file_path):
-    
-    key_patterns_kotlin = [r'String v[\d]*_[\d] = new StringBuilder();$', r'\bkotlin\b', r'\b.kotlin\b', r'@NotNull']
-    keyword_usages_kotlin = collections.OrderedDict()
-    keyword_usages_kotlin = {key_pattern: 0 for key_pattern in key_patterns_kotlin}
-    
-    key_patterns_reflection = [r'java.lang.reflect']
-    keyword_usages_reflection = collections.OrderedDict()
-    keyword_usages_reflection = {key_pattern: 0 for key_pattern in key_patterns_reflection}
-    
-    key_patterns_imports = [r'import']
-    keyword_usages_imports = {key_pattern: 0 for key_pattern in key_patterns_imports}
+    # import regex: "import <anything>;"
+    import_regex = r'import (.*?);\n'
+    # import_regex_count = 0
+    imports_list = []
 
     key_patterns_decompile = [r"// $FF: Couldn't be decompiled"]
     keyword_usages_decompile = {key_pattern: 0 for key_pattern in key_patterns_decompile}
@@ -80,35 +77,18 @@ def unpack_jar(file_path):
             if filename.endswith(".java"):
                 with archive.open(filename) as javafile:
                     src_string = javafile.read().decode("utf-8")
-
-                    # # kotlin
-                    # for key_pattern in key_patterns_kotlin:
-                    #     keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src_string)
-
-                    # # reflection
-                    # for key_pattern in key_patterns_reflection:
-                    #     keyword_usages_reflection[key_pattern] += src_string.count(key_pattern)
-                    
-                    # # imports
-                    # for key_pattern in key_patterns_imports:
-                    #     keyword_usages_imports[key_pattern] += src_string.count(key_pattern)
-                    #print(src_string)
-
-                    # Decompile
-                    for key_pattern in key_patterns_decompile:
-                        keyword_usages_decompile[key_pattern] += src_string.count(key_pattern)
-                              
-    
-    #print(keyword_usages_kotlin)
-    #print(keyword_usages_reflection)
-    #print(keyword_usages_imports)
-    print(keyword_usages_decompile)
+                    imports = re.findall(import_regex, src_string)
+                    imports_list.extend(imports)
+    print(imports_list)
 
         
 def unpack_jar_test(file_path):
     if path.exists(file_path):
         # TODO
         print("")
+
+
+# decompile("/home/yona/PycharmProjects/Bachelorproject/apks/flashlight.apk")
 
 
 def count_overlapping_distinct(pattern, text):
@@ -133,5 +113,6 @@ def count_overlapping_distinct(pattern, text):
 # x = re.findall(r"import " + java_ident + r"(\." + java_ident + r")*;", txt)
 
 unpack_jar(outputfile)
-        
+
+
 

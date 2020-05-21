@@ -60,9 +60,8 @@ def main():
             manifest_dict = analyze_manifest(a)
             write_to_csv(manifestcsv, manifest_dict)
 
-            # TODO Permissions csv
+            # TODO It seems like the list of permissions we have is incomplete. 
             permissions = manifest_dict["permissions"]
-            
             permissions_header = get_full_header("../static_out/allpermissions.txt")
             permissions_dict = create_complete_dict(permissions, permissions_header, manifest_dict['package-name'])
             write_to_csv(permissionscsv, permissions_dict, header=permissions_header)

@@ -104,15 +104,13 @@ def initialize_csv(file, header):
 
 # This function reads a txt file and assumes each line is a header
 def read_headers(headerfile):
-    with open(headerfile, 'r') as f:
-        return f.readlines()
+    return open(headerfile, 'r').read().split('\n')
 
 
 def create_complete_dict(data, headers, package_name):
     returndict = collections.OrderedDict()
     returndict['package-name'] = package_name
     # skip the package-name
-    next(headers)
     for header in headers:
         for item in data:
             if header == item:
@@ -125,7 +123,9 @@ def create_complete_dict(data, headers, package_name):
 
 def get_full_header(path):
     header = ['package-name']
-    return header.extend(read_headers(path))
+    header.extend(read_headers(path))
+    #print(header)
+    return header
 
 def blockPrint():
     sys.stdout = open(devnull, 'w')
