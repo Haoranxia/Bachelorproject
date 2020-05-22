@@ -1,10 +1,20 @@
 import requests
+import configparser
 import play_scraper
+from pathlib import Path
 from requests.exceptions import HTTPError
 from util import write_to_json, write_to_csv, calculate_sha256
 
-VT_API_KEY = '5cad0bcd69749612edce15f291d2e3a2b800c063446593360d7f4ed57f46c5a2'
-OPSWAT_API_KEY = 'f6ccaaa2ba7d467906cacb303572ef96'
+
+config = configparser.ConfigParser()
+config.read("../settings.ini")
+
+VT_API_KEY = config["Contextual_Settings"]["virus_total_api_key"]
+OPSWAT_API_KEY = config["Contextual_Settings"]["opswat_api_key"]
+OPSWAT_enabled = (config["Contextual_Settings"]["opswat"] == 'yes')
+google_play_enabled = (config["Contextual_Settings"]["app_store"] == 'yes')
+virus_total_enabled = (config["Contextual_Settings"]["virus_total"] == 'yes')
+file_upload_enabled = (config["Contextual_Settings"]['virus_total_enable_file_upload'] == 'yes')
 
 
 def reformat_dictionary(app_details, app_id):
@@ -23,14 +33,11 @@ def reformat_dictionary(app_details, app_id):
         if isinstance(val, str):
             val.encode('utf-8')
             updated_dict[key] = val.replace('\n', '\\n')
-    if 'description_html' in updated_dict:
-        updated_dict['description_html'] = str(updated_dict['description_html'])
-        # TODO:: try this \/
-        # updated_dict['description_html'] = updated_dict['description_html'].decode("utf-8")
+    if 'description_html' in updated_dict and updated_dict['description_html']:
+        updated_dict['description_html'] = updated_dict['description_html'].decode("utf-8")
     return updated_dict
 
 
-# TODO:: extract the api key, make the user sign in with creds?
 def get_virus_total_positives(apk_file):
     """
     Sends request to get a report from TotalVirus by sending sha256 hash value of an apk file
@@ -39,22 +46,34 @@ def get_virus_total_positives(apk_file):
     url = 'https://www.virustotal.com/vtapi/v2/file/report'
     params = {'apikey': VT_API_KEY, 'resource': calculate_sha256(apk_file)}
     response = requests.get(url, params=params)
-
-    # TODO:: Disable or remove apk file upload to virus total
-    '''
-    if response.json()['response_code'] == 0:  # apk hash is not found in virusTotal database
-        print("VirusTotal found no matching sha256 digest. Uploading source apk...")
+    vt_size_limit = 32000000  # 32MB size limit -> upload file via url and wait for report
+    # TODO::
+    #  1. IF APK > 32 MB upload using special url
+    #  2. get report using resource: scan_id
+    #  3. push new and "default" settings.ini to git
+    #  4. error handling when quota is reached
+    #  5. give protobuff another try?
+    if file_upload_enabled and response.json()['response_code'] == 0:  # apk hash is not found in virusTotal
         # send the file itself
-        url = 'https://www.virustotal.com/vtapi/v2/file/scan'
-        params = {'apikey': API_KEY}
-        files = {'file': (apk_file, open(apk_file, 'rb'))}
-        response = requests.post(url, files=files, params=params)
-    '''
-    try:
-        response.raise_for_status()
-    except requests.exceptions.RequestException as error:
-        raise SystemExit('Error getting VirusTotal report.\n' + str(error))
+        print("VirusTotal found no matching sha256 digest. Uploading source apk...")
+        try:
+            if Path(apk_file).stat().st_size > vt_size_limit:
+                url = 'https://www.virustotal.com/vtapi/v2/file/scan/upload_url'
+                params = {'apikey': VT_API_KEY}
+                response = requests.get(url, params=params)
+                upload_url = response.json()['upload_url']
+                files = {'file': (apk_file, open(apk_file, 'rb'))}
+                response = requests.post(upload_url, files=files)
+            else:
+                url = 'https://www.virustotal.com/vtapi/v2/file/scan'
+                params = {'apikey': VT_API_KEY}
+                files = {'file': (apk_file, open(apk_file, 'rb'))}
+                response = requests.post(url, files=files, params=params)
 
+            response.raise_for_status()
+        except requests.exceptions.RequestException as error:
+            print('Error getting VirusTotal report.\n' + str(error))
+            return None, None
     # compile a list of anti-virus scanners that return a positive on a virus scan of given apk
     positives_list = []
     for antivirus_name in response.json()['scans']:
@@ -90,7 +109,7 @@ def get_app_stores_availability(app_id, app_name):
     return available_stores
 
 
-def write_to_output_files(apk_file, app_id, app_details, output_filename):
+def add_results_to_output(apk_file, app_id, app_details, output_filename):
     """
     adds results from virus scanners and writes to csv and json
     :param apk_file: the apk file for contextual features
@@ -99,8 +118,14 @@ def write_to_output_files(apk_file, app_id, app_details, output_filename):
     :param output_filename: the name of output file with directory
     :return:
     """
-    app_details['vt_positives'], app_details['vt_positives_list'] = get_virus_total_positives(apk_file)
-    app_details['opswat_result'] = get_opswat_positives(apk_file)
+    if virus_total_enabled:
+        app_details['vt_positives'], app_details['vt_positives_list'] = get_virus_total_positives(apk_file)
+    else:
+        app_details['vt_positives'], app_details['vt_positives_list'] = (None, None)
+    if OPSWAT_enabled:
+        app_details['opswat_result'] = get_opswat_positives(apk_file)
+    else:
+        app_details['opswat_result'] = None
     formatted_app_details = reformat_dictionary(app_details, app_id)
     write_to_csv(output_filename + '.csv', formatted_app_details)
     write_to_json(output_filename + '.json', formatted_app_details)
@@ -117,9 +142,13 @@ def run_contextual(apk_file, app_id):
     #  error when vt or opswat quota is reached
     output_filename = '../contextual_out/contextual_features'
     try:
-        app_details = play_scraper.details(app_id)
-        write_to_output_files(apk_file, app_id, app_details, output_filename)
+        if google_play_enabled:
+            app_details = play_scraper.details(app_id)
+            add_results_to_output(apk_file, app_id, app_details, output_filename)
+        else:
+            empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
+            add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
     except ValueError:
         print('AppID not found in the Google Play store')
         empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
-        write_to_output_files(apk_file, app_id, empty_app_details, output_filename)
+        add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
