@@ -66,6 +66,9 @@ def unpack_jar(file_path):
     # import_regex_count = 0
     imports_list = []
 
+    key_patterns_decompile = [r"// $FF: Couldn't be decompiled"]
+    keyword_usages_decompile = {key_pattern: 0 for key_pattern in key_patterns_decompile}
+
     if path.exists(file_path):
         # if folder: go into folder
         archive = zipfile.ZipFile(file_path, 'r')

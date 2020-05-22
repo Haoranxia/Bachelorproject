@@ -3,11 +3,12 @@ import json
 import shutil
 import hashlib
 import sys
+import collections 
 from os import path, devnull
 from tempfile import NamedTemporaryFile
 
 
-def write_to_csv(file, file_dict):
+def write_to_csv(file, file_dict, header=None):
     """
     Writes the data in file_dict to a csv file where the fieldnames are the keys of the dictionary.
     If the file does not exist it will be created. If it already exists we will use a temporary file
@@ -16,11 +17,13 @@ def write_to_csv(file, file_dict):
     :param file_dict: the dictionary to be written to csv
     :return:
     """
+    if header == None:
+        header = file_dict.keys()
 
     if not path.exists(file):
         # Create a new file
         with open(file, 'w+', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=file_dict.keys())
+            writer = csv.DictWriter(f, fieldnames=header)
             writer.writeheader()
             writer.writerow(file_dict)
         return
@@ -30,8 +33,8 @@ def write_to_csv(file, file_dict):
 
         # Modify existing file
         with open(file, 'r') as readf, temp_file:
-            reader = csv.DictReader(readf, fieldnames=file_dict.keys())
-            writer = csv.DictWriter(temp_file, fieldnames=file_dict.keys())
+            reader = csv.DictReader(readf, fieldnames=header)
+            writer = csv.DictWriter(temp_file, fieldnames=header)
 
             for row in reader:
                 if str(row['package-name']) == str(file_dict['package-name']):
@@ -91,8 +94,42 @@ def calculate_sha256(filepath):
             sha256_hash.update(byte_block)
         return sha256_hash.hexdigest()
 
+
+# This function initializes a csv file containing 
+# all the permissions as the header (column headers)
+def initialize_csv(file, header):
+    with open(file, 'w+', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+
+# This function reads a txt file and assumes each line is a header
+def read_headers(headerfile):
+    return open(headerfile, 'r').read().split('\n')
+
+
+def create_complete_dict(data, headers, package_name):
+    returndict = collections.OrderedDict()
+    returndict['package-name'] = package_name
+    # skip the package-name
+    for header in headers:
+        for item in data:
+            if header == item:
+                returndict[header] = 1
+                data.remove(item)
+            else:
+                returndict[header] = 0
+    return returndict
+
+
+def get_full_header(path):
+    header = ['package-name']
+    header.extend(read_headers(path))
+    #print(header)
+    return header
+
 def blockPrint():
     sys.stdout = open(devnull, 'w')
+
 
 def enablePrint():
     sys.stdout = sys.__stdout__
