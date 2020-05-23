@@ -8,7 +8,7 @@ from os import path, devnull
 from tempfile import NamedTemporaryFile
 
 
-def write_to_csv(file, file_dict, header=None):
+def write_to_csv(key, file, file_dict, header=None):
     """
     Writes the data in file_dict to a csv file where the fieldnames are the keys of the dictionary.
     If the file does not exist it will be created. If it already exists we will use a temporary file
@@ -17,7 +17,7 @@ def write_to_csv(file, file_dict, header=None):
     :param file_dict: the dictionary to be written to csv
     :return:
     """
-    if header == None:
+    if header is None:
         header = file_dict.keys()
 
     if not path.exists(file):
@@ -37,7 +37,7 @@ def write_to_csv(file, file_dict, header=None):
             writer = csv.DictWriter(temp_file, fieldnames=header)
 
             for row in reader:
-                if str(row['package-name']) == str(file_dict['package-name']):
+                if str(row[key]) == str(file_dict[key]):
                     writer.writerow(file_dict)
                     row_exists = True
                 else:
@@ -126,6 +126,19 @@ def get_full_header(path):
     header.extend(read_headers(path))
     #print(header)
     return header
+
+
+def alreadyProcessed(package_name, processed_apks):
+    # TODO Implement more efficient 'in' function
+    if package_name in processed_apks: 
+        return True
+    return False
+
+
+def get_processed_apks(processed_apks_file):
+    with open(processed_apks_file, 'r') as f:
+        return f.readlines()
+
 
 def blockPrint():
     sys.stdout = open(devnull, 'w')

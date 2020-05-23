@@ -23,3 +23,8 @@ __pycache__/
 # Misc
 dex2jar-2.0/*
 settings.ini
+
+# Testing files
+/testing/features.txt
+/testing/perm_features.html
+/testing/permissions_table.txt

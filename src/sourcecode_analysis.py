@@ -37,14 +37,24 @@ def analyze_dex(ds, dx):
     # Use d object
     for dex in ds:
         if enable_opcodes:
-            opcodes_dict = get_opcodes(dex, opcodes_dict)
+            try:
+                opcodes_dict = get_opcodes(dex, opcodes_dict)
+            except Exception as e:
+                print("Opcodes extraction failed" + str(e))
+    
         
         if enable_obfuscation:
-            obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
-    
+            try:
+                obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
+            except Exception as e:
+                print("Obfuscation extraction failed" + str(e))
+
     # Use dx object
     if enable_kotlin or enable_reflection:
-        kotlin_dict, reflection_dict = get_keyword_usage(dx, enable_kotlin, enable_reflection)
+        try:
+            kotlin_dict, reflection_dict = get_keyword_usage(dx, enable_kotlin, enable_reflection)
+        except Exception as e:
+            print("Koltin/Reflection extraction failed" + str(e))
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 
@@ -119,23 +129,25 @@ def get_keyword_usage(app, enable_kotlin, enable_reflection):
     if enable_reflection:
         keyword_usages_reflection = {key_pattern: 0 for key_pattern in key_patterns_reflection}
 
-    for cl in app.get_classes():
-        # FIXME Cant get into the sourcecode???
-            
-        for m in cl.get_vm_class().get_methods():
-            if m:
-                src = m.get_source()
-                if src:
-                    # Kotlin keyword analysis
-                    if enable_kotlin:
-                        for key_pattern in key_patterns_kotlin:
-                            keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
+    try:
+        for cl in app.get_classes():
+            # FIXME Cant get into the sourcecode properly???
+            for m in cl.get_vm_class().get_methods():
+                if m:
+                    src = m.get_source()
+                    if src:
+                        # Kotlin keyword analysis
+                        if enable_kotlin:
+                            for key_pattern in key_patterns_kotlin:
+                                keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
 
-                    # Java reflection usage analysis
-                    if enable_reflection:
-                        for key_pattern in key_patterns_reflection:
-                            keyword_usages_reflection[key_pattern] += src.count(key_pattern)
-                
+                        # Java reflection usage analysis
+                        if enable_reflection:
+                            for key_pattern in key_patterns_reflection:
+                                keyword_usages_reflection[key_pattern] += src.count(key_pattern)
+    except Exception as e:
+        raise(e)
+
     return keyword_usages_kotlin, keyword_usages_reflection
 
 
