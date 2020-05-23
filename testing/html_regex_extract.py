@@ -27,10 +27,30 @@ def extractfeatures(filepath, regex):
         return features
 
 
+def write_to_file(file, data):
+    with open(file, 'w') as f:
+        for item in data:
+            f.write(item + "\n")
+
+
+def format_featurelist(prepend_string, featurelist):
+    for i, item in enumerate(featurelist):
+        featurelist[i] = str(prepend_string + item)
+
+
 permissions = extractfeatures(permissions_path, permissions_regex)
 permissions.pop(0) # Get rid of the 'Constants' element. (This is not a permission)
-hardwarefeatures = extractfeatures(hardwarefeatures_path, hardware_regex)
-softwarefeatures = extractfeatures(softwarefeatures_path, software_regex)
+format_featurelist("android.permission.", permissions)
 
-print(permissions)
+hardwarefeatures = extractfeatures(hardwarefeatures_path, hardware_regex)
+format_featurelist("android.hardware.", hardwarefeatures)
+
+softwarefeatures = extractfeatures(softwarefeatures_path, software_regex)
+format_featurelist("android.software.", softwarefeatures)
+
+write_to_file("./permissions.txt", permissions)
+write_to_file("./hardware_features.txt", hardwarefeatures)
+write_to_file("./software_features.txt", softwarefeatures)
+
+
 
