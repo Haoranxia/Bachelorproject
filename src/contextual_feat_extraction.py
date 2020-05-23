@@ -43,9 +43,9 @@ def get_virus_total_positives(apk_file):
     Sends request to get a report from TotalVirus by sending sha256 hash value of an apk file
     :return: the number of positives and list of anti-virus scanners that detected the positive
     """
-    url = 'https://www.virustotal.com/vtapi/v2/file/report'
-    params = {'apikey': VT_API_KEY, 'resource': calculate_sha256(apk_file)}
-    response = requests.get(url, params=params)
+    # url = 'https://www.virustotal.com/vtapi/v2/file/report'
+    # params = {'apikey': VT_API_KEY, 'resource': calculate_sha256(apk_file)}
+    # response = requests.get(url, params=params)
     vt_size_limit = 32000000  # 32MB size limit -> upload file via url and wait for report
     # TODO::
     #  1. IF APK > 32 MB upload using special url
@@ -53,7 +53,7 @@ def get_virus_total_positives(apk_file):
     #  3. push new and "default" settings.ini to git
     #  4. error handling when quota is reached
     #  5. give protobuff another try?
-    if file_upload_enabled and response.json()['response_code'] == 0:  # apk hash is not found in virusTotal
+    if file_upload_enabled:  # and response.json()['response_code'] == 0:  # apk hash is not found in virusTotal
         # send the file itself
         print("VirusTotal found no matching sha256 digest. Uploading source apk...")
         try:
@@ -64,17 +64,35 @@ def get_virus_total_positives(apk_file):
                 upload_url = response.json()['upload_url']
                 files = {'file': (apk_file, open(apk_file, 'rb'))}
                 response = requests.post(upload_url, files=files)
+                response.raise_for_status()
+                if 'scans' not in response.json():  # if request is queued
+                    write_to_csv('vt_queued_scans.csv', response.json())
+                    return None, 'Request queued. Rerun to get report'
             else:
                 url = 'https://www.virustotal.com/vtapi/v2/file/scan'
                 params = {'apikey': VT_API_KEY}
                 files = {'file': (apk_file, open(apk_file, 'rb'))}
                 response = requests.post(url, files=files, params=params)
-
-            response.raise_for_status()
+                response.raise_for_status()
+                print(response.json())
+                if 'scans' not in response.json():  # if request is queued
+                    write_to_csv(response.json()['sha256'], 'vt_queued_scans.csv', response.json())
+                    return None, 'Request queued. Rerun to get report'
+                else:
+                    return compile_vt_result(response)
         except requests.exceptions.RequestException as error:
             print('Error getting VirusTotal report.\n' + str(error))
             return None, None
-    # compile a list of anti-virus scanners that return a positive on a virus scan of given apk
+    return None
+    # return compile_vt_result(response)
+
+
+def compile_vt_result(response):
+    """
+    compile a list of anti-virus scanners that return a positive on a virus scan of given apk
+    :param response: a response from virus total scan request
+    :return:
+    """
     positives_list = []
     for antivirus_name in response.json()['scans']:
         if response.json()['scans'][antivirus_name]['detected']:
