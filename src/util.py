@@ -1,9 +1,10 @@
 import csv
+import sys
 import json
+import mmap
 import shutil
 import hashlib
-import sys
-import collections 
+import collections
 from os import path, devnull
 from tempfile import NamedTemporaryFile
 
@@ -38,7 +39,7 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
             writer = csv.DictWriter(temp_file, fieldnames=header)
 
             for row in reader:
-                if str(row[key]) == str(file_dict[key]):
+                if str(row[primary_key]) == str(file_dict[primary_key]):
                     writer.writerow(file_dict)
                     row_exists = True
                 else:
@@ -48,6 +49,34 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
                 writer.writerow(file_dict)
         
         shutil.move(temp_file.name, file)
+
+
+def delete_row(file, key):
+    """
+    deletes a row from a csv via a primary key
+    :param file: csv file
+    :param key: the key for a row to be deleted
+    :return:
+    """
+    with open(file, 'r') as read_file, NamedTemporaryFile(delete=False, mode='w', newline='') as temp_file:
+        writer = csv.writer(temp_file)
+        for row in csv.reader(read_file):
+            if row[4] != key:
+                writer.writerow(row)
+        shutil.move(temp_file.name, file)
+
+
+def file_contains(file_path, string):
+    """
+    Returns true if file contains a string
+    :param file_path: path of file including the file
+    :param string: string to be used
+    :return:
+    """
+    with open(file_path, 'rb', 0) as read_file, mmap.mmap(read_file.fileno(), 0, access=mmap.ACCESS_READ) as s:
+        if s.find(bytes(string, 'utf-8')) != -1:
+            return True
+    return False
 
 
 def write_to_json(filename, app_details):  # TODO:: RUN TESTS FOR APPENDING TO JSON
