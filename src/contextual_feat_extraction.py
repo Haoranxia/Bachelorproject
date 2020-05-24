@@ -118,12 +118,14 @@ def get_opswat_positives(apk_file):
     return response.json()['process_info']['result']
 
 
-def get_app_stores_availability(app_id, app_name):
+def get_app_stores_availability(app_id):
     available_stores = []
-    app_stores = ['Google Play', 'F-Droid', 'Uptodown']
+    app_stores = ['Google Play', 'F-Droid' 'apk-monk', 'apk-support']
     app_store_urls = ['https://play.google.com/store/apps/details?id=' + str(app_id),
                       'https://f-droid.org/en/packages/' + str(app_id),
-                      'https://' + str(app_name) + '.en.uptodown.com/android']
+                      'https://www.apkmonk.com/app/' + str(app_id),
+                      'https://apk.support/app/' + str(app_id),
+                      ]
     for app_store, url in zip(app_stores, app_store_urls):
         try:
             response = requests.get(url)
@@ -154,6 +156,8 @@ def add_results_to_output(apk_file, app_id, app_details, output_filename):
         app_details['opswat_result'] = get_opswat_positives(apk_file)
     else:
         app_details['opswat_result'] = None
+
+    app_details['store-availability'] = get_app_stores_availability(app_id)
     formatted_app_details = reformat_dictionary(app_details, app_id)
     write_to_csv('package-name', output_filename + '.csv', formatted_app_details)
     write_to_json(output_filename + '.json', formatted_app_details)
@@ -164,10 +168,8 @@ def run_contextual(apk_file, app_id):
     runs the contextual component, get contextual details from google play and also request report from VirusTotal
     :return:
     """
-
-    # TODO:: GET CONFIG ITEMS, -> appid, API KEYS, vt on/off, opswat on/off, opswat file upload on/off,
-    #  vt file upload on/off
-    #  error when vt or opswat quota is reached
+    # TODO:: get app id via "aapt dump badging flashlight.apk | grep package:\ name"
+    #  error when opswat quota is reached
     output_filename = '../contextual_out/contextual_features'
     try:
         if google_play_enabled:
