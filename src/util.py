@@ -1,18 +1,21 @@
 import csv
+import sys
 import json
+import mmap
 import shutil
 import hashlib
-import sys
-import collections 
+import collections
 from os import path, devnull
 from tempfile import NamedTemporaryFile
 
 
-def write_to_csv(key, file, file_dict, header=None):
+def write_to_csv(primary_key, file, file_dict, header=None):
     """
     Writes the data in file_dict to a csv file where the fieldnames are the keys of the dictionary.
     If the file does not exist it will be created. If it already exists we will use a temporary file
     to update the csv data accordingly and then this file will become the new primary csv file.
+    :param primary_key: primary key of csv table
+    :param header: header of the csv table (optional parameter)
     :param file: the path of the csv file (relative or full path)
     :param file_dict: the dictionary to be written to csv
     :return:
@@ -37,7 +40,7 @@ def write_to_csv(key, file, file_dict, header=None):
             writer = csv.DictWriter(temp_file, fieldnames=header)
 
             for row in reader:
-                if str(row[key]) == str(file_dict[key]):
+                if str(row[primary_key]) == str(file_dict[primary_key]):
                     writer.writerow(file_dict)
                     row_exists = True
                 else:
@@ -47,6 +50,34 @@ def write_to_csv(key, file, file_dict, header=None):
                 writer.writerow(file_dict)
         
         shutil.move(temp_file.name, file)
+
+
+def delete_row(file, key):
+    """
+    deletes a row from a csv via a primary key
+    :param file: csv file
+    :param key: the key for a row to be deleted
+    :return:
+    """
+    with open(file, 'r') as read_file, NamedTemporaryFile(delete=False, mode='w', newline='') as temp_file:
+        writer = csv.writer(temp_file)
+        for row in csv.reader(read_file):
+            if row[4] != key:
+                writer.writerow(row)
+        shutil.move(temp_file.name, file)
+
+
+def file_contains(file_path, string):
+    """
+    Returns true if file contains a string
+    :param file_path: path of file including the file
+    :param string: string to be used
+    :return:
+    """
+    with open(file_path, 'rb', 0) as read_file, mmap.mmap(read_file.fileno(), 0, access=mmap.ACCESS_READ) as s:
+        if s.find(bytes(string, 'utf-8')) != -1:
+            return True
+    return False
 
 
 def write_to_json(filename, app_details):  # TODO:: RUN TESTS FOR APPENDING TO JSON
@@ -101,6 +132,7 @@ def initialize_csv(file, header):
     with open(file, 'w+', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(header)
+
 
 # This function reads a txt file and assumes each line is a header
 def read_headers(headerfile):

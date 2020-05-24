@@ -3,8 +3,7 @@ import configparser
 import play_scraper
 from pathlib import Path
 from requests.exceptions import HTTPError
-from util import write_to_json, write_to_csv, calculate_sha256
-
+from util import write_to_json, write_to_csv, calculate_sha256, file_contains, delete_row
 
 config = configparser.ConfigParser()
 config.read("../settings.ini")
@@ -38,26 +37,36 @@ def reformat_dictionary(app_details, app_id):
     return updated_dict
 
 
+# TODO::
+#  1. IF APK > 32 MB upload using special url
+#  2. get report using resource: scan_id
+#  3. push new and "default" settings.ini to git
+#  4. error handling when quota is reached
+#  5. give protobuff another try?
 def get_virus_total_positives(apk_file):
     """
     Sends request to get a report from TotalVirus by sending sha256 hash value of an apk file
     :return: the number of positives and list of anti-virus scanners that detected the positive
     """
-    # url = 'https://www.virustotal.com/vtapi/v2/file/report'
-    # params = {'apikey': VT_API_KEY, 'resource': calculate_sha256(apk_file)}
-    # response = requests.get(url, params=params)
-    vt_size_limit = 32000000  # 32MB size limit -> upload file via url and wait for report
-    # TODO::
-    #  1. IF APK > 32 MB upload using special url
-    #  2. get report using resource: scan_id
-    #  3. push new and "default" settings.ini to git
-    #  4. error handling when quota is reached
-    #  5. give protobuff another try?
-    if file_upload_enabled:  # and response.json()['response_code'] == 0:  # apk hash is not found in virusTotal
-        # send the file itself
-        print("VirusTotal found no matching sha256 digest. Uploading source apk...")
-        try:
-            if Path(apk_file).stat().st_size > vt_size_limit:
+    vt_size_limit = 32000000  # 32MB size limit -> upload file via special url and queue for report
+    sha_digest = calculate_sha256(apk_file)
+    queue_csv_file = 'vt_queued_scans.csv'
+
+    try:
+        url = 'https://www.virustotal.com/vtapi/v2/file/report'
+        params = {'apikey': VT_API_KEY, 'resource': sha_digest}
+        if file_contains(queue_csv_file, sha_digest):
+            delete_row(queue_csv_file, sha_digest)
+        response = requests.get(url, params=params)
+        if response.status_code == 204:
+            return None, 'vt quota reached'
+        response.raise_for_status()
+
+        if file_upload_enabled and response.json()['response_code'] == 0:  # apk hash is not found in virusTotal
+            # send the file itself
+            print("VirusTotal found no matching sha256 digest. Uploading source apk...")
+
+            if Path(apk_file).stat().st_size > vt_size_limit:  # apk file size > vt limit -> upload via url
                 url = 'https://www.virustotal.com/vtapi/v2/file/scan/upload_url'
                 params = {'apikey': VT_API_KEY}
                 response = requests.get(url, params=params)
@@ -66,25 +75,26 @@ def get_virus_total_positives(apk_file):
                 response = requests.post(upload_url, files=files)
                 response.raise_for_status()
                 if 'scans' not in response.json():  # if request is queued
-                    write_to_csv('vt_queued_scans.csv', response.json())
+                    write_to_csv(response.json()['sha256'], queue_csv_file, response.json())
                     return None, 'Request queued. Rerun to get report'
+                else:
+                    return compile_vt_result(response)
             else:
                 url = 'https://www.virustotal.com/vtapi/v2/file/scan'
                 params = {'apikey': VT_API_KEY}
                 files = {'file': (apk_file, open(apk_file, 'rb'))}
                 response = requests.post(url, files=files, params=params)
                 response.raise_for_status()
-                print(response.json())
                 if 'scans' not in response.json():  # if request is queued
-                    write_to_csv(response.json()['sha256'], 'vt_queued_scans.csv', response.json())
+                    write_to_csv(response.json()['sha256'], queue_csv_file, response.json())
                     return None, 'Request queued. Rerun to get report'
                 else:
                     return compile_vt_result(response)
-        except requests.exceptions.RequestException as error:
-            print('Error getting VirusTotal report.\n' + str(error))
-            return None, None
-    return None
-    # return compile_vt_result(response)
+        else:
+            return compile_vt_result(response)
+    except requests.exceptions.RequestException as error:
+        print('Error getting VirusTotal report.\n' + str(error))
+        return None, None
 
 
 def compile_vt_result(response):
@@ -145,7 +155,7 @@ def add_results_to_output(apk_file, app_id, app_details, output_filename):
     else:
         app_details['opswat_result'] = None
     formatted_app_details = reformat_dictionary(app_details, app_id)
-    write_to_csv(output_filename + '.csv', formatted_app_details)
+    write_to_csv('package-name', output_filename + '.csv', formatted_app_details)
     write_to_json(output_filename + '.json', formatted_app_details)
 
 
