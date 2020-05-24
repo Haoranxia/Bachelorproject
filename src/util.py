@@ -141,7 +141,6 @@ def read_headers(headerfile):
 
 def create_complete_dict(data, headers, package_name):
     returndict = collections.OrderedDict()
-    returndict['package-name'] = package_name
     # skip the package-name
     for header in headers:
         for item in data:
@@ -150,11 +149,12 @@ def create_complete_dict(data, headers, package_name):
                 data.remove(item)
             else:
                 returndict[header] = 0
+    returndict["package-name"] = package_name
     return returndict
 
 
 def get_full_header(path):
-    header = ['package-name']
+    header = ["package-name"]
     header.extend(read_headers(path))
     #print(header)
     return header
@@ -168,8 +168,7 @@ def alreadyProcessed(package_name, processed_apks):
 
 
 def get_processed_apks(processed_apks_file):
-    with open(processed_apks_file, 'r') as f:
-        return f.readlines()
+    return read_headers(processed_apks_file)
 
 
 def blockPrint():
