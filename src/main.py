@@ -13,7 +13,7 @@ from androguard.core.analysis.analysis import Analysis
 from androguard.decompiler.decompiler import DecompilerDAD
 from androguard.decompiler.decompiler import DecompilerJADX
 
-from util import write_to_csv, read_headers, create_complete_dict, alreadyProcessed, get_processed_apks, get_full_header, blockPrint, enablePrint
+from util import *
 from sourcecode_analysis import analyze_dex
 from manifest_analysis import analyze_manifest
 from contextual_feat_extraction import run_contextual
@@ -26,8 +26,6 @@ hardwarefeaturescsv = "../static_out/hardwarefeatures.csv"
 softwarefeaturescsv = "../static_out/softwarefeatures.csv"
 sourcecodecsv = "../static_out/sourcecode_features.csv"
 opcodescsv = "../static_out/sourcecode_opcodes.csv"
-obfuscationscsv = "../static_out/sourcecode_obfuscations.csv"
-keywordscsv = "../static_out/sourcecode_keywords.csv"
 
 
 # Config file parsing
@@ -63,7 +61,7 @@ def main():
 
     for apk_file in apk_files:
         a = apk.APK(apk_file)
-        
+
         # If the progresstracker is enabled we do not want to process any already processed apks
         processed = False
         if enable_progresstracker:
@@ -133,16 +131,16 @@ def parse_arguments():
 # Helper functions
 def process_manifest(a):
     manifest_dict = analyze_manifest(a)
-    write_to_csv("package-name", manifestcsv, manifest_dict)
+    write_to_csv(manifestcsv, manifest_dict)
 
     permissions_header, permissions_dict = get_feature(manifest_dict, "permissions", "../resources/permissions.txt")
-    write_to_csv("package-name", permissionscsv, permissions_dict, header=permissions_header)
+    write_to_csv(permissionscsv, permissions_dict, header=permissions_header)
 
     hardware_header, hardware_dict = get_feature(manifest_dict, "features", "../resources/hardware_features.txt")
-    write_to_csv("package-name", hardwarefeaturescsv, hardware_dict, header=hardware_header)
+    write_to_csv(hardwarefeaturescsv, hardware_dict, header=hardware_header)
 
     software_header, software_dict = get_feature(manifest_dict, "features", "../resources/software_features.txt")
-    write_to_csv("package-name", softwarefeaturescsv, software_dict, header=software_header)
+    write_to_csv(softwarefeaturescsv, software_dict, header=software_header)
 
 
 def get_feature(manifest_dict, dictkey, headerfile):
@@ -168,21 +166,20 @@ def process_sourcecode(a):
     for d in ds:
         # TODO use JADX instead of DAD because DAD might have issues with decompiling certain sections of code
         decompiler = DecompilerDAD(d, dx)
-        # decompiler = DecompilerJADX(d, dx)
         d.set_decompiler(decompiler)
 
-    print("Executing src")
-    opcodes_dict, obfuscations_dict, kotlin_dict, reflection_dict = analyze_dex(ds, dx)
-    keywords_dict = kotlin_dict.update(reflection_dict)
-
-    print(reflection_dict)
-    print(kotlin_dict)
-    print(keywords_dict)
+    opcodes_dict, sourcecode_dict = analyze_dex(ds, dx)
 
     glogger.enabled = True
+
+    # Output formatting
+    opcodes_header = get_full_header("../resources/opcodes.txt")
+    opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
+    print(opcodes_header)
+    print(opcodes_dict)
+    #print(sourcecode_dict)
     #write_to_csv(opcodescsv, opcodes_dict)
-    #write_to_csv(obfuscationscsv, obfuscations_dict)
-    #write_to_csv(keywordscsv, keywords_dict)
+    #write_to_csv(sourcecodecsv, sourcecode_dict)
            
 
 if __name__ == '__main__':

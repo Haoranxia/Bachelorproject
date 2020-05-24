@@ -8,11 +8,12 @@ from os import path, devnull
 from tempfile import NamedTemporaryFile
 
 
-def write_to_csv(key, file, file_dict, header=None):
+def write_to_csv(file, file_dict, key='package-name', header=None):
     """
     Writes the data in file_dict to a csv file where the fieldnames are the keys of the dictionary.
     If the file does not exist it will be created. If it already exists we will use a temporary file
     to update the csv data accordingly and then this file will become the new primary csv file.
+    :param key: the key that will be used for checking whether a record is already present or not
     :param file: the path of the csv file (relative or full path)
     :param file_dict: the dictionary to be written to csv
     :return:
@@ -102,29 +103,31 @@ def initialize_csv(file, header):
         writer = csv.writer(f)
         writer.writerow(header)
 
+
 # This function reads a txt file and assumes each line is a header
 def read_headers(headerfile):
     return open(headerfile, 'r').read().split('\n')
 
 
-def create_complete_dict(data, headers, package_name):
+# This function creates a dict with 'headers' as the keys
+# and if the header is present in 'data' then we denote it
+# with a 1. Otherwise a 0.
+def create_complete_dict(data, headers, package_name, frequency=False):
     returndict = collections.OrderedDict()
-    # skip the package-name
     for header in headers:
-        for item in data:
-            if header == item:
-                returndict[header] = 1
-                data.remove(item)
-            else:
-                returndict[header] = 0
+        if header in data:
+            returndict[header] = 1 if frequency is None else data[header]
+        else:
+            returndict[header] = 0
     returndict["package-name"] = package_name
     return returndict
 
 
+# This function extends a file containing headers
+# for a dictionairy with the package-name key
 def get_full_header(path):
     header = ["package-name"]
     header.extend(read_headers(path))
-    #print(header)
     return header
 
 

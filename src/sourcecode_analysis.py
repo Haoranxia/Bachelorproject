@@ -6,6 +6,14 @@ import configparser
 from androguard.core import bytecodes
 from androguard.core import androconf
 
+# Config file parsing
+config = configparser.ConfigParser()
+config.read("../settings.ini")
+
+enable_opcodes = (config["Sourcecode_Settings"]["Opcodes"] == "yes")
+enable_obfuscation = (config["Sourcecode_Settings"]["Obfuscation"] == "yes")
+enable_kotlin = (config["Sourcecode_Settings"]["Kotlin"] == "yes")
+enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
 
 # TODO: Look for common obfuscation techniques and pattern match for that
 # TODO: Look for more kotlin code patterns and pattern match for that
@@ -23,17 +31,6 @@ def analyze_dex(ds, dx):
     kotlin_dict = collections.OrderedDict()
     reflection_dict = collections.OrderedDict()
 
-    # Config file parsing
-    config = configparser.ConfigParser()
-    config.read("../settings.ini")
-
-    enable_opcodes = (config["Sourcecode_Settings"]["Opcodes"] == "yes")
-    enable_obfuscation = (config["Sourcecode_Settings"]["Obfuscation"] == "yes")
-    enable_kotlin = (config["Sourcecode_Settings"]["Kotlin"] == "yes")
-    enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
-
-    # Logic
-
     # Use d object
     for dex in ds:
         if enable_opcodes:
@@ -42,23 +39,21 @@ def analyze_dex(ds, dx):
             except Exception as e:
                 print("Opcodes extraction failed" + str(e))
     
-        
         if enable_obfuscation:
             try:
-                obfuscation_score, obfuscations_dict = get_obfuscation_naming_total(dex, obfuscations_dict)
+                obfuscation_score, obfuscations_dict, count_histogram = get_obfuscation_naming_total(dex, obfuscations_dict)
             except Exception as e:
                 print("Obfuscation extraction failed" + str(e))
 
     # Use dx object
-    if enable_kotlin or enable_reflection:
-        try:
-            kotlin_dict, reflection_dict = get_keyword_usage(dx, enable_kotlin, enable_reflection)
-        except Exception as e:
-            print("Koltin/Reflection extraction failed" + str(e))
+    try:
+        kotlin_dict, reflection_dict = get_keyword_usage(dx, enable_kotlin, enable_reflection)
+    except Exception as e:
+        print("Koltin/Reflection extraction failed" + str(e))
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 
-    return opcodes_dict, obfuscations_dict, kotlin_dict, reflection_dict
+    return opcodes_dict, format_sourcecode_dict(obfuscations_dict, count_histogram, kotlin_dict, reflection_dict) 
 
 
 # Return a dictionary of opcodes and the nr of occurrences of that opcode
@@ -92,21 +87,29 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
     # TODO explain how obfuscation score is calculated
     obfuscation_score = 0
     total_evaluated = 0
+    count_histogram = collections.OrderedDict()
+    count_histogram["Length 1 identifier"] = 0
+    count_histogram["Length 2 identifier"] = 0
+    count_histogram["Length 3 identifier"] = 0
+
     for c in app.get_classes():
         total_evaluated += 1
+        count_histogram = update_count_histogram(c.get_name(), count_histogram)
         obfuscations_dict = add_to_obfuscation_histogram(c.get_name(), obfuscations_dict)
         obfuscation_score += obfuscation_evaluator(c.get_name())
 
         for field in c.get_fields():
             total_evaluated += 1
+            count_histogram = update_count_histogram(field.get_name(), count_histogram)
             add_to_obfuscation_histogram(field.get_name(), obfuscations_dict)
             obfuscation_score += obfuscation_evaluator(field.get_name())
 
         for method in c.get_methods():
             total_evaluated += 1
+            count_histogram = update_count_histogram(method.get_name(), count_histogram)
             add_to_obfuscation_histogram(method.get_name(), obfuscations_dict)
             obfuscation_score += obfuscation_evaluator(method.get_name())
-    return (obfuscation_score / total_evaluated), obfuscations_dict
+    return (obfuscation_score / total_evaluated), obfuscations_dict, count_histogram
 
 
 # Function that checks for certain keywords in the sourcecode
@@ -122,34 +125,45 @@ def get_keyword_usage(app, enable_kotlin, enable_reflection):
     keyword_usages_kotlin = collections.OrderedDict()
     if enable_kotlin:
         keyword_usages_kotlin = {key_pattern: 0 for key_pattern in key_patterns_kotlin}
-    
+    else:
+        keyword_usages_kotlin = {key_pattern: None for key_pattern in key_patterns_kotlin}
+
     # Reflection
     key_patterns_reflection = [r'java.lang.reflect']
     keyword_usages_reflection = collections.OrderedDict()
     if enable_reflection:
         keyword_usages_reflection = {key_pattern: 0 for key_pattern in key_patterns_reflection}
+    else:
+        keyword_usages_reflection = {key_pattern: None for key_pattern in key_patterns_reflection}
 
-    try:
-        for cl in app.get_classes():
-            # FIXME Cant get into the sourcecode properly???
-            for m in cl.get_vm_class().get_methods():
-                if m:
-                    src = m.get_source()
-                    if src:
-                        # Kotlin keyword analysis
-                        if enable_kotlin:
-                            for key_pattern in key_patterns_kotlin:
-                                keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
+    if enable_reflection or enable_kotlin:
+        try:
+            for cl in app.get_classes():
+                # FIXME Cant get into the sourcecode properly???
+                # FIXME get_vm_class() or get_class() or another function??? This one doesnt work properly???
+                for m in cl.get_vm_class().get_methods():
+                    if m:
+                        src = m.get_source()
+                        if src:
+                            # Kotlin keyword analysis
+                            if enable_kotlin:
+                                for key_pattern in key_patterns_kotlin:
+                                    keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
 
-                        # Java reflection usage analysis
-                        if enable_reflection:
-                            for key_pattern in key_patterns_reflection:
-                                keyword_usages_reflection[key_pattern] += src.count(key_pattern)
-    except Exception as e:
-        raise(e)
+                            # Java reflection usage analysis
+                            if enable_reflection:
+                                for key_pattern in key_patterns_reflection:
+                                    keyword_usages_reflection[key_pattern] += src.count(key_pattern)
+        except Exception as e:
+            raise(e)
 
     return keyword_usages_kotlin, keyword_usages_reflection
 
+def update_count_histogram(identifier_name, count_histogram):
+    if len(identifier_name) < 4:
+        count_histogram["Length " + str(len(identifier_name)) + " identifier"] += 1
+
+    return count_histogram
 
 # Obfuscation helper functions
 def add_to_obfuscation_histogram(name, obfuscations_dict):
@@ -265,3 +279,12 @@ def get_string_obfuscation(dx):
                     break_flag = True
                     break
     return possible_str_obfs_cnt
+
+
+def format_sourcecode_dict(obfuscations_dict, obfuscations_histogram, kotlin_dict, reflection_dict):
+    sourcecode_features_dict = collections.OrderedDict()
+    sourcecode_features_dict["Possible Obufscated Identifiers and their Frequency"] = list(obfuscations_dict.items())
+    sourcecode_features_dict.update(obfuscations_histogram)
+    sourcecode_features_dict.update(kotlin_dict)
+    sourcecode_features_dict.update(reflection_dict)
+    return sourcecode_features_dict
