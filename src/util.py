@@ -17,6 +17,7 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
     :param key: the key that will be used for checking whether a record is already present or not
     :param file: the path of the csv file (relative or full path)
     :param file_dict: the dictionary to be written to csv
+    :param header: table header
     :return:
     """
     if header is None:
@@ -39,7 +40,7 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
             writer = csv.DictWriter(temp_file, fieldnames=header)
 
             for row in reader:
-                if str(row[primary_key]) == str(file_dict[primary_key]):
+                if str(row[key]) == str(file_dict[key]):
                     writer.writerow(file_dict)
                     row_exists = True
                 else:

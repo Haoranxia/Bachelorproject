@@ -9,6 +9,7 @@ pylint = "*"
 [packages]
 androguard = "*"
 play-scraper = "*"
+google-play-scraper = "*"
 
 [requires]
 python_version = "3.8"
