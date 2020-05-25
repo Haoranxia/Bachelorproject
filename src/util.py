@@ -39,7 +39,7 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
             writer = csv.DictWriter(temp_file, fieldnames=header)
 
             for row in reader:
-                if str(row[primary_key]) == str(file_dict[primary_key]):
+                if str(row[key]) == str(file_dict[key]):
                     writer.writerow(file_dict)
                     row_exists = True
                 else:

@@ -38,7 +38,7 @@ def analyze_dex(ds, dx):
                 opcodes_dict = get_opcodes(dex, opcodes_dict)
             except Exception as e:
                 print("Opcodes extraction failed" + str(e))
-    
+
         if enable_obfuscation:
             try:
                 obfuscation_score, obfuscations_dict, count_histogram = get_obfuscation_naming_total(dex, obfuscations_dict)
@@ -283,7 +283,7 @@ def get_string_obfuscation(dx):
 
 def format_sourcecode_dict(obfuscations_dict, obfuscations_histogram, kotlin_dict, reflection_dict):
     sourcecode_features_dict = collections.OrderedDict()
-    sourcecode_features_dict["Possible Obufscated Identifiers and their Frequency"] = list(obfuscations_dict.items())
+    sourcecode_features_dict["Possible obfuscations"] = list(obfuscations_dict.items())
     sourcecode_features_dict.update(obfuscations_histogram)
     sourcecode_features_dict.update(kotlin_dict)
     sourcecode_features_dict.update(reflection_dict)
