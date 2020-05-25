@@ -175,12 +175,25 @@ def process_sourcecode(a):
     # Output formatting
     opcodes_header = get_full_header("../resources/opcodes.txt")
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
-    print(opcodes_header)
-    print(opcodes_dict)
-    #print(sourcecode_dict)
-    #write_to_csv(opcodescsv, opcodes_dict)
-    #write_to_csv(sourcecodecsv, sourcecode_dict)
-           
+
+    sourcecode_header = format_sourcecode_header(sourcecode_dict)
+    sourcecode_dict = format_sourcecode_dict(sourcecode_header, sourcecode_dict, a.get_package())
+   
+    write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
+    write_to_csv(sourcecodecsv, sourcecode_dict, header=sourcecode_header)
+
+
+def format_sourcecode_header(sourcecode_dict):
+    # Header: [pkg-name, obfuscationslist, 1-length obfs, 2-length obfs, 3-length obfs, kotlin1, kotlin2, kotlin3, kotlin4, reflection]
+    header = ["package-name"]
+    header.extend(sourcecode_dict.keys())
+    return header
+
+
+def format_sourcecode_dict(header, sourcecode_dict, package_name):
+    sourcecode_dict["package-name"] = package_name
+    return {key: sourcecode_dict[key] for key in header}
+ 
 
 if __name__ == '__main__':
     main()
