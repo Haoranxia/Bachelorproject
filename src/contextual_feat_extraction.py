@@ -169,19 +169,24 @@ def add_results_to_output(apk_file, app_id, app_details, output_filename):
     write_to_json(output_filename + '.json', formatted_app_details)
 
 
-def extend_app_details(app_id, app_details):
+def extend_app_details(app_id, app_details, gp_available):
     """
     extends contextual features using an additional google play web scraper
     :param app_id: application id of android application
     :param app_details: app details dictionary to be extended
+    :param gp_available: boolean to denote if app is available in google play (used to initialize an empty extended \
+    app_details dictionary)
     :return:
     """
-    extended_dict = app(app_id)
     key_list = ['score', 'histogram', 'price', 'free', 'currency', 'sale', 'saleTime', 'androidVersion', 'privacyPolicy'
         , 'headerImage', 'contentRatingDescription', 'adSupported', 'containsAds', 'released', 'comments']
-
-    extended_details = {key: extended_dict[key] for key in key_list}
-    app_details.update(extended_details)
+    if gp_available:
+        extended_dict = app(app_id)
+        extended_details = {key: extended_dict[key] for key in key_list}
+        app_details.update(extended_details)
+    else:
+        extended_details = {key: None for key in key_list}
+        app_details.update(extended_details)
 
 
 def run_contextual(apk_file, app_id):
@@ -195,7 +200,7 @@ def run_contextual(apk_file, app_id):
     try:
         if google_play_enabled:
             app_details = play_scraper.details(app_id)
-            extend_app_details(app_id, app_details)
+            extend_app_details(app_id, app_details, True)
             add_results_to_output(apk_file, app_id, app_details, output_filename)
         else:
             empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
@@ -203,4 +208,5 @@ def run_contextual(apk_file, app_id):
     except ValueError:
         print('AppID not found in the Google Play store')
         empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
+        extend_app_details(None, None, False)
         add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
