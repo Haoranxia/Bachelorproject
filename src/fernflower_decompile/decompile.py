@@ -3,10 +3,6 @@
 # Dex2jar command format: d2j-dex2jar [options] <file0> 
 # d2j-dex2jar -o <../static_out/out.jar> <../apks/1.apk>
 
-# Input: apk
-# dex2jar -> jar with .class files
-# fernflower -> jar with .java files
-
 from os import path, devnull 
 import platform, subprocess, zipfile, configparser, re
 import collections
@@ -21,9 +17,10 @@ config.read("../../settings.ini")
 
 d2j_path = config["Paths"]["dex2jar_path"]
 fernflower_path = config["Paths"]["fernflower_path"]
-outputfile = "./fernflower_out/dex2jar_out.jar"
+dex2jar_out = "./dex2jar_out/dex2jar_out.jar"
+fernflower_out = "./fernflower_out/fernflower_out.jar"
 
-
+# Pipeline: apk -> dex2jar -> jar with classes -> fernflower -> jar with javacode
 def decompile(apk):
     if d2j_path:
         # dex2jar
@@ -31,14 +28,14 @@ def decompile(apk):
 
     if fernflower_path:
         # jar (class) to jar (java)
-        fernflower_decompile(outputfile)
+        fernflower_decompile(dex2jar_out)
 
 
 def dex2jar(apk):
     if isWindows:
-        d2j_args = [d2j_path, "-o", outputfile, apk]
+        d2j_args = [d2j_path, "-o", dex2jar_out, "--force", apk]
     else:
-        d2j_args = ["sh", d2j_path, "-o", outputfile, apk]
+        d2j_args = ["sh", d2j_path, "-o", dex2jar_out, "--force", apk]
 
     p = subprocess.Popen(d2j_args)
     stdout, stderr = p.communicate()
@@ -60,59 +57,45 @@ def fernflower_decompile(file_path):
             print(stderr)
 
 
-def unpack_jar(file_path):
+def extract_features(file_path):
     # import regex: "import <anything>;"
-    import_regex = r'import (.*?);\n'
-    # import_regex_count = 0
+    import_regex = r'import (.*?);'
     imports_list = []
 
-    key_patterns_decompile = [r"// $FF: Couldn't be decompiled"]
-    keyword_usages_decompile = {key_pattern: 0 for key_pattern in key_patterns_decompile}
+    decompilation_failure_regex = r"// $FF: Couldn't be decompiled"
+    failed_decompilation_count = 0
 
-    if path.exists(file_path):
-        # if folder: go into folder
-        archive = zipfile.ZipFile(file_path, 'r')
-        filenames = archive.namelist()
-        for filename in filenames:
-            if filename.endswith(".java"):
-                with archive.open(filename) as javafile:
-                    src_string = javafile.read().decode("utf-8")
-                    imports = re.findall(import_regex, src_string)
-                    imports_list.extend(imports)
-    print(imports_list)
+    # if folder: go into folder
+    archive = zipfile.ZipFile(file_path, 'r')
+    filenames = archive.namelist()
+    for filename in filenames:
+        if filename.endswith(".java"):
+            with archive.open(filename) as javafile:
+                src_string = javafile.read().decode("utf-8")
 
+                # Imports
+                imports = re.findall(import_regex, src_string)
+                imports_list.extend(imports)
+
+                # Failed decompilations
+                failed_decompilation_count += len(re.findall(decompilation_failure_regex, src_string))
         
-def unpack_jar_test(file_path):
-    if path.exists(file_path):
-        # TODO
-        print("")
+    return imports_list, failed_decompilation_count
 
 
 # decompile("/home/yona/PycharmProjects/Bachelorproject/apks/flashlight.apk")
-
-
-def count_overlapping_distinct(pattern, text):
-    """
-    counts the number of patterns found in text
-    :param pattern: regex pattern
-    :param text: the source text to be searched
-    :return:
-    """
-    total = 0
-    start = 0
-    there = re.compile(pattern)
-
-    while True:
-        mo = there.search(text, start)
-        if mo is None: return total
-        total += 1
-        start = 1 + mo.start()
+# dex2jar_path = D:\Bachelor_project\Bachelorproject\src\fernflower_decompile\tools\dex2jar-2.0\d2j-dex2jar.bat
+# fernflower_path = D:\Bachelor_project\Bachelorproject\src\fernflower_decompile\tools\fernflower.jar
 
 # txt = "import whatever.lmao; import secondClass; class SomeClass{}"
 # java_ident = r"[A-Za-z\_\$]+[0-9]*[A-Za-z\_\$]*"
 # x = re.findall(r"import " + java_ident + r"(\." + java_ident + r")*;", txt)
 
-unpack_jar(outputfile)
+path = "../../apks/flashlight.apk"
+decompile(path)
+imports_list, failed_decompilation_count = extract_features("./fernflower_out/dex2jar_out.jar")
+print(imports_list)
+print(failed_decompilation_count)
 
 
 

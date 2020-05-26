@@ -31,13 +31,12 @@ opcodescsv = "../static_out/sourcecode_opcodes.csv"
 # Config file parsing
 config = configparser.ConfigParser()
 config.read("../settings.ini")
-
-
 enable_contextual = (config["Settings"]["Contextual"] == "yes")
 enable_manifest = (config["Settings"]["Manifest"] == "yes")
 enable_sourcecode = (config["Settings"]["Sourcecode"] == "yes")
 enable_logger = (config["Misc"]["Uselogger"] == "yes")
 enable_progresstracker = (config["Misc"]["Progresstracker"] == "yes")
+enable_fernflower = (config["Settings"]["Fernflower"] == "yes")
 
 
 # Progress tracking stuff
@@ -84,6 +83,10 @@ def main():
                 print("Running sourcecode")
                 process_sourcecode(a)
             
+            if enable_fernflower:
+                print("Running fernflower decompilation")
+                process_fernflower(apk_file)
+
             # Log processed APK
             if enable_progresstracker:
                 print("Updating progresstracker file")
@@ -151,9 +154,12 @@ def get_feature(manifest_dict, dictkey, headerfile):
 
 
 def process_sourcecode(a):
-    # FIXME Disabled glogger due to "Multiple exit nodes error" in androguard. This seems to be a bug related to
-    # the androguard framework so we can't do much about it
+    # FIXME glogger disables the "multiple exit nodes found" prints (androguard issue/bug)
     glogger.disabled = True
+
+    # FIXME dlogger disables the "Error decompiling method class <object>" message. 
+    # It seems like DAD has issues with decompiling some apks and will then show this message
+    dlogger.disabled = True
 
     # Create the d (DalvikVMFormat object) for each dex, and dx (Analysis object) 
     # for all dex files for sourcecode analysis
@@ -164,13 +170,14 @@ def process_sourcecode(a):
         dx.add(d)
 
     for d in ds:
-        # TODO use JADX instead of DAD because DAD might have issues with decompiling certain sections of code
+        # NOTE: We use the DAD decompiler (build-in androguard decompiler). Another option would be JADX
+        # However, JADX stops decompiling when it encounters a problem (which happens quite often with obfuscated apks)
         decompiler = DecompilerDAD(d, dx)
         d.set_decompiler(decompiler)
 
     opcodes_dict, sourcecode_dict = analyze_dex(ds, dx)
-
     glogger.enabled = True
+    dlogger.enabled = True
 
     # Output formatting
     opcodes_header = get_full_header("../resources/opcodes.txt")
@@ -194,6 +201,10 @@ def format_sourcecode_dict(header, sourcecode_dict, package_name):
     sourcecode_dict["package-name"] = package_name
     return {key: sourcecode_dict[key] for key in header}
  
+
+# TODO: Implement fernflower connection
+def process_fernflower(apk_file):
+    print("TODO")
 
 if __name__ == '__main__':
     main()

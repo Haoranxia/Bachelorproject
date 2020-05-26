@@ -30,10 +30,10 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
             writer.writerow(file_dict)
         return
     else:
+        # Modify existing file
         row_exists = False
         temp_file = NamedTemporaryFile(delete=False, mode='w', newline='')
 
-        # Modify existing file
         with open(file, 'r') as readf, temp_file:
             reader = csv.DictReader(readf, fieldnames=header)
             writer = csv.DictWriter(temp_file, fieldnames=header)
@@ -169,11 +169,3 @@ def alreadyProcessed(package_name, processed_apks):
 
 def get_processed_apks(processed_apks_file):
     return read_headers(processed_apks_file)
-
-
-def blockPrint():
-    sys.stdout = open(devnull, 'w')
-
-
-def enablePrint():
-    sys.stdout = sys.__stdout__

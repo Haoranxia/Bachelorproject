@@ -47,7 +47,7 @@ def analyze_dex(ds, dx):
 
     # Use dx object
     try:
-        kotlin_dict, reflection_dict = get_keyword_usage(dx, enable_kotlin, enable_reflection)
+        kotlin_dict, reflection_dict = get_keyword_usage(dx)
     except Exception as e:
         print("Koltin/Reflection extraction failed" + str(e))
 
@@ -113,7 +113,7 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
 
 
 # Function that checks for certain keywords in the sourcecode
-def get_keyword_usage(app, enable_kotlin, enable_reflection):
+def get_keyword_usage(app):
     """
     Scan the source code for kotlin keyword/pattern usage
     :param app: app containing the source code
@@ -139,21 +139,18 @@ def get_keyword_usage(app, enable_kotlin, enable_reflection):
     if enable_reflection or enable_kotlin:
         try:
             for cl in app.get_classes():
-                # FIXME Cant get into the sourcecode properly???
-                # FIXME get_vm_class() or get_class() or another function??? This one doesnt work properly???
-                for m in cl.get_vm_class().get_methods():
-                    if m:
-                        src = m.get_source()
-                        if src:
-                            # Kotlin keyword analysis
-                            if enable_kotlin:
-                                for key_pattern in key_patterns_kotlin:
-                                    keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
+                src = cl.get_vm_class().get_source()
+                # for m in cl.get_vm_class().get_methods(): (Iterate over methods in src instead of all of src)
+                if src:
+                    # Kotlin keyword analysis
+                    if enable_kotlin:
+                        for key_pattern in key_patterns_kotlin:
+                            keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
 
-                            # Java reflection usage analysis
-                            if enable_reflection:
-                                for key_pattern in key_patterns_reflection:
-                                    keyword_usages_reflection[key_pattern] += src.count(key_pattern)
+                    # Java reflection usage analysis
+                    if enable_reflection:
+                        for key_pattern in key_patterns_reflection:
+                            keyword_usages_reflection[key_pattern] += src.count(key_pattern)
         except Exception as e:
             raise(e)
 
