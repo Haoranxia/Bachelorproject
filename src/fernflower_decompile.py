@@ -13,12 +13,12 @@ if platform.system() == 'Windows':
 
 # Paths
 config = configparser.ConfigParser()
-config.read("../../settings.ini")
+config.read("../settings.ini")
 
 d2j_path = config["Paths"]["dex2jar_path"]
 fernflower_path = config["Paths"]["fernflower_path"]
-dex2jar_out = "./dex2jar_out/dex2jar_out.jar"
-fernflower_out = "./fernflower_out/fernflower_out.jar"
+dex2jar_out = "./fernflower_decompile/dex2jar_out/dex2jar_out.jar"
+fernflower_out = "./fernflower_decompile/fernflower_out/dex2jar_out.jar"
 
 # Pipeline: apk -> dex2jar -> jar with classes -> fernflower -> jar with javacode
 def decompile(apk):
@@ -40,21 +40,22 @@ def dex2jar(apk):
     p = subprocess.Popen(d2j_args)
     stdout, stderr = p.communicate()
 
-    if stdout:
-        print(stdout)
-    if stderr:
-        print(stderr)
+    # TODO: Instead of printing, write these to a log file
+    # if stdout:
+    #     print(stdout)
+    # if stderr:
+    #     print(stderr)
 
 
 def fernflower_decompile(file_path):
-    if True:  # if isWindows:
-        p = subprocess.Popen(["java", "-jar", fernflower_path, file_path, "./fernflower_out"])
-        stdout, stderr = p.communicate()
+    p = subprocess.Popen(["java", "-jar", fernflower_path, file_path, "./fernflower_decompile/fernflower_out"])
+    stdout, stderr = p.communicate()
 
-        if stdout:
-            print(stdout)
-        if stderr:
-            print(stderr)
+    # TODO: instead of printing, write these to a log file
+    # if stdout:
+    #     print(stdout)
+    # if stderr:
+    #     print(stderr)
 
 
 def extract_features(file_path):
@@ -91,11 +92,10 @@ def extract_features(file_path):
 # java_ident = r"[A-Za-z\_\$]+[0-9]*[A-Za-z\_\$]*"
 # x = re.findall(r"import " + java_ident + r"(\." + java_ident + r")*;", txt)
 
-path = "../../apks/flashlight.apk"
-decompile(path)
-imports_list, failed_decompilation_count = extract_features("./fernflower_out/dex2jar_out.jar")
-print(imports_list)
-print(failed_decompilation_count)
+def run_fernflower_decompile(file_path):
+    decompile(file_path)
+    imports_list, decompile_error_count = extract_features(fernflower_out)
+    return imports_list, decompile_error_count
 
 
 

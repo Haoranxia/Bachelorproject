@@ -14,6 +14,7 @@ from androguard.decompiler.decompiler import DecompilerDAD
 from androguard.decompiler.decompiler import DecompilerJADX
 
 from util import *
+from fernflower_decompile import run_fernflower_decompile
 from sourcecode_analysis import analyze_dex
 from manifest_analysis import analyze_manifest
 from contextual_feat_extraction import run_contextual
@@ -85,7 +86,7 @@ def main():
             
             if enable_fernflower:
                 print("Running fernflower decompilation")
-                process_fernflower(apk_file)
+                process_fernflower(a, apk_file)
 
             # Log processed APK
             if enable_progresstracker:
@@ -203,8 +204,12 @@ def format_sourcecode_dict(header, sourcecode_dict, package_name):
  
 
 # TODO: Implement fernflower connection
-def process_fernflower(apk_file):
-    print("TODO")
+def process_fernflower(a, apk_file):
+    print(a.get_package())
+    imports_list, compile_error_count = run_fernflower_decompile(apk_file)
+    print(imports_list)
+    print(compile_error_count)
+    
 
 if __name__ == '__main__':
     main()
