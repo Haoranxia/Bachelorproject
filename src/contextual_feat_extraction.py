@@ -204,6 +204,3 @@ def run_contextual(apk_file, app_id):
         print('AppID not found in the Google Play store')
         empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
         add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
-
-
-run_contextual('../apks/uberlite.apk', 'com.ubercab.uberlite')
