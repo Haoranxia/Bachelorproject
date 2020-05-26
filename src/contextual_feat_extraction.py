@@ -208,5 +208,5 @@ def run_contextual(apk_file, app_id):
     except ValueError:
         print('AppID not found in the Google Play store')
         empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
-        extend_app_details(None, None, False)
+        extend_app_details(None, empty_app_details, False)
         add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
