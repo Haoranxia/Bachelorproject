@@ -2,6 +2,7 @@ import requests
 import configparser
 import play_scraper
 from pathlib import Path
+from google_play_scraper import app
 from requests.exceptions import HTTPError
 from util import write_to_json, write_to_csv, calculate_sha256, file_contains, delete_row
 
@@ -75,7 +76,7 @@ def get_virus_total_positives(apk_file):
                 response = requests.post(upload_url, files=files)
                 response.raise_for_status()
                 if 'scans' not in response.json():  # if request is queued
-                    write_to_csv(response.json()['sha256'], queue_csv_file, response.json())
+                    write_to_csv(queue_csv_file, response.json(), key=response.json()['sha256'])
                     return None, 'Request queued. Rerun to get report'
                 else:
                     return compile_vt_result(response)
@@ -86,7 +87,7 @@ def get_virus_total_positives(apk_file):
                 response = requests.post(url, files=files, params=params)
                 response.raise_for_status()
                 if 'scans' not in response.json():  # if request is queued
-                    write_to_csv(response.json()['sha256'], queue_csv_file, response.json())
+                    write_to_csv(queue_csv_file, response.json(), key=response.json()['sha256'])
                     return None, 'Request queued. Rerun to get report'
                 else:
                     return compile_vt_result(response)
@@ -119,23 +120,28 @@ def get_opswat_positives(apk_file):
 
 
 def get_app_stores_availability(app_id):
+    """
+    gets the list of app store a given apk exits in
+    :param app_id: application id
+    :return:
+    """
     available_stores = []
-    app_stores = ['Google Play', 'F-Droid' 'apk-monk', 'apk-support']
+    app_stores = ['Google Play', 'F-Droid', 'apk-monk', 'apk-support']
     app_store_urls = ['https://play.google.com/store/apps/details?id=' + str(app_id),
                       'https://f-droid.org/en/packages/' + str(app_id),
                       'https://www.apkmonk.com/app/' + str(app_id),
-                      'https://apk.support/app/' + str(app_id),
+                      'https://apk.support/app/' + str(app_id)
                       ]
     for app_store, url in zip(app_stores, app_store_urls):
         try:
             response = requests.get(url)
             response.raise_for_status()
-        except HTTPError as http_err:
-            print('HTTP error occurred: ' + str(http_err))
+        except HTTPError:
+            print(app_id + ' not found in ' + app_store + ' app store.')
         except Exception as err:
             print('Error occurred: ' + str(err))
-        else:  # no raised exceptions
-            available_stores.append(app_store)
+        else:
+            available_stores.append(app_store)  # no raised exceptions
     return available_stores
 
 
@@ -159,8 +165,28 @@ def add_results_to_output(apk_file, app_id, app_details, output_filename):
 
     app_details['store-availability'] = get_app_stores_availability(app_id)
     formatted_app_details = reformat_dictionary(app_details, app_id)
-    write_to_csv('package-name', output_filename + '.csv', formatted_app_details)
+    write_to_csv(output_filename + '.csv', formatted_app_details, key='package-name')
     write_to_json(output_filename + '.json', formatted_app_details)
+
+
+def extend_app_details(app_id, app_details, gp_available):
+    """
+    extends contextual features using an additional google play web scraper
+    :param app_id: application id of android application
+    :param app_details: app details dictionary to be extended
+    :param gp_available: boolean to denote if app is available in google play (used to initialize an empty extended \
+    app_details dictionary)
+    :return:
+    """
+    key_list = ['score', 'histogram', 'price', 'free', 'currency', 'sale', 'saleTime', 'androidVersion', 'privacyPolicy'
+        , 'headerImage', 'contentRatingDescription', 'adSupported', 'containsAds', 'released', 'comments']
+    if gp_available:
+        extended_dict = app(app_id)
+        extended_details = {key: extended_dict[key] for key in key_list}
+        app_details.update(extended_details)
+    else:
+        extended_details = {key: None for key in key_list}
+        app_details.update(extended_details)
 
 
 def run_contextual(apk_file, app_id):
@@ -174,6 +200,7 @@ def run_contextual(apk_file, app_id):
     try:
         if google_play_enabled:
             app_details = play_scraper.details(app_id)
+            extend_app_details(app_id, app_details, True)
             add_results_to_output(apk_file, app_id, app_details, output_filename)
         else:
             empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
@@ -181,4 +208,5 @@ def run_contextual(apk_file, app_id):
     except ValueError:
         print('AppID not found in the Google Play store')
         empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
+        extend_app_details(None, empty_app_details, False)
         add_results_to_output(apk_file, app_id, empty_app_details, output_filename)

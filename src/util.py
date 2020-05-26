@@ -17,6 +17,7 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
     :param key: the key that will be used for checking whether a record is already present or not
     :param file: the path of the csv file (relative or full path)
     :param file_dict: the dictionary to be written to csv
+    :param header: table header
     :return:
     """
     if header is None:
