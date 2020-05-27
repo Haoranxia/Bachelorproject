@@ -129,12 +129,8 @@ def get_keyword_usage(app):
         keyword_usages_kotlin = {key_pattern: None for key_pattern in key_patterns_kotlin}
 
     # Reflection
-    key_patterns_reflection = [r'java.lang.reflect']
-    keyword_usages_reflection = collections.OrderedDict()
-    if enable_reflection:
-        keyword_usages_reflection = {key_pattern: 0 for key_pattern in key_patterns_reflection}
-    else:
-        keyword_usages_reflection = {key_pattern: None for key_pattern in key_patterns_reflection}
+    reflection_regex = r'java.lang.reflect.* '
+    reflection_dict = collections.OrderedDict()
 
     if enable_reflection or enable_kotlin:
         try:
@@ -149,12 +145,17 @@ def get_keyword_usage(app):
 
                     # Java reflection usage analysis
                     if enable_reflection:
-                        for key_pattern in key_patterns_reflection:
-                            keyword_usages_reflection[key_pattern] += src.count(key_pattern)
+                        reflections = re.findall(reflection_regex, src)
+                        for reflection in reflections:
+                            if reflection not in reflection_dict:
+                                reflection_dict[reflection] = 1
+                            else:
+                                reflection_dict[reflection] += 1
+
         except Exception as e:
             raise(e)
 
-    return keyword_usages_kotlin, keyword_usages_reflection
+    return keyword_usages_kotlin, reflection_dict
 
 def update_count_histogram(identifier_name, count_histogram):
     if len(identifier_name) < 4:
@@ -283,5 +284,5 @@ def format_sourcecode_dict(obfuscations_dict, obfuscations_histogram, kotlin_dic
     sourcecode_features_dict["Possible obfuscations"] = list(obfuscations_dict.items())
     sourcecode_features_dict.update(obfuscations_histogram)
     sourcecode_features_dict.update(kotlin_dict)
-    sourcecode_features_dict.update(reflection_dict)
+    sourcecode_features_dict["Reflection"] = [(key, reflection_dict[key]) for key in reflection_dict.keys()]
     return sourcecode_features_dict
