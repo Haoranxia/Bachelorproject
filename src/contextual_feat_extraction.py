@@ -61,7 +61,7 @@ def get_hybrid_analysis_positives(apk_file):
                 positives += scan_item['positives']
         return response_json['threat_score'], positives, positives_list
     except requests.exceptions.RequestException:
-        print('App not found in hybrid-analysis database.')
+        print('Apk file not found in hybrid-analysis database.')
         return None, None, None
 
 
@@ -141,11 +141,16 @@ def compile_vt_result(response):
 
 
 def get_opswat_positives(apk_file):
-    url = "https://api.metadefender.com/v4/hash/" + str(calculate_sha256(apk_file))
-    headers = {'apikey': OPSWAT_API_KEY}
-    response = requests.request("GET", url, headers=headers)
-    # print(response.text) TODO :: run more tests here!!
-    return response.json()['process_info']['result']
+    try:
+        url = "https://api.metadefender.com/v4/hash/" + str(calculate_sha256(apk_file))
+        headers = {'apikey': OPSWAT_API_KEY}
+        response = requests.request("GET", url, headers=headers)
+        response.raise_for_status()
+        print(response)  # TODO :: run more tests here!!
+        return response.json()['process_info']['result']
+    except requests.exceptions.RequestException:
+        print('Apk file not found in Meta-scan database.')
+        return None
 
 
 def get_app_stores_availability(app_id):
