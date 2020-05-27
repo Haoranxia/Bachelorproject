@@ -84,6 +84,8 @@ def main():
                 print("Running sourcecode")
                 process_sourcecode(a)
             
+            # Source code featuers using fernflower decompiler
+            # Disabled by default
             if enable_fernflower:
                 print("Running fernflower decompilation")
                 process_fernflower(a, apk_file)
@@ -183,32 +185,27 @@ def process_sourcecode(a):
     # Output formatting
     opcodes_header = get_full_header("../resources/opcodes.txt")
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
+    
+    sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
 
-    sourcecode_header = format_sourcecode_header(sourcecode_dict)
-    sourcecode_dict = format_sourcecode_dict(sourcecode_header, sourcecode_dict, a.get_package())
-   
     write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
-    write_to_csv(sourcecodecsv, sourcecode_dict, header=sourcecode_header)
+    write_to_csv(sourcecodecsv, sourcecode_dict, header=list(sourcecode_dict.keys()))
 
 
-def format_sourcecode_header(sourcecode_dict):
-    # Header: [pkg-name, obfuscationslist, 1-length obfs, 2-length obfs, 3-length obfs, kotlin1, kotlin2, kotlin3, kotlin4, reflection]
-    header = ["package-name"]
-    header.extend(sourcecode_dict.keys())
-    return header
-
-
-def format_sourcecode_dict(header, sourcecode_dict, package_name):
-    sourcecode_dict["package-name"] = package_name
-    return {key: sourcecode_dict[key] for key in header}
+def format_sourcecode_dict(sourcecode_dict, package_name):
+    return_dict = collections.OrderedDict()
+    return_dict["package-name"] = package_name
+    return_dict.update(sourcecode_dict)
+    return return_dict
  
 
-# TODO: Implement fernflower connection
+# TODO: to_csv for fernflower
 def process_fernflower(a, apk_file):
     print(a.get_package())
-    imports_list, compile_error_count = run_fernflower_decompile(apk_file)
-    print(imports_list)
+    imports_dict, compile_error_count, reflection_dict = run_fernflower_decompile(a.get_package(), apk_file)
+    print(imports_dict)
     print(compile_error_count)
+    print(reflection_dict)
     
 
 if __name__ == '__main__':

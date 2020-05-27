@@ -1,0 +1,66 @@
+INFO:  Decompiling class com/qihoo/util/Configuration
+INFO:  ... done
+INFO:  Decompiling class com/qihoo/util/QHDialog
+WARN:           Heavily obfuscated exception ranges found!
+WARN:           Method showDialog (Landroid/content/Context;Ljava/lang/String;)V couldn't be decompiled.
+java.lang.RuntimeException: parsing failure!
+	at org.jetbrains.java.decompiler.modules.decompiler.DomHelper.parseGraph(DomHelper.java:203)
+	at org.jetbrains.java.decompiler.main.rels.MethodProcessorRunnable.codeToJava(MethodProcessorRunnable.java:116)
+	at org.jetbrains.java.decompiler.main.rels.ClassWrapper.init(ClassWrapper.java:62)
+	at org.jetbrains.java.decompiler.main.ClassesProcessor.initWrappers(ClassesProcessor.java:369)
+	at org.jetbrains.java.decompiler.main.ClassesProcessor.writeClass(ClassesProcessor.java:316)
+	at org.jetbrains.java.decompiler.main.Fernflower.getClassContent(Fernflower.java:114)
+	at org.jetbrains.java.decompiler.struct.ContextUnit.save(ContextUnit.java:133)
+	at org.jetbrains.java.decompiler.struct.StructContext.saveContext(StructContext.java:58)
+	at org.jetbrains.java.decompiler.main.Fernflower.decompileContext(Fernflower.java:87)
+	at org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler.decompileContext(ConsoleDecompiler.java:120)
+	at org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler.main(ConsoleDecompiler.java:82)
+WARN:           Heavily obfuscated exception ranges found!
+INFO:  ... done
+ERROR: Class com/qihoo/util/QHDialog couldn't be fully decompiled.
+java.lang.NullPointerException
+	at org.jetbrains.java.decompiler.modules.decompiler.vars.VarProcessor.setVarFinal(VarProcessor.java:118)
+	at org.jetbrains.java.decompiler.main.rels.NestedClassProcessor.insertLocalVars(NestedClassProcessor.java:418)
+	at org.jetbrains.java.decompiler.main.rels.NestedClassProcessor.processClass(NestedClassProcessor.java:73)
+	at org.jetbrains.java.decompiler.main.ClassesProcessor.writeClass(ClassesProcessor.java:318)
+	at org.jetbrains.java.decompiler.main.Fernflower.getClassContent(Fernflower.java:114)
+	at org.jetbrains.java.decompiler.struct.ContextUnit.save(ContextUnit.java:133)
+	at org.jetbrains.java.decompiler.struct.StructContext.saveContext(StructContext.java:58)
+	at org.jetbrains.java.decompiler.main.Fernflower.decompileContext(Fernflower.java:87)
+	at org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler.decompileContext(ConsoleDecompiler.java:120)
+	at org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler.main(ConsoleDecompiler.java:82)
+INFO:  Decompiling class com/qihoo/util/QhJobService
+INFO:  ... done
+INFO:  Decompiling class com/qihoo/util/StubApp2493544057
+WARN:           Heavily obfuscated exception ranges found!
+WARN:           Heavily obfuscated exception ranges found!
+WARN:           Method isSameFile (Ljava/io/BufferedInputStream;Ljava/io/BufferedInputStream;)Z couldn't be decompiled.
+java.lang.RuntimeException: parsing failure!
+	at org.jetbrains.java.decompiler.modules.decompiler.DomHelper.parseGraph(DomHelper.java:203)
+	at org.jetbrains.java.decompiler.main.rels.MethodProcessorRunnable.codeToJava(MethodProcessorRunnable.java:116)
+	at org.jetbrains.java.decompiler.main.rels.ClassWrapper.init(ClassWrapper.java:62)
+	at org.jetbrains.java.decompiler.main.ClassesProcessor.initWrappers(ClassesProcessor.java:369)
+	at org.jetbrains.java.decompiler.main.ClassesProcessor.writeClass(ClassesProcessor.java:316)
+	at org.jetbrains.java.decompiler.main.Fernflower.getClassContent(Fernflower.java:114)
+	at org.jetbrains.java.decompiler.struct.ContextUnit.save(ContextUnit.java:133)
+	at org.jetbrains.java.decompiler.struct.StructContext.saveContext(StructContext.java:58)
+	at org.jetbrains.java.decompiler.main.Fernflower.decompileContext(Fernflower.java:87)
+	at org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler.decompileContext(ConsoleDecompiler.java:120)
+	at org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler.main(ConsoleDecompiler.java:82)
+WARN:           Heavily obfuscated exception ranges found!
+ERROR:          Statement cannot be decomposed although reducible!
+WARN:           Method isX86Arch ()Ljava/lang/Boolean; couldn't be decompiled.
+java.lang.RuntimeException: parsing failure!
+	at org.jetbrains.java.decompiler.modules.decompiler.DomHelper.parseGraph(DomHelper.java:203)
+	at org.jetbrains.java.decompiler.main.rels.MethodProcessorRunnable.codeToJava(MethodProcessorRunnable.java:116)
+	at org.jetbrains.java.decompiler.main.rels.ClassWrapper.init(ClassWrapper.java:62)
+	at org.jetbrains.java.decompiler.main.ClassesProcessor.initWrappers(ClassesProcessor.java:369)
+	at org.jetbrains.java.decompiler.main.ClassesProcessor.writeClass(ClassesProcessor.java:316)
+	at org.jetbrains.java.decompiler.main.Fernflower.getClassContent(Fernflower.java:114)
+	at org.jetbrains.java.decompiler.struct.ContextUnit.save(ContextUnit.java:133)
+	at org.jetbrains.java.decompiler.struct.StructContext.saveContext(StructContext.java:58)
+	at org.jetbrains.java.decompiler.main.Fernflower.decompileContext(Fernflower.java:87)
+	at org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler.decompileContext(ConsoleDecompiler.java:120)
+	at org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler.main(ConsoleDecompiler.java:82)
+WARN:           Heavily obfuscated exception ranges found!
+INFO:  ... done

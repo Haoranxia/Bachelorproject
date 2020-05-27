@@ -20,51 +20,68 @@ fernflower_path = config["Paths"]["fernflower_path"]
 dex2jar_out = "./fernflower_decompile/dex2jar_out/dex2jar_out.jar"
 fernflower_out = "./fernflower_decompile/fernflower_out/dex2jar_out.jar"
 
+dex2jar_log = "./fernflower_decompile/dex2jar_out/dex2jar.log"
+fernflower_log = "./fernflower_decompile/fernflower_out/fernflower.log"
+
 # Pipeline: apk -> dex2jar -> jar with classes -> fernflower -> jar with javacode
-def decompile(apk):
+def decompile(package_name, apk):
     if d2j_path:
         # dex2jar
-        dex2jar(apk)
+        print("path to apk: ")
+        print(apk)
+        dex2jar(package_name, apk)
 
     if fernflower_path:
         # jar (class) to jar (java)
-        fernflower_decompile(dex2jar_out)
+        print("path to dex2jar_out: ")
+        print(dex2jar_out)
+        fernflower_decompile(package_name, dex2jar_out)
 
 
-def dex2jar(apk):
+def dex2jar(package_name, apk):
+    """
+    Transform a given apk's dex files to a jar containing .class files
+    :param apk: Path to the apk to be transformed
+    """
     if isWindows:
         d2j_args = [d2j_path, "-o", dex2jar_out, "--force", apk]
     else:
         d2j_args = ["sh", d2j_path, "-o", dex2jar_out, "--force", apk]
 
-    p = subprocess.Popen(d2j_args)
-    stdout, stderr = p.communicate()
-
-    # TODO: Instead of printing, write these to a log file
-    # if stdout:
-    #     print(stdout)
-    # if stderr:
-    #     print(stderr)
+    p = subprocess.Popen(d2j_args, stdout=subprocess.PIPE)
+    log = p.communicate()[0]
+    logfile_path = "./fernflower_decompile/dex2jar_out/" + package_name + "_dex2jar.log"
+    write_to_file(logfile_path, log)
 
 
-def fernflower_decompile(file_path):
-    p = subprocess.Popen(["java", "-jar", fernflower_path, file_path, "./fernflower_decompile/fernflower_out"])
-    stdout, stderr = p.communicate()
-
-    # TODO: instead of printing, write these to a log file
-    # if stdout:
-    #     print(stdout)
-    # if stderr:
-    #     print(stderr)
+def fernflower_decompile(package_name, file_path):
+    """
+    Decompile the given jar file (containing .class files) to a jar file containing .java files
+    :param file_path: path to the jar file containing .class files
+    """
+    print("decompiling following jar: ")
+    print(file_path)
+    fernflower_args = ["java", "-jar", fernflower_path, file_path, "./fernflower_decompile/fernflower_out"]
+    p = subprocess.Popen(fernflower_args, stdout=subprocess.PIPE)
+    log = p.communicate()[0]
+    logfile_path = "./fernflower_decompile/fernflower_out/" + package_name + "_fernflower.log"
+    write_to_file(logfile_path, log)
 
 
 def extract_features(file_path):
+    """
+    Extract the wanted features from a jar file containing .java files
+    :param file_path: Path to the jar containing .java files
+    """
     # import regex: "import <anything>;"
     import_regex = r'import (.*?);'
-    imports_list = []
+    imports_dict = collections.OrderedDict()
 
     decompilation_failure_regex = r"// $FF: Couldn't be decompiled"
     failed_decompilation_count = 0
+
+    reflection_regex = r"java.lang.reflect.*;"
+    reflection_dict = collections.OrderedDict()
 
     # if folder: go into folder
     archive = zipfile.ZipFile(file_path, 'r')
@@ -76,26 +93,43 @@ def extract_features(file_path):
 
                 # Imports
                 imports = re.findall(import_regex, src_string)
-                imports_list.extend(imports)
+                for import_statement in imports:
+                    if import_statement not in imports_dict:
+                        imports_dict[import_statement] = 1
+                    else:
+                        imports_dict[import_statement] += 1
 
                 # Failed decompilations
                 failed_decompilation_count += len(re.findall(decompilation_failure_regex, src_string))
+
+                # Counting reflection occurences
+                reflections = re.findall(reflection_regex, src_string)
+                for reflection in reflections:
+                    if reflection not in reflection_dict:
+                        reflection_dict[reflection] = 1
+                    else:
+                        reflection_dict[reflection] += 1
+
+                # TODO: Add more patterns/features to look for
         
-    return imports_list, failed_decompilation_count
+    return imports_dict, failed_decompilation_count, reflection_dict
 
 
 # decompile("/home/yona/PycharmProjects/Bachelorproject/apks/flashlight.apk")
 # dex2jar_path = D:\Bachelor_project\Bachelorproject\src\fernflower_decompile\tools\dex2jar-2.0\d2j-dex2jar.bat
 # fernflower_path = D:\Bachelor_project\Bachelorproject\src\fernflower_decompile\tools\fernflower.jar
 
-# txt = "import whatever.lmao; import secondClass; class SomeClass{}"
-# java_ident = r"[A-Za-z\_\$]+[0-9]*[A-Za-z\_\$]*"
-# x = re.findall(r"import " + java_ident + r"(\." + java_ident + r")*;", txt)
+def run_fernflower_decompile(package_name, file_path):
+    decompile(package_name, file_path)
+    imports_dict, decompile_error_count, reflection_dict = extract_features(fernflower_out)
+    return imports_dict, decompile_error_count, reflection_dict
 
-def run_fernflower_decompile(file_path):
-    decompile(file_path)
-    imports_list, decompile_error_count = extract_features(fernflower_out)
-    return imports_list, decompile_error_count
+
+# Helper functions
+def write_to_file(filepath, data):
+    with open(filepath, 'wb+') as f:
+        f.write(data)
+        f.close()
 
 
 

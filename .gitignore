@@ -28,3 +28,6 @@ settings.ini
 /testing/features.txt
 /testing/perm_features.html
 /testing/permissions_table.txt
+
+# Log files 
+**/*.log
