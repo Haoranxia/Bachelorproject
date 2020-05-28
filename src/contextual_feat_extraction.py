@@ -1,7 +1,9 @@
+import re
 import requests
 import configparser
 import play_scraper
 from pathlib import Path
+from subprocess import Popen, PIPE
 from google_play_scraper import app
 from requests.exceptions import HTTPError
 from util import write_to_json, write_to_csv, calculate_sha256, file_contains, delete_row
@@ -11,10 +13,13 @@ config.read("../settings.ini")
 
 VT_API_KEY = config["Contextual_Settings"]["virus_total_api_key"]
 OPSWAT_API_KEY = config["Contextual_Settings"]["opswat_api_key"]
+HA_API_KEY = config["Contextual_Settings"]["hybrid_analysis_api_key"]
 OPSWAT_enabled = (config["Contextual_Settings"]["opswat"] == 'yes')
 google_play_enabled = (config["Contextual_Settings"]["app_store"] == 'yes')
+hybrid_analysis_enabled = (config["Contextual_Settings"]["hybrid_analysis"] == 'yes')
 virus_total_enabled = (config["Contextual_Settings"]["virus_total"] == 'yes')
 file_upload_enabled = (config["Contextual_Settings"]['virus_total_enable_file_upload'] == 'yes')
+OPSWAT_THREAT_CODE = 1  # opswat designated code for threats in API response (scan_all_result_i)
 
 
 def reformat_dictionary(app_details, app_id):
@@ -38,26 +43,67 @@ def reformat_dictionary(app_details, app_id):
     return updated_dict
 
 
+def get_opswat_positives(apk_file):
+    """
+    Sends request to get a report from OPSWAT meta-scan api by using sha256 hash value of an apk file
+    :param apk_file: apk file to be hashed and queried in the OPSWAT api
+    :return:
+    """
+    try:
+        url = "https://api.metadefender.com/v4/hash/" + str(calculate_sha256(apk_file))
+        headers = {'apikey': OPSWAT_API_KEY}
+        response = requests.request("GET", url, headers=headers)
+        response.raise_for_status()
+        positives_list = []
+        scan_details = response.json()['scan_results']['scan_details']
+        for antivirus_name in scan_details:
+            if scan_details[antivirus_name]['scan_result_i'] == OPSWAT_THREAT_CODE:  # if av reports apk to be a threat
+                positives_list.append(antivirus_name)
+        return response.json()['scan_results']['scan_all_result_a'], positives_list
+    except requests.exceptions.RequestException:
+        print('Apk file not found in Meta-scan database.')
+    return None, None
+
+
+def get_hybrid_analysis_positives(apk_file):
+    """
+    Sends request to get a report from hybrid-analysis api by using sha256 hash value of an apk file
+    :param apk_file: file to be examined for av report
+    :return: list of anti-virus scanners that detected the file to be positive
+    """
+    try:
+        sha_digest = calculate_sha256(apk_file)
+        url = 'https://www.hybrid-analysis.com/api/v2/overview/' + sha_digest
+        response = requests.get(url=url, headers={'api-key': HA_API_KEY, 'user-agent': 'Falcon Sandbox'})
+        response.raise_for_status()
+        response_json = response.json()
+        positives_list = []
+        ha_scanners = response_json['scanners']
+        positives = 0
+        for scan_item in ha_scanners:
+            if scan_item['positives'] and scan_item['positives'] != 0:
+                positives_list.append(scan_item['name'])
+                positives += scan_item['positives']
+        return response_json['threat_score'], positives, positives_list
+    except requests.exceptions.RequestException:
+        print('Apk file not found in hybrid-analysis database.')
+        return None, None, None
+
+
 # TODO::
-#  1. IF APK > 32 MB upload using special url
-#  2. get report using resource: scan_id
-#  3. push new and "default" settings.ini to git
-#  4. error handling when quota is reached
 #  5. give protobuff another try?
 def get_virus_total_positives(apk_file):
     """
     Sends request to get a report from TotalVirus by sending sha256 hash value of an apk file
+    or uploading the file if the hash value is not found in vt database
     :return: the number of positives and list of anti-virus scanners that detected the positive
     """
     vt_size_limit = 32000000  # 32MB size limit -> upload file via special url and queue for report
     sha_digest = calculate_sha256(apk_file)
-    queue_csv_file = 'vt_queued_scans.csv'
 
     try:
         url = 'https://www.virustotal.com/vtapi/v2/file/report'
         params = {'apikey': VT_API_KEY, 'resource': sha_digest}
-        if file_contains(queue_csv_file, sha_digest):
-            delete_row(queue_csv_file, sha_digest)
         response = requests.get(url, params=params)
         if response.status_code == 204:
             return None, 'vt quota reached'
@@ -72,30 +118,37 @@ def get_virus_total_positives(apk_file):
                 params = {'apikey': VT_API_KEY}
                 response = requests.get(url, params=params)
                 upload_url = response.json()['upload_url']
-                files = {'file': (apk_file, open(apk_file, 'rb'))}
-                response = requests.post(upload_url, files=files)
-                response.raise_for_status()
-                if 'scans' not in response.json():  # if request is queued
-                    write_to_csv(queue_csv_file, response.json(), key=response.json()['sha256'])
-                    return None, 'Request queued. Rerun to get report'
-                else:
-                    return compile_vt_result(response)
+                return request_vt_response(apk_file, upload_url, None, None)
             else:
                 url = 'https://www.virustotal.com/vtapi/v2/file/scan'
                 params = {'apikey': VT_API_KEY}
-                files = {'file': (apk_file, open(apk_file, 'rb'))}
-                response = requests.post(url, files=files, params=params)
-                response.raise_for_status()
-                if 'scans' not in response.json():  # if request is queued
-                    write_to_csv(queue_csv_file, response.json(), key=response.json()['sha256'])
-                    return None, 'Request queued. Rerun to get report'
-                else:
-                    return compile_vt_result(response)
+                return request_vt_response(apk_file, None, params, url)
         else:
             return compile_vt_result(response)
     except requests.exceptions.RequestException as error:
-        print('Error getting VirusTotal report.\n' + str(error))
+        print('Failed to receive VirusTotal report.\n' + str(error))
         return None, None
+
+
+def request_vt_response(apk_file, upload_url, params, url):
+    """
+    sends a post request with an apk file to vt api
+    :param apk_file: the apk file to be uploaded
+    :param upload_url: the url used to upload files greater than 32MB
+    :param params: post request parameters (VT_API_KEY)
+    :param url: the url used to upload files less than 32MB
+    :return:
+    """
+    files = {'file': (apk_file, open(apk_file, 'rb'))}
+    if params:
+        response = requests.post(url, files=files, params=params)
+    else:
+        response = requests.post(upload_url, files=files)
+    response.raise_for_status()
+    if 'scans' not in response.json():  # if request is queued
+        return None, 'Request queued. Rerun to get report'
+    else:
+        return compile_vt_result(response)
 
 
 def compile_vt_result(response):
@@ -109,14 +162,6 @@ def compile_vt_result(response):
         if response.json()['scans'][antivirus_name]['detected']:
             positives_list.append(antivirus_name)
     return response.json()['positives'], positives_list
-
-
-def get_opswat_positives(apk_file):
-    url = "https://api.metadefender.com/v4/hash/" + str(calculate_sha256(apk_file))
-    headers = {'apikey': OPSWAT_API_KEY}
-    response = requests.request("GET", url, headers=headers)
-    # print(response.text)
-    return response.json()['process_info']['result']
 
 
 def get_app_stores_availability(app_id):
@@ -159,9 +204,15 @@ def add_results_to_output(apk_file, app_id, app_details, output_filename):
     else:
         app_details['vt_positives'], app_details['vt_positives_list'] = (None, None)
     if OPSWAT_enabled:
-        app_details['opswat_result'] = get_opswat_positives(apk_file)
+        app_details['opswat_result'], app_details['opswat_positives_list'] = get_opswat_positives(apk_file)
     else:
-        app_details['opswat_result'] = None
+        app_details['opswat_result'], app_details['opswat_positives_list'] = (None, None)
+    if hybrid_analysis_enabled:
+        app_details['HA_threat_score'], app_details['HA_positives'], app_details['HA_positives_list'] = \
+            get_hybrid_analysis_positives(apk_file)
+    else:
+        app_details['HA_threat_score'], app_details['HA_positives'], app_details['HA_positives_list'] = (None, None,
+                                                                                                         None)
 
     app_details['store-availability'] = get_app_stores_availability(app_id)
     formatted_app_details = reformat_dictionary(app_details, app_id)
@@ -189,13 +240,22 @@ def extend_app_details(app_id, app_details, gp_available):
         app_details.update(extended_details)
 
 
+def get_app_id(apk_file):
+    """
+    gets an app id given an apk file
+    :param apk_file: an android app
+    :return:
+    """
+    meta_info = Popen(['aapt', 'dump', 'badging', apk_file], stdout=PIPE, stderr=PIPE)
+    meta_info_stdout, stderr = meta_info.communicate()
+    print(re.findall(r"package: name='(.*?)'", meta_info_stdout.decode('utf-8'))[0])
+
+
 def run_contextual(apk_file, app_id):
     """
     runs the contextual component, get contextual details from google play and also request report from VirusTotal
     :return:
     """
-    # TODO:: get app id via "aapt dump badging flashlight.apk | grep package:\ name"
-    #  error when opswat quota is reached
     output_filename = '../contextual_out/contextual_features'
     try:
         if google_play_enabled:
@@ -204,9 +264,13 @@ def run_contextual(apk_file, app_id):
             add_results_to_output(apk_file, app_id, app_details, output_filename)
         else:
             empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
+            extend_app_details(None, empty_app_details, False)
             add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
     except ValueError:
         print('AppID not found in the Google Play store')
         empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
         extend_app_details(None, empty_app_details, False)
         add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
+
+
+# run_contextual('../apks/flashlight.apk', 'com.torch.lampe.flashlight')
