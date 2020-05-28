@@ -50,8 +50,9 @@ def dex2jar(package_name, apk):
 
     p = subprocess.Popen(d2j_args, stdout=subprocess.PIPE)
     log = p.communicate()[0]
-    logfile_path = "./fernflower_decompile/dex2jar_out/" + package_name + "_dex2jar.log"
-    write_to_file(logfile_path, log)
+    if log:
+        logfile_path = "./fernflower_decompile/dex2jar_out/" + package_name + "_dex2jar.log"
+        write_to_file(logfile_path, log)
 
 
 def fernflower_decompile(package_name, file_path):
@@ -63,9 +64,10 @@ def fernflower_decompile(package_name, file_path):
     print(file_path)
     fernflower_args = ["java", "-jar", fernflower_path, file_path, "./fernflower_decompile/fernflower_out"]
     p = subprocess.Popen(fernflower_args, stdout=subprocess.PIPE)
-    log = p.communicate()[0]
-    logfile_path = "./fernflower_decompile/fernflower_out/" + package_name + "_fernflower.log"
-    write_to_file(logfile_path, log)
+    if log:
+        log = p.communicate()[0]
+        logfile_path = "./fernflower_decompile/fernflower_out/" + package_name + "_fernflower.log"
+        write_to_file(logfile_path, log)
 
 
 def extract_features(file_path):

@@ -142,11 +142,14 @@ def read_headers(headerfile):
 # This function creates a dict with 'headers' as the keys
 # and if the header is present in 'data' then we denote it
 # with a 1. Otherwise a 0.
-def create_complete_dict(data, headers, package_name, frequency=False):
+def create_complete_dict(data_dict, headers, package_name, frequency=False):
     returndict = collections.OrderedDict()
     for header in headers:
-        if header in data:
-            returndict[header] = 1 if frequency is None else data[header]
+        if header in data_dict:
+            if frequency is False:
+                returndict[header] = 1
+            else:
+                returndict[header] = data_dict[header]
         else:
             returndict[header] = 0
     returndict["package-name"] = package_name
@@ -170,3 +173,6 @@ def alreadyProcessed(package_name, processed_apks):
 
 def get_processed_apks(processed_apks_file):
     return read_headers(processed_apks_file)
+
+
+

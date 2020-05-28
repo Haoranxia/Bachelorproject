@@ -279,6 +279,7 @@ def get_string_obfuscation(dx):
     return possible_str_obfs_cnt
 
 
+# Output formatting function
 def format_sourcecode_dict(obfuscations_dict, obfuscations_histogram, kotlin_dict, reflection_dict):
     sourcecode_features_dict = collections.OrderedDict()
     sourcecode_features_dict["Possible obfuscations"] = list(obfuscations_dict.items())

@@ -2,9 +2,11 @@ import sys
 import argparse
 import configparser
 import collections
+import logging 
+import time
+
 from os import listdir
 from os.path import isfile, join
-
 from androguard.core.bytecodes import dvm, apk
 from androguard.misc import AnalyzeAPK
 from androguard.decompiler.dad.graph import logger as glogger
@@ -19,14 +21,18 @@ from sourcecode_analysis import analyze_dex
 from manifest_analysis import analyze_manifest
 from contextual_feat_extraction import run_contextual
 
+# Logger
+main_logger = logging.getLogger(__name__)
+
 
 # CSV initialization (Relative path to this file)
 manifestcsv = "../static_out/manifest_features.csv"
 permissionscsv = "../static_out/permissions.csv"
-hardwarefeaturescsv = "../static_out/hardwarefeatures.csv"
-softwarefeaturescsv = "../static_out/softwarefeatures.csv"
+hardwarefeaturescsv = "../static_out/hardware_features.csv"
+softwarefeaturescsv = "../static_out/software_features.csv"
 sourcecodecsv = "../static_out/sourcecode_features.csv"
 opcodescsv = "../static_out/sourcecode_opcodes.csv"
+fernflowercsv = "../static_out/fernflower_features.csv"
 
 
 # Config file parsing
@@ -59,6 +65,7 @@ def main():
     # Argument parsing
     apk_files = parse_arguments()
 
+    start_time = time.time()
     for apk_file in apk_files:
         a = apk.APK(apk_file)
 
@@ -69,6 +76,7 @@ def main():
                 processed = True
         
         if not processed:
+            print("Processing apk: " + a.get_package() + " || file: " + apk_file)
             # Contextual features
             if enable_contextual:
                 print("Running contextual")
@@ -85,10 +93,9 @@ def main():
                 process_sourcecode(a)
             
             # Source code featuers using fernflower decompiler
-            # Disabled by default
             if enable_fernflower:
                 print("Running fernflower decompilation")
-                process_fernflower(a, apk_file)
+                process_fernflower(a.get_package(), apk_file)
 
             # Log processed APK
             if enable_progresstracker:
@@ -96,6 +103,11 @@ def main():
                 with open(processed_apks_file, 'a') as f:
                     f.write(a.get_package() + '\n')
                     f.close()
+
+            # Measure time elapsed for each apk
+            current_time = time.time()
+            print("Time spent on this apk: " + str(current_time - start_time))
+            start_time = current_time()
 
     print("Finished")
         
@@ -189,7 +201,7 @@ def process_sourcecode(a):
     sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
 
     write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
-    write_to_csv(sourcecodecsv, sourcecode_dict, header=list(sourcecode_dict.keys()))
+    write_to_csv(sourcecodecsv, sourcecode_dict)
 
 
 def format_sourcecode_dict(sourcecode_dict, package_name):
@@ -199,13 +211,16 @@ def format_sourcecode_dict(sourcecode_dict, package_name):
     return return_dict
  
 
-# TODO: to_csv for fernflower
-def process_fernflower(a, apk_file):
-    print(a.get_package())
-    imports_dict, compile_error_count, reflection_dict = run_fernflower_decompile(a.get_package(), apk_file)
-    print(imports_dict)
-    print(compile_error_count)
-    print(reflection_dict)
+def process_fernflower(package_name, apk_file):
+    imports_dict, compile_error_count, reflection_dict = run_fernflower_decompile(package_name, apk_file)
+
+    # Output formatting
+    fernflower_dict = collections.OrderedDict()
+    fernflower_dict["package-name"] = package_name
+    fernflower_dict["imports"] = list(imports_dict.items())
+    fernflower_dict["compile-error count"] = compile_error_count
+    fernflower_dict["reflection usage"] = list(reflection_dict.items())
+    write_to_csv(fernflowercsv, fernflower_dict)
     
 
 if __name__ == '__main__':

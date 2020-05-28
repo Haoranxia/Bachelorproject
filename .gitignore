@@ -31,3 +31,4 @@ settings.ini
 
 # Log files 
 **/*.log
+*.log
