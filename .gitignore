@@ -4,6 +4,7 @@
 apks/*
 static_out/*
 contextual_out/*
+non_dataset_apks/*
 
 # Pycharm
 .idea/
