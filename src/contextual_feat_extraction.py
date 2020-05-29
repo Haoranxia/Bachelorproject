@@ -74,7 +74,7 @@ def get_hybrid_analysis_positives(apk_file):
     try:
         sha_digest = calculate_sha256(apk_file)
         url = 'https://www.hybrid-analysis.com/api/v2/overview/' + sha_digest
-        response = requests.get(url=url, headers={'api-key': HA_API_KEY, 'user-agent': 'Falcon Sandbox'})
+        response = requests.get(url=url, headers={'api-key': HA_API_KEY, 'user-agent': 'Falcon Sandbox'}, timeout=4)
         response.raise_for_status()
         response_json = response.json()
         positives_list = []
@@ -104,7 +104,7 @@ def get_virus_total_positives(apk_file):
     try:
         url = 'https://www.virustotal.com/vtapi/v2/file/report'
         params = {'apikey': VT_API_KEY, 'resource': sha_digest}
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=4)
         if response.status_code == 204:
             return None, 'vt quota reached'
         response.raise_for_status()
@@ -117,6 +117,7 @@ def get_virus_total_positives(apk_file):
                 url = 'https://www.virustotal.com/vtapi/v2/file/scan/upload_url'
                 params = {'apikey': VT_API_KEY}
                 response = requests.get(url, params=params)
+                response.raise_for_status()
                 upload_url = response.json()['upload_url']
                 return request_vt_response(apk_file, upload_url, None, None)
             else:
@@ -165,7 +166,7 @@ def compile_vt_result(response):
 
 
 def get_app_stores_availability(app_id):
-    """
+    """ TODO:: GET REQUESTS NEED A TIME LIMIT!!!!
     gets the list of app store a given apk exits in
     :param app_id: application id
     :return:
@@ -179,7 +180,7 @@ def get_app_stores_availability(app_id):
                       ]
     for app_store, url in zip(app_stores, app_store_urls):
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=4)
             response.raise_for_status()
         except HTTPError:
             print(app_id + ' not found in ' + app_store + ' app store.')
@@ -266,7 +267,7 @@ def run_contextual(apk_file, app_id):
             empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
             extend_app_details(None, empty_app_details, False)
             add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
-    except ValueError:
+    except (ValueError, requests.exceptions.HTTPError):
         print('AppID not found in the Google Play store')
         empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
         extend_app_details(None, empty_app_details, False)

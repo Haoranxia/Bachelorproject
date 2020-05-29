@@ -33,9 +33,9 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
     else:
         # Modify existing file
         row_exists = False
-        temp_file = NamedTemporaryFile(delete=False, mode='w', newline='')
+        temp_file = NamedTemporaryFile(delete=False, mode='w', newline='', encoding='utf-8')
 
-        with open(file, 'r') as readf, temp_file:
+        with open(file, 'r', encoding='utf-8') as readf, temp_file:
             reader = csv.DictReader(readf, fieldnames=header)
             writer = csv.DictWriter(temp_file, fieldnames=header)
 
@@ -48,7 +48,7 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
 
             if not row_exists:
                 writer.writerow(file_dict)
-        
+
         shutil.move(temp_file.name, file)
 
 

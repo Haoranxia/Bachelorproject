@@ -107,7 +107,7 @@ def main():
             # Measure time elapsed for each apk
             current_time = time.time()
             print("Time spent on this apk: " + str(current_time - start_time))
-            start_time = current_time()
+            start_time = current_time
 
     print("Finished")
         

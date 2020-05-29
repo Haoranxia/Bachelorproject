@@ -1,2 +1,0 @@
-com.torch.lampe.flashlight
-com.whatsapp
