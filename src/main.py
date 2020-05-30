@@ -106,15 +106,10 @@ def main():
 
             # Measure time elapsed for each apk
             current_time = time.time()
-            print("Time spent on this apk:")
             print(current_time - start_time)
             start_time = current_time
             totaltime += current_time
 
-    print("Finished")
-        
-
-def init_args_parser():
     """
     initializes program argument parser
     either the folder containing APKs or the apk file itself is specified
