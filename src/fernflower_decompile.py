@@ -29,14 +29,12 @@ fernflower_log = "./fernflower_decompile/fernflower_out/fernflower.log"
 def decompile(package_name, apk):
     if d2j_path:
         # dex2jar
-        print("path to apk: ")
-        print(apk)
+        print("### Running d2j ###")
         dex2jar(package_name, apk)
 
     if fernflower_path:
         # jar (class) to jar (java)
-        print("path to dex2jar_out: ")
-        print(dex2jar_out)
+        print("### Running fernflower ###")
         fernflower_decompile(package_name, dex2jar_out)
 
 
@@ -79,6 +77,8 @@ def extract_features(file_path):
     Extract the wanted features from a jar file containing .java files
     :param file_path: Path to the jar containing .java files
     """
+
+    print("### Extracting fernflower features ###")
     # import regex: "import <anything>;"
     import_regex = r'import (.*?);'
     imports_dict = collections.OrderedDict()
@@ -89,6 +89,8 @@ def extract_features(file_path):
     reflection_regex = r"java.lang.reflect.*;"
     reflection_dict = collections.OrderedDict()
 
+
+
     # if folder: go into folder
     archive = zipfile.ZipFile(file_path, 'r')
     filenames = archive.namelist()
@@ -96,7 +98,6 @@ def extract_features(file_path):
         if filename.endswith(".java"):
             with archive.open(filename) as javafile:
                 src_string = javafile.read().decode("utf-8")
-
                 # Imports
                 imports = re.findall(import_regex, src_string)
                 for import_statement in imports:

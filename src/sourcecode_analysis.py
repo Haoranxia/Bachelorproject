@@ -6,6 +6,8 @@ import logging
 import configparser
 from androguard.core import bytecodes
 from androguard.core import androconf
+from androguard.core.analysis import analysis
+from androguard.core.bytecodes.dvm import ClassDefItem
 
 # Config file parsing
 config = configparser.ConfigParser()
@@ -124,6 +126,7 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
 
 
 # Function that checks for certain keywords in the sourcecode
+# TODO: Refactor function to allow the user to specify a pattern
 def get_keyword_usage(app):
     """
     Scan the source code for kotlin keyword/pattern usage
@@ -131,8 +134,10 @@ def get_keyword_usage(app):
     :return:
     """
 
+    # TODO: Make sure patterns are correct
+
     # Kotlin 
-    key_patterns_kotlin = [r'String v[\d]*_[\d] = new StringBuilder();$', r'\bkotlin\b', r'\b.kotlin\b', r'@NotNull']
+    key_patterns_kotlin = [r'new StringBuilder\(\)', r'\bkotlin\b', r'\b.kotlin\b', r'@NotNull']
     keyword_usages_kotlin = collections.OrderedDict()
     if enable_kotlin:
         keyword_usages_kotlin = {key_pattern: 0 for key_pattern in key_patterns_kotlin}
@@ -140,8 +145,9 @@ def get_keyword_usage(app):
         keyword_usages_kotlin = {key_pattern: None for key_pattern in key_patterns_kotlin}
 
     # Reflection
-    reflection_regex = r'java.lang.reflect.* '
+    reflection_regex = r'reflect\.(.*)'
     reflection_dict = collections.OrderedDict()
+
     start_time = time.time()
     if enable_reflection or enable_kotlin:
         try:
@@ -149,13 +155,15 @@ def get_keyword_usage(app):
                 for method in cl.get_methods():
                     m = method.get_method()
 
-                    # for m in cl.get_vm_class().get_methods(): (Iterate over methods in src instead of all of src)
+                    # We only care about code in methods. We check those for patterns
                     if m and isinstance(m, bytecodes.dvm.EncodedMethod):
                         src = m.get_source()
-                        # Kotlin keyword analysis
+                        print(src)
+                        #Kotlin keyword analysis
                         if enable_kotlin:
                             for key_pattern in key_patterns_kotlin:
-                                keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
+                                keyword_usages_kotlin[key_pattern] += len(re.findall(key_pattern, src))
+                                #keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
 
                         # Java reflection usage analysis
                         if enable_reflection:

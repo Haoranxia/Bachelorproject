@@ -64,7 +64,8 @@ def main():
     """
     # Argument parsing
     apk_files = parse_arguments()
-
+    start_time = time.time()
+    totaltime = start_time
     for apk_file in apk_files:
         a = apk.APK(apk_file)
 
@@ -102,6 +103,13 @@ def main():
                 with open(processed_apks_file, 'a') as f:
                     f.write(a.get_package() + '\n')
                     f.close()
+
+            # Measure time elapsed for each apk
+            current_time = time.time()
+            print("Time spent on this apk:")
+            print(current_time - start_time)
+            start_time = current_time
+            totaltime += current_time
 
     print("Finished")
         
@@ -172,7 +180,6 @@ def process_sourcecode(a):
 
     # Create the d (DalvikVMFormat object) for each dex, and dx (Analysis object) 
     # for all dex files for sourcecode analysis
-
     ds = [dvm.DalvikVMFormat(dex, using_api=a.get_target_sdk_version()) for dex in a.get_all_dex()]
     dx = Analysis()
 
@@ -201,7 +208,6 @@ def process_sourcecode(a):
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
 
     sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
-
     write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
     write_to_csv(sourcecodecsv, sourcecode_dict)
 
@@ -214,7 +220,10 @@ def format_sourcecode_dict(sourcecode_dict, package_name):
  
 
 def process_fernflower(package_name, apk_file):
+    start_time = time.time()
     imports_dict, compile_error_count, reflection_dict = run_fernflower_decompile(package_name, apk_file)
+    finish_time = time.time()
+    print("fernflower duration: " + str(finish_time - start_time))
 
     # Output formatting
     fernflower_dict = collections.OrderedDict()
