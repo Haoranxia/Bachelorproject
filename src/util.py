@@ -8,7 +8,7 @@ import collections
 from os import path, devnull
 from tempfile import NamedTemporaryFile
 
-
+# TODO: This function sometimes breaks when odd characters are encountered (also breaks csv)
 def write_to_csv(file, file_dict, key='package-name', header=None):
     """
     Writes the data in file_dict to a csv file where the fieldnames are the keys of the dictionary.
@@ -25,7 +25,7 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
 
     if not path.exists(file):
         # Create a new file
-        with open(file, 'w+', newline='') as f:
+        with open(file, 'w+', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=header)
             writer.writeheader()
             writer.writerow(file_dict)
@@ -33,21 +33,24 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
     else:
         # Modify existing file
         row_exists = False
-        temp_file = NamedTemporaryFile(delete=False, mode='w', newline='')
+        temp_file = NamedTemporaryFile(delete=False, mode='w', newline='', encoding='utf-8')
 
-        with open(file, 'r') as readf, temp_file:
+        with open(file, 'r', encoding='utf-8') as readf, temp_file:
             reader = csv.DictReader(readf, fieldnames=header)
             writer = csv.DictWriter(temp_file, fieldnames=header)
 
-            for row in reader:
-                if str(row[key]) == str(file_dict[key]):
-                    writer.writerow(file_dict)
-                    row_exists = True
-                else:
-                    writer.writerow(row)
+            try:
+                for row in reader:
+                    if str(row[key]) == str(file_dict[key]):
+                        writer.writerow(file_dict)
+                        row_exists = True
+                    else:
+                        writer.writerow(row)
 
-            if not row_exists:
-                writer.writerow(file_dict)
+                if not row_exists:
+                    writer.writerow(file_dict)
+            except Exception as e:
+                print("Error in writing to csv " + str(e))
         
         shutil.move(temp_file.name, file)
 
@@ -59,7 +62,7 @@ def delete_row(file, key):
     :param key: the key for a row to be deleted
     :return:
     """
-    with open(file, 'r') as read_file, NamedTemporaryFile(delete=False, mode='w', newline='') as temp_file:
+    with open(file, 'r', encoding='utf-8') as read_file, NamedTemporaryFile(delete=False, mode='w', newline='') as temp_file:
         writer = csv.writer(temp_file)
         for row in csv.reader(read_file):
             if row[4] != key:
