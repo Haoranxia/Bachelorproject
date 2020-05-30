@@ -65,7 +65,6 @@ def main():
     # Argument parsing
     apk_files = parse_arguments()
 
-    start_time = time.time()
     for apk_file in apk_files:
         a = apk.APK(apk_file)
 
@@ -74,7 +73,7 @@ def main():
         if enable_progresstracker:
             if alreadyProcessed(a.get_package(), processed_apks):
                 processed = True
-        
+
         if not processed:
             print("Processing apk: " + a.get_package() + " || file: " + apk_file)
             # Contextual features
@@ -91,8 +90,8 @@ def main():
             if enable_sourcecode:
                 print("Running sourcecode")
                 process_sourcecode(a)
-            
-            # Source code featuers using fernflower decompiler
+
+            # Source code features using fernflower decompiler
             if enable_fernflower:
                 print("Running fernflower decompilation")
                 process_fernflower(a.get_package(), apk_file)
@@ -103,11 +102,6 @@ def main():
                 with open(processed_apks_file, 'a') as f:
                     f.write(a.get_package() + '\n')
                     f.close()
-
-            # Measure time elapsed for each apk
-            current_time = time.time()
-            print("Time spent on this apk: " + str(current_time - start_time))
-            start_time = current_time
 
     print("Finished")
         
@@ -178,7 +172,8 @@ def process_sourcecode(a):
 
     # Create the d (DalvikVMFormat object) for each dex, and dx (Analysis object) 
     # for all dex files for sourcecode analysis
-    ds = [dvm.DalvikVMFormat(dex) for dex in a.get_all_dex()]
+
+    ds = [dvm.DalvikVMFormat(dex, using_api=a.get_target_sdk_version()) for dex in a.get_all_dex()]
     dx = Analysis()
 
     for d in ds:
@@ -190,14 +185,21 @@ def process_sourcecode(a):
         decompiler = DecompilerDAD(d, dx)
         d.set_decompiler(decompiler)
 
+    dx.create_xref()
+
+    start_time = time.time()
+
     opcodes_dict, sourcecode_dict = analyze_dex(ds, dx)
     glogger.enabled = True
     dlogger.enabled = True
 
+    current_time = time.time()
+    print("Time spent on this apk: " + str(current_time - start_time))
+
     # Output formatting
     opcodes_header = get_full_header("../resources/opcodes.txt")
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
-    
+
     sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
 
     write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)

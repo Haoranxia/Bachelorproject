@@ -23,7 +23,7 @@ OPSWAT_THREAT_CODE = 1  # opswat designated code for threats in API response (sc
 
 
 def reformat_dictionary(app_details, app_id):
-    """
+    """ TODO:: convert the data into strings to avoid switching of data types within a column
     format the order of dictionary to have package id (package-name) as the first column and
     insert escaping for new lines
     :param app_details: a dictionary that contains the contextual features
@@ -90,8 +90,6 @@ def get_hybrid_analysis_positives(apk_file):
         return None, None, None
 
 
-# TODO::
-#  5. give protobuff another try?
 def get_virus_total_positives(apk_file):
     """
     Sends request to get a report from TotalVirus by sending sha256 hash value of an apk file
@@ -146,6 +144,7 @@ def request_vt_response(apk_file, upload_url, params, url):
     else:
         response = requests.post(upload_url, files=files)
     response.raise_for_status()
+    print('Finished uploading source apk.')
     if 'scans' not in response.json():  # if request is queued
         return None, 'Request queued. Rerun to get report'
     else:
@@ -166,7 +165,7 @@ def compile_vt_result(response):
 
 
 def get_app_stores_availability(app_id):
-    """ TODO:: GET REQUESTS NEED A TIME LIMIT!!!!
+    """
     gets the list of app store a given apk exits in
     :param app_id: application id
     :return:

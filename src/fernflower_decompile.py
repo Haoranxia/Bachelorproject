@@ -6,6 +6,7 @@
 from os import path, devnull 
 import platform, subprocess, zipfile, configparser, re
 import collections
+import time
 
 isWindows = False
 if platform.system() == 'Windows':
@@ -22,6 +23,7 @@ fernflower_out = "./fernflower_decompile/fernflower_out/dex2jar_out.jar"
 
 dex2jar_log = "./fernflower_decompile/dex2jar_out/dex2jar.log"
 fernflower_log = "./fernflower_decompile/fernflower_out/fernflower.log"
+
 
 # Pipeline: apk -> dex2jar -> jar with classes -> fernflower -> jar with javacode
 def decompile(package_name, apk):
@@ -41,6 +43,7 @@ def decompile(package_name, apk):
 def dex2jar(package_name, apk):
     """
     Transform a given apk's dex files to a jar containing .class files
+    :param package_name:
     :param apk: Path to the apk to be transformed
     """
     if isWindows:
@@ -58,14 +61,15 @@ def dex2jar(package_name, apk):
 def fernflower_decompile(package_name, file_path):
     """
     Decompile the given jar file (containing .class files) to a jar file containing .java files
+    :param package_name:
     :param file_path: path to the jar file containing .class files
     """
     print("decompiling following jar: ")
     print(file_path)
     fernflower_args = ["java", "-jar", fernflower_path, file_path, "./fernflower_decompile/fernflower_out"]
     p = subprocess.Popen(fernflower_args, stdout=subprocess.PIPE)
+    log = p.communicate()[0]
     if log:
-        log = p.communicate()[0]
         logfile_path = "./fernflower_decompile/fernflower_out/" + package_name + "_fernflower.log"
         write_to_file(logfile_path, log)
 
@@ -104,7 +108,7 @@ def extract_features(file_path):
                 # Failed decompilations
                 failed_decompilation_count += len(re.findall(decompilation_failure_regex, src_string))
 
-                # Counting reflection occurences
+                # Counting reflection occurrences
                 reflections = re.findall(reflection_regex, src_string)
                 for reflection in reflections:
                     if reflection not in reflection_dict:
@@ -122,7 +126,11 @@ def extract_features(file_path):
 # fernflower_path = D:\Bachelor_project\Bachelorproject\src\fernflower_decompile\tools\fernflower.jar
 
 def run_fernflower_decompile(package_name, file_path):
+    start_time = time.time()
+
     decompile(package_name, file_path)
+    current_time = time.time()
+    print("Time spent on fern flower decompiler: " + str(current_time - start_time))
     imports_dict, decompile_error_count, reflection_dict = extract_features(fernflower_out)
     return imports_dict, decompile_error_count, reflection_dict
 
