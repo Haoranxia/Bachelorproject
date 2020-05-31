@@ -69,13 +69,13 @@ def main():
     totaltime = start_time
     for apk_file in apk_files:
         a = apk.APK(apk_file)
-        #a, d, dx = AnalyzeAPK()
+
         # If the progresstracker is enabled we do not want to process any already processed apks
         processed = False
         if enable_progresstracker:
             if alreadyProcessed(a.get_package(), processed_apks):
                 processed = True
-        
+
         if not processed:
             main_logger.info("Processing apk: " + a.get_package() + " || file: " + apk_file)
             # Contextual features
@@ -92,8 +92,8 @@ def main():
             if enable_sourcecode:
                 main_logger.info("Running sourcecode")
                 process_sourcecode(a)
-            
-            # Source code featuers using fernflower decompiler
+
+            # Source code features using fernflower decompiler
             if enable_fernflower:
                 main_logger.info("Running fernflower decompilation")
                 process_fernflower(a.get_package(), apk_file)
@@ -107,11 +107,11 @@ def main():
 
             # Measure time elapsed for each apk
             current_time = time.time()
-            main_logger.info("Time spent on this apk:" + str(current_time - start_time))
+            main_logger.info("Total time spent on this apk:" + str(current_time - start_time))
             start_time = current_time
             totaltime += current_time
 
-    main_logger.info("Finished")
+    main_logger.info("Finished analysis of apks")
     main_logger.info("Total executiontime: " + str(totaltime))
         
 
@@ -151,17 +151,33 @@ def parse_arguments():
 
 # Helper functions
 def process_manifest(a):
+    # Main manifest features
     manifest_dict = analyze_manifest(a)
-    write_to_csv(manifestcsv, manifest_dict)
+    try:
+        write_to_csv(manifestcsv, manifest_dict)
+    except Exception:
+        main_logger.error("Error writing manifest analysis output to csv || apk: " + a.get_package())
 
+    # Permissions
     permissions_header, permissions_dict = get_feature(manifest_dict, "permissions", "../resources/permissions.txt")
-    write_to_csv(permissionscsv, permissions_dict, header=permissions_header)
+    try:
+        write_to_csv(permissionscsv, permissions_dict, header=permissions_header)
+    except Exception:
+         main_logger.error("Error writing permissions output to csv || apk: " + a.get_package())
 
+    # Hardware features
     hardware_header, hardware_dict = get_feature(manifest_dict, "features", "../resources/hardware_features.txt")
-    write_to_csv(hardwarefeaturescsv, hardware_dict, header=hardware_header)
+    try:
+        write_to_csv(hardwarefeaturescsv, hardware_dict, header=hardware_header)
+    except Exception:
+        main_logger.error("Error writing hardware features to csv || apk: " + a.get_package())
 
+    # Software features
     software_header, software_dict = get_feature(manifest_dict, "features", "../resources/software_features.txt")
-    write_to_csv(softwarefeaturescsv, software_dict, header=software_header)
+    try:
+        write_to_csv(softwarefeaturescsv, software_dict, header=software_header)
+    except Exception:
+        main_logger.error("Error writing software features to csv || apk: " + a.get_package())
 
 
 def get_feature(manifest_dict, dictkey, headerfile):
@@ -195,17 +211,30 @@ def process_sourcecode(a):
 
     dx.create_xref()
 
+    start_time = time.time()
+
     opcodes_dict, sourcecode_dict = analyze_dex(ds, dx)
     glogger.enabled = True
     dlogger.enabled = True
 
+    current_time = time.time()
+    main_logger.info("Apk: " + a.get_package() + " || Time spent on analysis: " + str(current_time - start_time))
+
     # Output formatting
     opcodes_header = get_full_header("../resources/opcodes.txt")
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
-    
+
     sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
-    write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
-    write_to_csv(sourcecodecsv, sourcecode_dict)
+
+    try:
+        write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
+    except Exception:
+        main_logger.error("Error in writing opcode analysis output to csv || apk: " + a.get_package())
+    
+    try:
+        write_to_csv(sourcecodecsv, sourcecode_dict)
+    except Exception:
+        main_logger.error("Error in writing sourcecode analysis output to csv || apk: " + a.get_package())
 
 
 def format_sourcecode_dict(sourcecode_dict, package_name):
@@ -227,7 +256,11 @@ def process_fernflower(package_name, apk_file):
     fernflower_dict["imports"] = list(imports_dict.items())
     fernflower_dict["compile-error count"] = compile_error_count
     fernflower_dict["reflection usage"] = list(reflection_dict.items())
-    write_to_csv(fernflowercsv, fernflower_dict)
+
+    try:
+        write_to_csv(fernflowercsv, fernflower_dict)
+    except Exception:
+        main_logger.error("Error in writing fernflower analysis output to csv || apk " + package_name)
     
 
 if __name__ == '__main__':

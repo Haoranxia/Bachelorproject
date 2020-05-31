@@ -50,7 +50,7 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
                 if not row_exists:
                     writer.writerow(file_dict)
             except Exception as e:
-                print("Error in writing to csv " + str(e))
+                raise(e)
         
         shutil.move(temp_file.name, file)
 
@@ -130,14 +130,14 @@ def calculate_sha256(filepath):
 
 
 # This function initializes a csv file containing 
-# all the permissions as the header (column headers)
+# all the values in the header parameter as the header (column headers)
 def initialize_csv(file, header):
     with open(file, 'w+', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(header)
 
 
-# This function reads a txt file and assumes each line is a header
+# This function reads a txt file and assumes each line is a value for the header of a column
 def read_headers(headerfile):
     return open(headerfile, 'r').read().split('\n')
 

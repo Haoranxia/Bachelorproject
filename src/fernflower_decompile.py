@@ -1,10 +1,18 @@
 from os import path, devnull 
 import platform, subprocess, zipfile, configparser, re
 import collections
+import time
+import logging
 
 isWindows = False
 if platform.system() == 'Windows':
     isWindows = True
+
+
+# Logger
+fernflower_logger = logging.getLogger()
+fernflower_logger.setLevel(logging.INFO)
+
 
 # Paths
 config = configparser.ConfigParser()
@@ -18,6 +26,7 @@ fernflower_out = "./fernflower_decompile/fernflower_out/dex2jar_out.jar"
 dex2jar_log = "./fernflower_decompile/dex2jar_out/dex2jar.log"
 fernflower_log = "./fernflower_decompile/fernflower_out/fernflower.log"
 
+
 # Pipeline: apk -> dex2jar -> jar with classes -> fernflower -> jar with javacode
 def decompile(package_name, apk):
     """
@@ -28,26 +37,30 @@ def decompile(package_name, apk):
     if d2j_path:
         # dex2jar
         try:
-            print("### Running d2j ###")
+            fernflower_logger.info("### Running d2j ###")
             dex2jar(package_name, apk)
         except FileNotFoundError:
-            print("Cant find file: " + apk)
+            fernflower_logger.error("Cant find dex2jar or apk file")
+        except Exception:
+            fernflower_logger.error("Problem with dex2jar decompilation")
 
     if fernflower_path:
         # jar (class) to jar (java)
         try:
-            print("### Running fernflower ###")
+            fernflower_logger.info("### Running fernflower ###")
             fernflower_decompile(package_name, dex2jar_out)
         except FileNotFoundError:
-            print("Cant find file: " + apk)
+            fernflower_logger.error("Cant find fernflower or apk file")
+        except Exception:
+            fernflower_logger.error("Problem with fernflower decompilation")
 
 
 def dex2jar(package_name, apk):
     """
     Transform a given apk's dex files to a jar containing .class files
+    :param package_name:
     :param apk: Path to the apk to be transformed
     """
-    print(apk)
     if isWindows:
         d2j_args = [d2j_path, "-o", dex2jar_out, "--force", apk]
     else:
@@ -63,10 +76,9 @@ def dex2jar(package_name, apk):
 def fernflower_decompile(package_name, file_path):
     """
     Decompile the given jar file (containing .class files) to a jar file containing .java files
+    :param package_name:
     :param file_path: path to the jar file containing .class files
     """
-    print("decompiling following jar: ")
-    print(file_path)
     fernflower_args = ["java", "-jar", fernflower_path, file_path, "./fernflower_decompile/fernflower_out"]
     p = subprocess.Popen(fernflower_args, stdout=subprocess.PIPE)
     log = p.communicate()[0]
@@ -80,8 +92,6 @@ def extract_features(file_path):
     Extract the wanted features from a jar file containing .java files
     :param file_path: Path to the jar containing .java files
     """
-
-    print("### Extracting fernflower features ###")
     import_regex = r'import (.*?);'
     imports_dict = collections.OrderedDict()
 
@@ -117,8 +127,14 @@ def extract_features(file_path):
 # fernflower_path = D:\Bachelor_project\Bachelorproject\src\fernflower_decompile\tools\fernflower.jar
 
 def run_fernflower_decompile(package_name, file_path):
+    start_time = time.time()
     decompile(package_name, file_path)
+    fernflower_logger.info("Time spent on decompiling: " + str(time.time() - start_time))
+
+    fernflower_logger.info("### Extracting features from decompiled code ###")
+    start_time = time.time()
     imports_dict, decompile_error_count, reflection_dict = extract_features(fernflower_out)
+    fernflower_logger.info("TIme spent on extractinf features: " + str(time.time() - start_time))
     return imports_dict, decompile_error_count, reflection_dict
 
 

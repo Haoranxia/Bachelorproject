@@ -1,9 +1,9 @@
 import re
 import math
+import time
 import collections
 import logging
 import configparser
-import time
 from androguard.core import bytecodes
 from androguard.core import androconf
 from androguard.core.analysis import analysis
@@ -18,12 +18,13 @@ enable_obfuscation = (config["Sourcecode_Settings"]["Obfuscation"] == "yes")
 enable_kotlin = (config["Sourcecode_Settings"]["Kotlin"] == "yes")
 enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
 
+
 # TODO: Look for common obfuscation techniques and pattern match for that
 # TODO: Look for more kotlin code patterns and pattern match for that
 def analyze_dex(ds, dx):
     """
     analyze Dex file
-    :param d: list of dalvikVMformat objects
+    :param ds: list of dalvikVMformat objects
     :param dx: Analysis object
     :return:
     """
@@ -38,19 +39,28 @@ def analyze_dex(ds, dx):
     for dex in ds:
         if enable_opcodes:
             try:
+                start_time = time.time()
                 opcodes_dict = get_opcodes(dex, opcodes_dict)
+                current_time = time.time()
+                print("Time spent on opcodes: " + str(current_time - start_time))
             except Exception as e:
                 print("Opcodes extraction failed" + str(e))
 
         if enable_obfuscation:
             try:
+                start_time = time.time()
                 obfuscation_score, obfuscations_dict, count_histogram = get_obfuscation_naming_total(dex, obfuscations_dict)
+                current_time = time.time()
+                print("Time spent on obfuscation: " + str(current_time - start_time))
             except Exception as e:
                 print("Obfuscation extraction failed" + str(e))
 
     # Use dx object
     try:
+        start_time = time.time()
         kotlin_dict, reflection_dict = get_keyword_usage(dx)
+        current_time = time.time()
+        print("Time spent on keyword usage: " + str(current_time - start_time))
     except Exception as e:
         print("Koltin/Reflection extraction failed" + str(e))
 
@@ -124,7 +134,7 @@ def get_keyword_usage(app):
     :param app: app containing the source code
     :return:
     """
-    
+
     # TODO: Make sure patterns are correct
 
     # Kotlin 
@@ -140,32 +150,28 @@ def get_keyword_usage(app):
     reflection_dict = collections.OrderedDict()
 
     if enable_reflection or enable_kotlin:
-        try:
-            for cl in app.get_classes():
-                for method in cl.get_methods():
-                    m = method.get_method()
+        for cl in app.get_classes():
+            for method in cl.get_methods():
+                m = method.get_method()
 
-                    # We only care about code in methods. We check those for patterns
-                    if m and isinstance(m, bytecodes.dvm.EncodedMethod):
-                        src = m.get_source()
+                # We only care about code in methods. We check those for patterns
+                if m and isinstance(m, bytecodes.dvm.EncodedMethod):
+                    src = m.get_source()
 
-                        #Kotlin keyword analysis
-                        if enable_kotlin:
-                            for key_pattern in key_patterns_kotlin:
-                                keyword_usages_kotlin[key_pattern] += len(re.findall(key_pattern, src))
-                                #keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
+                    #Kotlin keyword analysis
+                    if enable_kotlin:
+                        for key_pattern in key_patterns_kotlin:
+                            keyword_usages_kotlin[key_pattern] += len(re.findall(key_pattern, src))
+                            #keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
 
-                        # Java reflection usage analysis
-                        if enable_reflection:
-                            reflections = re.findall(reflection_regex, src)
-                            for reflection in reflections:
-                                if reflection not in reflection_dict:
-                                    reflection_dict[reflection] = 1
-                                else:
-                                    reflection_dict[reflection] += 1
-
-        except Exception as e:
-            raise(e)
+                    # Java reflection usage analysis
+                    if enable_reflection:
+                        reflections = re.findall(reflection_regex, src)
+                        for reflection in reflections:
+                            if reflection not in reflection_dict:
+                                reflection_dict[reflection] = 1
+                            else:
+                                reflection_dict[reflection] += 1
             
     return keyword_usages_kotlin, reflection_dict
 
@@ -270,7 +276,7 @@ def get_string_obfuscation(dx):
     :param dx: Analysis object
     :return: a count of strings that have possible string obfuscation
     """
-    code_sentinels = ['{', ';', 'void', '[', 'if (', 'while(', 'for(']  # <- TODO:: MAKE THESE REGEX
+    code_sentinels = ['{', ';', 'void', '[', 'if (', 'while(', 'for(']
     possible_str_obfs_cnt = 0
     break_flag = False
     for string in dx.strings.keys():
@@ -281,7 +287,7 @@ def get_string_obfuscation(dx):
         for sentinel in code_sentinels:
             if break_flag:
                 break_flag = False
-                break
+                break+
             for _, method in dx.strings[string].get_xref_from():
                 # excluding toString() methods to minimize false detection of string encrypted code
                 if sentinel in string and method.name != "toString" or has_uncommon_chars(string):
@@ -290,6 +296,7 @@ def get_string_obfuscation(dx):
                     possible_str_obfs_cnt += 1
                     break_flag = True
                     break
+
     return possible_str_obfs_cnt
 
 
