@@ -1,8 +1,3 @@
-# Convert dex to jar 
-# Look up how to execute programs with arguments
-# Dex2jar command format: d2j-dex2jar [options] <file0> 
-# d2j-dex2jar -o <../static_out/out.jar> <../apks/1.apk>
-
 from os import path, devnull 
 import platform, subprocess, zipfile, configparser, re
 import collections
@@ -25,15 +20,26 @@ fernflower_log = "./fernflower_decompile/fernflower_out/fernflower.log"
 
 # Pipeline: apk -> dex2jar -> jar with classes -> fernflower -> jar with javacode
 def decompile(package_name, apk):
+    """
+    This is the function that handles the pipeline for decompiling an apks dex files into java sourcecode
+    :param package_name: the package name/package id of the apk
+    :param apk: the path to the apk to be decompiled
+    """
     if d2j_path:
         # dex2jar
-        print("### Running d2j ###")
-        dex2jar(package_name, apk)
+        try:
+            print("### Running d2j ###")
+            dex2jar(package_name, apk)
+        except FileNotFoundError:
+            print("Cant find file: " + apk)
 
     if fernflower_path:
         # jar (class) to jar (java)
-        print("### Running fernflower ###")
-        fernflower_decompile(package_name, dex2jar_out)
+        try:
+            print("### Running fernflower ###")
+            fernflower_decompile(package_name, dex2jar_out)
+        except FileNotFoundError:
+            print("Cant find file: " + apk)
 
 
 def dex2jar(package_name, apk):
@@ -41,6 +47,7 @@ def dex2jar(package_name, apk):
     Transform a given apk's dex files to a jar containing .class files
     :param apk: Path to the apk to be transformed
     """
+    print(apk)
     if isWindows:
         d2j_args = [d2j_path, "-o", dex2jar_out, "--force", apk]
     else:
@@ -75,17 +82,15 @@ def extract_features(file_path):
     """
 
     print("### Extracting fernflower features ###")
-    # import regex: "import <anything>;"
     import_regex = r'import (.*?);'
     imports_dict = collections.OrderedDict()
 
+    # Fernflower displays this 'pattern' in methods that cant be decompiled. (src: see decompiled fernflower code)
     decompilation_failure_regex = r"// $FF: Couldn't be decompiled"
     failed_decompilation_count = 0
 
     reflection_regex = r"java.lang.reflect.*;"
     reflection_dict = collections.OrderedDict()
-
-
 
     # if folder: go into folder
     archive = zipfile.ZipFile(file_path, 'r')
@@ -94,26 +99,15 @@ def extract_features(file_path):
         if filename.endswith(".java"):
             with archive.open(filename) as javafile:
                 src_string = javafile.read().decode("utf-8")
+          
                 # Imports
-                imports = re.findall(import_regex, src_string)
-                for import_statement in imports:
-                    if import_statement not in imports_dict:
-                        imports_dict[import_statement] = 1
-                    else:
-                        imports_dict[import_statement] += 1
+                imports_dict = find_pattern(imports_dict, import_regex, src_string)
 
                 # Failed decompilations
                 failed_decompilation_count += len(re.findall(decompilation_failure_regex, src_string))
 
                 # Counting reflection occurences
-                reflections = re.findall(reflection_regex, src_string)
-                for reflection in reflections:
-                    if reflection not in reflection_dict:
-                        reflection_dict[reflection] = 1
-                    else:
-                        reflection_dict[reflection] += 1
-
-                # TODO: Add more patterns/features to look for
+                reflection_dict = find_pattern(reflection_dict, reflection_regex, src_string)
         
     return imports_dict, failed_decompilation_count, reflection_dict
 
@@ -133,6 +127,16 @@ def write_to_file(filepath, data):
     with open(filepath, 'wb+') as f:
         f.write(data)
         f.close()
+
+
+def find_pattern(pattern_dict, pattern, src):
+    pattern_usage = re.findall(pattern, src)
+    for pattern in pattern_usage:
+        if pattern not in pattern_dict:
+            pattern_dict[pattern] = 1
+        else:
+            pattern_dict[pattern] += 1
+    return pattern_dict
 
 
 

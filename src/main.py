@@ -22,7 +22,8 @@ from manifest_analysis import analyze_manifest
 from contextual_feat_extraction import run_contextual
 
 # Logger
-main_logger = logging.getLogger(__name__)
+main_logger = logging.getLogger()
+main_logger.setLevel(logging.INFO)
 
 
 # CSV initialization (Relative path to this file)
@@ -76,42 +77,42 @@ def main():
                 processed = True
         
         if not processed:
-            print("Processing apk: " + a.get_package() + " || file: " + apk_file)
+            main_logger.info("Processing apk: " + a.get_package() + " || file: " + apk_file)
             # Contextual features
             if enable_contextual:
-                print("Running contextual")
+                main_logger.info("Running contextual")
                 run_contextual(apk_file=apk_file, app_id=a.get_package())
 
             # Manifest features
             if enable_manifest:
-                print("Running manifest")
+                main_logger.info("Running manifest")
                 process_manifest(a)
 
             # Source code features
             if enable_sourcecode:
-                print("Running sourcecode")
+                main_logger.info("Running sourcecode")
                 process_sourcecode(a)
             
             # Source code featuers using fernflower decompiler
             if enable_fernflower:
-                print("Running fernflower decompilation")
+                main_logger.info("Running fernflower decompilation")
                 process_fernflower(a.get_package(), apk_file)
 
             # Log processed APK
             if enable_progresstracker:
-                print("Updating progresstracker file")
+                main_logger.info("Updating progresstracker file")
                 with open(processed_apks_file, 'a') as f:
                     f.write(a.get_package() + '\n')
                     f.close()
 
             # Measure time elapsed for each apk
             current_time = time.time()
-            print("Time spent on this apk:")
-            print(current_time - start_time)
+            main_logger.info("Time spent on this apk:" + str(current_time - start_time))
             start_time = current_time
             totaltime += current_time
 
-    print("Finished")
+    main_logger.info("Finished")
+    main_logger.info("Total executiontime: " + str(totaltime))
         
 
 def init_args_parser():
@@ -218,7 +219,7 @@ def process_fernflower(package_name, apk_file):
     start_time = time.time()
     imports_dict, compile_error_count, reflection_dict = run_fernflower_decompile(package_name, apk_file)
     finish_time = time.time()
-    print("fernflower duration: " + str(finish_time - start_time))
+    main_logger.info("fernflower duration: " + str(finish_time - start_time))
 
     # Output formatting
     fernflower_dict = collections.OrderedDict()

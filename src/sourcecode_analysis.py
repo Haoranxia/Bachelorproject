@@ -112,6 +112,7 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
             count_histogram = update_count_histogram(method.get_name(), count_histogram)
             add_to_obfuscation_histogram(method.get_name(), obfuscations_dict)
             obfuscation_score += obfuscation_evaluator(method.get_name())
+
     return (obfuscation_score / total_evaluated), obfuscations_dict, count_histogram
 
 
@@ -138,7 +139,6 @@ def get_keyword_usage(app):
     reflection_regex = r'reflect\.(.*)'
     reflection_dict = collections.OrderedDict()
 
-    start_time = time.time()
     if enable_reflection or enable_kotlin:
         try:
             for cl in app.get_classes():
@@ -148,7 +148,7 @@ def get_keyword_usage(app):
                     # We only care about code in methods. We check those for patterns
                     if m and isinstance(m, bytecodes.dvm.EncodedMethod):
                         src = m.get_source()
-                        print(src)
+
                         #Kotlin keyword analysis
                         if enable_kotlin:
                             for key_pattern in key_patterns_kotlin:
@@ -166,9 +166,7 @@ def get_keyword_usage(app):
 
         except Exception as e:
             raise(e)
-
-    finish_time = time.time()
-    print("src analysis took: " + str(finish_time - start_time))
+            
     return keyword_usages_kotlin, reflection_dict
 
 
