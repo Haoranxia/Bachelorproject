@@ -134,7 +134,7 @@ def run_fernflower_decompile(package_name, file_path):
     fernflower_logger.info("### Extracting features from decompiled code ###")
     start_time = time.time()
     imports_dict, decompile_error_count, reflection_dict = extract_features(fernflower_out)
-    fernflower_logger.info("TIme spent on extractinf features: " + str(time.time() - start_time))
+    fernflower_logger.info("TIme spent on extracting features: " + str(time.time() - start_time))
     return imports_dict, decompile_error_count, reflection_dict
 
 

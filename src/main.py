@@ -43,7 +43,6 @@ config.read("../settings.ini")
 enable_contextual = (config["Settings"]["Contextual"] == "yes")
 enable_manifest = (config["Settings"]["Manifest"] == "yes")
 enable_sourcecode = (config["Settings"]["Sourcecode"] == "yes")
-enable_logger = (config["Misc"]["Uselogger"] == "yes")
 enable_progresstracker = (config["Misc"]["Progresstracker"] == "yes")
 enable_fernflower = (config["Settings"]["Fernflower"] == "yes")
 
@@ -54,6 +53,15 @@ processed_apks_file = "../resources/processedapks.txt"
 if enable_progresstracker:
     processed_apks = get_processed_apks(processed_apks_file)
 
+# TODOLIST
+# TODO: Check kotlin patterns
+# TODO: Perhaps change logger output
+# TODO: Test benign dataset
+# TODO: Test malware dataset
+# TODO: Compare results between benign/malware
+# TODO: Obtain statistics from output (benign/malware)
+# TODO: Compare results between fernflower/DAD
+# TODO: Possibly write classification algorithms for our obtained results
 
 def main():
     # Argument parsing
@@ -105,7 +113,7 @@ def main():
             process_time = current_time - start_time
             start_time = current_time
             totaltime += process_time
-            main_logger.info("Total time spent on this apk:" + str(process_time) + "\n")
+            main_logger.info("Total time spent on this apk: " + str(process_time) + "\n")
         else:
             main_logger.info("apk already processed... skipping...")
 
