@@ -24,6 +24,7 @@ from contextual_feat_extraction import run_contextual
 # Logger
 main_logger = logging.getLogger()
 main_logger.setLevel(logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 # CSV initialization (Relative path to this file)
@@ -153,31 +154,19 @@ def parse_arguments():
 def process_manifest(a):
     # Main manifest features
     manifest_dict = analyze_manifest(a)
-    try:
-        write_to_csv(manifestcsv, manifest_dict)
-    except Exception:
-        main_logger.error("Error writing manifest analysis output to csv || apk: " + a.get_package())
+    write_to_csv(manifestcsv, manifest_dict)
 
     # Permissions
     permissions_header, permissions_dict = get_feature(manifest_dict, "permissions", "../resources/permissions.txt")
-    try:
-        write_to_csv(permissionscsv, permissions_dict, header=permissions_header)
-    except Exception:
-         main_logger.error("Error writing permissions output to csv || apk: " + a.get_package())
+    write_to_csv(permissionscsv, permissions_dict, header=permissions_header)
 
     # Hardware features
     hardware_header, hardware_dict = get_feature(manifest_dict, "features", "../resources/hardware_features.txt")
-    try:
-        write_to_csv(hardwarefeaturescsv, hardware_dict, header=hardware_header)
-    except Exception:
-        main_logger.error("Error writing hardware features to csv || apk: " + a.get_package())
+    write_to_csv(hardwarefeaturescsv, hardware_dict, header=hardware_header)
 
     # Software features
     software_header, software_dict = get_feature(manifest_dict, "features", "../resources/software_features.txt")
-    try:
-        write_to_csv(softwarefeaturescsv, software_dict, header=software_header)
-    except Exception:
-        main_logger.error("Error writing software features to csv || apk: " + a.get_package())
+    write_to_csv(softwarefeaturescsv, software_dict, header=software_header)
 
 
 def get_feature(manifest_dict, dictkey, headerfile):
@@ -225,16 +214,8 @@ def process_sourcecode(a):
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
 
     sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
-
-    try:
-        write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
-    except Exception:
-        main_logger.error("Error in writing opcode analysis output to csv || apk: " + a.get_package())
-    
-    try:
-        write_to_csv(sourcecodecsv, sourcecode_dict)
-    except Exception:
-        main_logger.error("Error in writing sourcecode analysis output to csv || apk: " + a.get_package())
+    write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
+    write_to_csv(sourcecodecsv, sourcecode_dict)
 
 
 def format_sourcecode_dict(sourcecode_dict, package_name):
