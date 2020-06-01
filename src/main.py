@@ -24,10 +24,10 @@ from contextual_feat_extraction import run_contextual
 # Logger
 main_logger = logging.getLogger()
 main_logger.setLevel(logging.INFO)
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(filename='main.log', level=logging.INFO)
 
 
-# CSV initialization (Relative path to this file)
+# CSV output files (Relative path to this file)
 manifestcsv = "../static_out/manifest_features.csv"
 permissionscsv = "../static_out/permissions.csv"
 hardwarefeaturescsv = "../static_out/hardware_features.csv"
@@ -50,24 +50,18 @@ enable_fernflower = (config["Settings"]["Fernflower"] == "yes")
 
 # Progress tracking stuff
 processed_apks = None
-processed_apks_file = "./processedapks.txt"
+processed_apks_file = "../resources/processedapks.txt"
 if enable_progresstracker:
     processed_apks = get_processed_apks(processed_apks_file)
 
 
 def main():
-    """
-    a : APK object; We can obtain all information about the APK here (manifest file stuff)
-    d : array of DalvikVMFormat objects; Corresponds to the DEX file. We can obtain classes, methods, strings etc.
-        from here. The array contains a d object for each dex file found in the apk
-    dx : Analysis object; Contains special classes, which link information about classes.dex and can handle multiple
-        dex files meaning that it contains information about all the dex files in the apk
-    :return:
-    """
     # Argument parsing
     apk_files = parse_arguments()
+
     start_time = time.time()
-    totaltime = start_time
+    totaltime = 0
+
     for apk_file in apk_files:
         a = apk.APK(apk_file)
 
@@ -77,8 +71,8 @@ def main():
             if alreadyProcessed(a.get_package(), processed_apks):
                 processed = True
 
+        main_logger.info("Processing apk: " + a.get_package() + " || file: " + apk_file)
         if not processed:
-            main_logger.info("Processing apk: " + a.get_package() + " || file: " + apk_file)
             # Contextual features
             if enable_contextual:
                 main_logger.info("Running contextual")
@@ -108,9 +102,12 @@ def main():
 
             # Measure time elapsed for each apk
             current_time = time.time()
-            main_logger.info("Total time spent on this apk:" + str(current_time - start_time))
+            process_time = current_time - start_time
             start_time = current_time
-            totaltime += current_time
+            totaltime += process_time
+            main_logger.info("Total time spent on this apk:" + str(process_time) + "\n")
+        else:
+            main_logger.info("apk already processed... skipping...")
 
     main_logger.info("Finished analysis of apks")
     main_logger.info("Total executiontime: " + str(totaltime))
@@ -152,6 +149,11 @@ def parse_arguments():
 
 # Helper functions
 def process_manifest(a):
+    """
+    This function processes the extracted information from the manifest file
+    :param a: Analysis object from androguard
+    :return:
+    """
     # Main manifest features
     manifest_dict = analyze_manifest(a)
     write_to_csv(manifestcsv, manifest_dict)
@@ -169,14 +171,12 @@ def process_manifest(a):
     write_to_csv(softwarefeaturescsv, software_dict, header=software_header)
 
 
-def get_feature(manifest_dict, dictkey, headerfile):
-    feature = manifest_dict[dictkey]
-    feature_header = get_full_header(headerfile)
-    feature_dict = create_complete_dict(feature, feature_header, manifest_dict["package-name"])
-    return feature_header, feature_dict
-
-
 def process_sourcecode(a):
+    """
+    This function constructs the relevant objects for sourcecode analysis using androguard.
+    After construction we extract the features we want and process them accordingly.
+    :param a: Analysis object from androguard
+    """
     # FIXME glogger disables the "multiple exit nodes found" prints (androguard issue/bug)
     glogger.disabled = True
 
@@ -226,10 +226,15 @@ def format_sourcecode_dict(sourcecode_dict, package_name):
  
 
 def process_fernflower(package_name, apk_file):
+    """
+    This function formats the output that is obtained by running the fernflower decompiler and extracting our features.
+    :param package_name: The package name/package id of the apk
+    :param apk_file: the path to the to be analyzed apk file
+    """
     start_time = time.time()
     imports_dict, compile_error_count, reflection_dict = run_fernflower_decompile(package_name, apk_file)
     finish_time = time.time()
-    main_logger.info("fernflower duration: " + str(finish_time - start_time))
+    main_logger.info("Time spent on feature extraction (fernflower): " + str(finish_time - start_time))
 
     # Output formatting
     fernflower_dict = collections.OrderedDict()
@@ -237,11 +242,7 @@ def process_fernflower(package_name, apk_file):
     fernflower_dict["imports"] = list(imports_dict.items())
     fernflower_dict["compile-error count"] = compile_error_count
     fernflower_dict["reflection usage"] = list(reflection_dict.items())
-
-    try:
-        write_to_csv(fernflowercsv, fernflower_dict)
-    except Exception:
-        main_logger.error("Error in writing fernflower analysis output to csv || apk " + package_name)
+    write_to_csv(fernflowercsv, fernflower_dict)
     
 
 if __name__ == '__main__':
