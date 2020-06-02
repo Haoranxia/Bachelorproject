@@ -155,6 +155,11 @@ def get_keyword_usage(app):
     reflection_regex = r'reflect\.([a-zA-Z]+)'
     reflection_dict = collections.OrderedDict()
 
+    # General obfuscation keywords
+    general_keywords = [r'goto']
+    keyword_usages_general = collections.OrderedDict()
+    keyword_usages_general = {key_pattern: 0 for key_pattern in keyword_usages_general}
+
     if enable_reflection or enable_kotlin:
         for cl in app.get_classes():
             for method in cl.get_methods():
@@ -183,6 +188,12 @@ def get_keyword_usage(app):
                                 reflection_dict[reflection] = 1
                             else:
                                 reflection_dict[reflection] += 1
+                    
+                    # General keyword analysis
+                    if src:
+                        for pattern in general_keywords:
+                            keyword_usages_general[pattern] += len(re.findall(pattern, src))
+
             
     return keyword_usages_kotlin, reflection_dict
 

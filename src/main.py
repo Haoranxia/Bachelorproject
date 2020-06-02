@@ -5,9 +5,10 @@ import collections
 import logging 
 import time
 
+from zipfile import BadZipFile
 from os import listdir
 from os.path import isfile, join
-from androguard.core.bytecodes import dvm, apk
+from androguard.core.bytecodes import dvm, apk, axml
 from androguard.misc import AnalyzeAPK
 from androguard.decompiler.dad.graph import logger as glogger
 from androguard.decompiler.dad.decompile import logger as dlogger
@@ -54,7 +55,7 @@ if enable_progresstracker:
     processed_apks = get_processed_apks(processed_apks_file)
 
 # TODOLIST
-# TODO: Check kotlin patterns
+# TODO: Check kotlin patterns (ask supervisor)
 # TODO: Perhaps change logger output
 # TODO: Test benign dataset
 # TODO: Test malware dataset
@@ -71,16 +72,22 @@ def main():
     totaltime = 0
 
     for apk_file in apk_files:
-        a = apk.APK(apk_file)
+        # Try to inspect/parse the APK
+        try:
+            a = inspect_APK(apk_file)
+        except Exception:
+            update_progresstracker(apk_file)
+            continue
 
         # If the progresstracker is enabled we do not want to process any already processed apks
         processed = False
-        if enable_progresstracker:
-            if alreadyProcessed(a.get_package(), processed_apks):
+        if enable_progresstracker and a:
+            if alreadyProcessed(path_leaf(apk_file), processed_apks):
                 processed = True
 
-        main_logger.info("Processing apk: " + a.get_package() + " || file: " + apk_file)
-        if not processed:
+        if not processed and a:
+            main_logger.info("Processing apk: " + a.get_package() + " || file: " + apk_file)
+
             # Contextual features
             if enable_contextual:
                 main_logger.info("Running contextual")
@@ -104,9 +111,7 @@ def main():
             # Log processed APK
             if enable_progresstracker:
                 main_logger.info("Updating progresstracker file")
-                with open(processed_apks_file, 'a') as f:
-                    f.write(a.get_package() + '\n')
-                    f.close()
+                update_progresstracker(apk_file)               
 
             # Measure time elapsed for each apk
             current_time = time.time()
@@ -251,6 +256,38 @@ def process_fernflower(package_name, apk_file):
     fernflower_dict["compile-error count"] = compile_error_count
     fernflower_dict["reflection usage"] = list(reflection_dict.items())
     write_to_csv(fernflowercsv, fernflower_dict)
+
+
+def inspect_APK(apk_file):
+    try:
+        a = apk.APK(apk_file)
+        return a
+
+    except BadZipFile as bzfe: 
+        main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?")
+        raise(bzfe)
+    except FileNotFoundError as fnfe:
+        main_logger.warning("Could not find apk: " + path_leaf(apk_file) + " ...Is it actually there?")
+        raise(fnfe)
+    except axml.ResParserError as rpe:
+        main_logger.warning("Could not decode manifest properly for apk: " + path_leaf(apk_file))
+        raise(rpe)
+    except Exception as e:
+        main_logger.warning("Something went wrong with parsing the APK: " + path_leaf(apk_file))
+        raise(e)
+
+    return None
+
+
+
+def update_progresstracker(apk_file):
+    # with open(processed_apks_file, 'a') as f:
+        #     f.write(a.get_package() + '\n')
+        #     f.close()
+        
+        with open(processed_apks_file, 'a') as f:
+            f.write(path_leaf(apk_file) + '\n')
+            f.close()
     
 
 if __name__ == '__main__':

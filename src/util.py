@@ -5,6 +5,7 @@ import mmap
 import shutil
 import hashlib
 import collections
+import ntpath
 from os import path, devnull
 from tempfile import NamedTemporaryFile
 
@@ -183,6 +184,11 @@ def get_feature(manifest_dict, dictkey, headerfile):
     feature_header = get_full_header(headerfile)
     feature_dict = create_complete_dict(feature, feature_header, manifest_dict["package-name"])
     return feature_header, feature_dict
+
+
+def path_leaf(path):
+    head, tail = ntpath.split(path)
+    return tail or ntpath.basename(head)
 
 
 
