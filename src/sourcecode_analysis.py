@@ -144,7 +144,7 @@ def get_keyword_usage(app):
     """
 
     # Kotlin 
-    key_patterns_kotlin = [r'new StringBuilder\(\)', r'\bkotlin\b', r'\b.kotlin\b', r'@NotNull']
+    key_patterns_kotlin = [r'new StringBuilder\(\)', r'\bkotlin\b', r'kotlin\.([a-zA-Z]+)', r'@NotNull']
     keyword_usages_kotlin = collections.OrderedDict()
     if enable_kotlin:
         keyword_usages_kotlin = {key_pattern: 0 for key_pattern in key_patterns_kotlin}

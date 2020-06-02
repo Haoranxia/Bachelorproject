@@ -71,7 +71,10 @@ def main():
     start_time = time.time()
     totaltime = 0
 
-    for apk_file in apk_files:
+    nrapks = len(apk_files)
+    for apk_index, apk_file in enumerate(apk_files):
+        print("Processing apk: " + str(apk_index) + " out of " + str(nrapks) + " apks")
+        
         # Try to inspect/parse the APK
         try:
             a = inspect_APK(apk_file)
@@ -227,6 +230,7 @@ def process_sourcecode(a):
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
 
     sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
+
     write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
     write_to_csv(sourcecodecsv, sourcecode_dict)
 
@@ -262,22 +266,19 @@ def inspect_APK(apk_file):
     try:
         a = apk.APK(apk_file)
         return a
-
     except BadZipFile as bzfe: 
-        main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?")
+        main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?\n")
         raise(bzfe)
     except FileNotFoundError as fnfe:
-        main_logger.warning("Could not find apk: " + path_leaf(apk_file) + " ...Is it actually there?")
+        main_logger.warning("Could not find apk: " + path_leaf(apk_file) + " ...Is it actually there?\n")
         raise(fnfe)
     except axml.ResParserError as rpe:
-        main_logger.warning("Could not decode manifest properly for apk: " + path_leaf(apk_file))
+        main_logger.warning("Could not decode manifest properly for apk: " + path_leaf(apk_file) + "\n")
         raise(rpe)
+
     except Exception as e:
-        main_logger.warning("Something went wrong with parsing the APK: " + path_leaf(apk_file))
+        main_logger.warning("Something went wrong with parsing the APK: " + path_leaf(apk_file) + "\n")
         raise(e)
-
-    return None
-
 
 
 def update_progresstracker(apk_file):
@@ -285,9 +286,9 @@ def update_progresstracker(apk_file):
         #     f.write(a.get_package() + '\n')
         #     f.close()
         
-        with open(processed_apks_file, 'a') as f:
-            f.write(path_leaf(apk_file) + '\n')
-            f.close()
+    with open(processed_apks_file, 'a') as f:
+        f.write(path_leaf(apk_file) + '\n')
+        f.close()
     
 
 if __name__ == '__main__':
