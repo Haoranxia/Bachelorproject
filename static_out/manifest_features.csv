@@ -1,0 +1,2 @@
+package-name,permissions,features,main-activities,activities,services,receivers,providers,activity-intents,service-intents,receiver-intents,libraries,meta-data
+be.brunoparmentier.dnssetter,['android.permission.ACCESS_SUPERUSER'],[],{'be.brunoparmentier.dnssetter.MainActivity'},"['be.brunoparmentier.dnssetter.MainActivity', 'be.brunoparmentier.dnssetter.AboutActivity']",[],[],[],"[{'action': ['android.intent.action.MAIN'], 'category': ['android.intent.category.LAUNCHER']}]",[],[],[],"[None, None, None]"

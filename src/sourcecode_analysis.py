@@ -3,11 +3,18 @@ import math
 import time
 import collections
 import logging
+import traceback
 import configparser
 from androguard.core import bytecodes
 from androguard.core import androconf
 from androguard.core.analysis import analysis
-from androguard.core.bytecodes.dvm import ClassDefItem
+from androguard.core.bytecodes.dvm import ClassDefItem, EncodedMethod
+
+
+# Logger
+sourcecode_logger = logging.getLogger()
+sourcecode_logger.setLevel(logging.INFO)
+
 
 # Config file parsing
 config = configparser.ConfigParser()
@@ -42,31 +49,32 @@ def analyze_dex(ds, dx):
                 start_time = time.time()
                 opcodes_dict = get_opcodes(dex, opcodes_dict)
                 current_time = time.time()
-                print("Time spent on opcodes: " + str(current_time - start_time))
+                sourcecode_logger.info("Time spent on opcodes: " + str(current_time - start_time))
             except Exception as e:
-                print("Opcodes extraction failed" + str(e))
+                sourcecode_logger.error("Opcodes extraction failed: " + str(e))
 
         if enable_obfuscation:
             try:
                 start_time = time.time()
                 obfuscation_score, obfuscations_dict, count_histogram = get_obfuscation_naming_total(dex, obfuscations_dict)
                 current_time = time.time()
-                print("Time spent on obfuscation: " + str(current_time - start_time))
+                sourcecode_logger.info("Time spent on obfuscation: " + str(current_time - start_time))
             except Exception as e:
-                print("Obfuscation extraction failed" + str(e))
+                sourcecode_logger.error("Obfuscation extraction failed: " + str(e))
 
     # Use dx object
     try:
         start_time = time.time()
-        kotlin_dict, reflection_dict = get_keyword_usage(dx)
+        kotlin_dict, reflection_dict, keyword_usages_general = get_keyword_usage(dx)
         current_time = time.time()
-        print("Time spent on keyword usage: " + str(current_time - start_time))
+        sourcecode_logger.info("Time spent on keyword usage: " + str(current_time - start_time))
     except Exception as e:
-        print("Koltin/Reflection extraction failed" + str(e))
+        sourcecode_logger.error("Koltin/Reflection extraction failed: " + str(e))
+        traceback.print_exc()
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 
-    return opcodes_dict, format_sourcecode_dict(obfuscations_dict, count_histogram, kotlin_dict, reflection_dict) 
+    return opcodes_dict, format_sourcecode_dict(obfuscations_dict, count_histogram, kotlin_dict, reflection_dict, keyword_usages_general) 
 
 
 # Return a dictionary of opcodes and the nr of occurrences of that opcode
@@ -135,8 +143,6 @@ def get_keyword_usage(app):
     :return:
     """
 
-    # TODO: Make sure patterns are correct
-
     # Kotlin 
     key_patterns_kotlin = [r'new StringBuilder\(\)', r'\bkotlin\b', r'\b.kotlin\b', r'@NotNull']
     keyword_usages_kotlin = collections.OrderedDict()
@@ -146,8 +152,13 @@ def get_keyword_usage(app):
         keyword_usages_kotlin = {key_pattern: None for key_pattern in key_patterns_kotlin}
 
     # Reflection
-    reflection_regex = r'reflect\.(.*)'
+    reflection_regex = r'reflect\.([a-zA-Z]+)'
     reflection_dict = collections.OrderedDict()
+
+    # General obfuscation keywords
+    general_keywords = [r'goto']
+    keyword_usages_general = collections.OrderedDict()
+    keyword_usages_general = {key_pattern: 0 for key_pattern in general_keywords}
 
     if enable_reflection or enable_kotlin:
         for cl in app.get_classes():
@@ -156,24 +167,35 @@ def get_keyword_usage(app):
 
                 # We only care about code in methods. We check those for patterns
                 if m and isinstance(m, bytecodes.dvm.EncodedMethod):
-                    src = m.get_source()
+                    try:
+                        src = m.get_source()
+                    except:
+                        sourcecode_logger.warning("Could not decompile method: " + m.name)
+                        src = None
 
                     #Kotlin keyword analysis
-                    if enable_kotlin:
+                    if src and enable_kotlin:
                         for key_pattern in key_patterns_kotlin:
                             keyword_usages_kotlin[key_pattern] += len(re.findall(key_pattern, src))
                             # keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
 
                     # Java reflection usage analysis
-                    if enable_reflection:
+                    if src and enable_reflection:
                         reflections = re.findall(reflection_regex, src)
                         for reflection in reflections:
+                            reflection = "java.lang.reflect." + reflection # Specify the full name for formatting sakes
                             if reflection not in reflection_dict:
                                 reflection_dict[reflection] = 1
                             else:
                                 reflection_dict[reflection] += 1
+                    
+                    # General keyword analysis
+                    if src:
+                        for pattern in general_keywords:
+                            keyword_usages_general[pattern] += len(re.findall(pattern, src))
+
             
-    return keyword_usages_kotlin, reflection_dict
+    return keyword_usages_kotlin, reflection_dict, keyword_usages_general
 
 
 def update_count_histogram(identifier_name, count_histogram):
@@ -302,10 +324,11 @@ def get_string_obfuscation(dx):
 
 
 # Output formatting function
-def format_sourcecode_dict(obfuscations_dict, obfuscations_histogram, kotlin_dict, reflection_dict):
+def format_sourcecode_dict(obfuscations_dict, obfuscations_histogram, kotlin_dict, reflection_dict, keyword_usages_general):
     sourcecode_features_dict = collections.OrderedDict()
     sourcecode_features_dict["Possible obfuscations"] = list(obfuscations_dict.items())
     sourcecode_features_dict.update(obfuscations_histogram)
     sourcecode_features_dict.update(kotlin_dict)
+    sourcecode_features_dict.update(keyword_usages_general)
     sourcecode_features_dict["Reflection"] = [(key, reflection_dict[key]) for key in reflection_dict.keys()]
     return sourcecode_features_dict

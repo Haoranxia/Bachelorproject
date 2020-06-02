@@ -5,6 +5,7 @@ import mmap
 import shutil
 import hashlib
 import collections
+import ntpath
 from os import path, devnull
 from tempfile import NamedTemporaryFile
 
@@ -176,6 +177,18 @@ def alreadyProcessed(package_name, processed_apks):
 
 def get_processed_apks(processed_apks_file):
     return read_headers(processed_apks_file)
+
+
+def get_feature(manifest_dict, dictkey, headerfile):
+    feature = manifest_dict[dictkey]
+    feature_header = get_full_header(headerfile)
+    feature_dict = create_complete_dict(feature, feature_header, manifest_dict["package-name"])
+    return feature_header, feature_dict
+
+
+def path_leaf(path):
+    head, tail = ntpath.split(path)
+    return tail or ntpath.basename(head)
 
 
 
