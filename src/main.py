@@ -7,6 +7,8 @@ import time
 
 from os import listdir
 from os.path import isfile, join
+from zipfile import BadZipfile
+
 from androguard.core.bytecodes import dvm, apk
 from androguard.misc import AnalyzeAPK
 from androguard.decompiler.dad.graph import logger as glogger
@@ -67,7 +69,10 @@ def main():
     apk_files = parse_arguments()
     start_time = time.time()
     totaltime = start_time
-    for apk_file in apk_files:
+    total_no_of_apks = len(apk_files)
+    for apk_index, apk_file in enumerate(apk_files):
+        print(str(apk_index) + " out of " + str(total_no_of_apks) + " processed." + " || file: " + apk_file)
+
         a = apk.APK(apk_file)
 
         # If the progresstracker is enabled we do not want to process any already processed apks
@@ -77,7 +82,9 @@ def main():
                 processed = True
 
         if not processed:
-            main_logger.info("Processing apk: " + a.get_package() + " || file: " + apk_file)
+
+            main_logger.info("\nProcessing APK: " + a.get_package() + " || file: " + apk_file)
+
             # Contextual features
             if enable_contextual:
                 main_logger.info("Running contextual")

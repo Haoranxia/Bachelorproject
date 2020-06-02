@@ -1,4 +1,6 @@
 import re
+import logging
+import http.client
 import requests
 import configparser
 import play_scraper
@@ -21,9 +23,14 @@ virus_total_enabled = (config["Contextual_Settings"]["virus_total"] == 'yes')
 file_upload_enabled = (config["Contextual_Settings"]['virus_total_enable_file_upload'] == 'yes')
 OPSWAT_THREAT_CODE = 1  # opswat designated code for threats in API response (scan_all_result_i)
 
+logging.basicConfig(format='%(asctime)s %(message)s')
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+# logger.disabled = True
+
 
 def reformat_dictionary(app_details, app_id):
-    """ TODO:: convert the data into strings to avoid switching of data types within a column
+    """
     format the order of dictionary to have package id (package-name) as the first column and
     insert escaping for new lines
     :param app_details: a dictionary that contains the contextual features
@@ -61,7 +68,7 @@ def get_opswat_positives(apk_file):
                 positives_list.append(antivirus_name)
         return response.json()['scan_results']['scan_all_result_a'], positives_list
     except requests.exceptions.RequestException:
-        print('Apk file not found in Meta-scan database.')
+        logger.error('Apk file not found in Meta-scan database.')
     return None, None
 
 
@@ -86,7 +93,7 @@ def get_hybrid_analysis_positives(apk_file):
                 positives += scan_item['positives']
         return response_json['threat_score'], positives, positives_list
     except requests.exceptions.RequestException:
-        print('Apk file not found in hybrid-analysis database.')
+        logger.info('Apk file not found in hybrid-analysis database.')
         return None, None, None
 
 
@@ -104,12 +111,13 @@ def get_virus_total_positives(apk_file):
         params = {'apikey': VT_API_KEY, 'resource': sha_digest}
         response = requests.get(url, params=params, timeout=4)
         if response.status_code == 204:
+            logger.info('Virus Total API quota reached')
             return None, 'vt quota reached'
         response.raise_for_status()
 
         if file_upload_enabled and response.json()['response_code'] == 0:  # apk hash is not found in virusTotal
             # send the file itself
-            print("VirusTotal found no matching sha256 digest. Uploading source apk...")
+            logger.info("VirusTotal found no matching sha256 digest. Uploading source apk...")
 
             if Path(apk_file).stat().st_size > vt_size_limit:  # apk file size > vt limit -> upload via url
                 url = 'https://www.virustotal.com/vtapi/v2/file/scan/upload_url'
@@ -124,8 +132,8 @@ def get_virus_total_positives(apk_file):
                 return request_vt_response(apk_file, None, params, url)
         else:
             return compile_vt_result(response)
-    except requests.exceptions.RequestException as error:
-        print('Failed to receive VirusTotal report.\n' + str(error))
+    except requests.exceptions.RequestException:
+        logger.error('Failed to receive VirusTotal report')
         return None, None
 
 
@@ -144,8 +152,9 @@ def request_vt_response(apk_file, upload_url, params, url):
     else:
         response = requests.post(upload_url, files=files)
     response.raise_for_status()
-    print('Finished uploading source apk.')
+    logger.info('Finished uploading source apk to Virus Total.')
     if 'scans' not in response.json():  # if request is queued
+        logger.info('Request to Virus Total is queued. Rerun contextual component to get full report')
         return None, 'Request queued. Rerun to get report'
     else:
         return compile_vt_result(response)
@@ -179,12 +188,12 @@ def get_app_stores_availability(app_id):
                       ]
     for app_store, url in zip(app_stores, app_store_urls):
         try:
-            response = requests.get(url, timeout=4)
+            response = requests.head(url, timeout=4)
             response.raise_for_status()
         except HTTPError:
-            print(app_id + ' not found in ' + app_store + ' app store.')
+            logger.info(app_id + ' not found in ' + app_store + ' app store.')
         except Exception as err:
-            print('Error occurred: ' + str(err))
+            logger.error(err)
         else:
             available_stores.append(app_store)  # no raised exceptions
     return available_stores
@@ -201,15 +210,19 @@ def add_results_to_output(apk_file, app_id, app_details, output_filename):
     """
     if virus_total_enabled:
         app_details['vt_positives'], app_details['vt_positives_list'] = get_virus_total_positives(apk_file)
+        logger.info("Received Virus Total contextual data")
+
     else:
         app_details['vt_positives'], app_details['vt_positives_list'] = (None, None)
     if OPSWAT_enabled:
         app_details['opswat_result'], app_details['opswat_positives_list'] = get_opswat_positives(apk_file)
+        logger.info("Received META-SCAN's OPSWAT contextual data")
     else:
         app_details['opswat_result'], app_details['opswat_positives_list'] = (None, None)
     if hybrid_analysis_enabled:
         app_details['HA_threat_score'], app_details['HA_positives'], app_details['HA_positives_list'] = \
             get_hybrid_analysis_positives(apk_file)
+        logger.info("Received Hybrid analysis's contextual data")
     else:
         app_details['HA_threat_score'], app_details['HA_positives'], app_details['HA_positives_list'] = (None, None,
                                                                                                          None)
@@ -260,17 +273,17 @@ def run_contextual(apk_file, app_id):
     try:
         if google_play_enabled:
             app_details = play_scraper.details(app_id)
+            logger.info("Acquired Google Play contextual data for " + str(app_id))
             extend_app_details(app_id, app_details, True)
+            logger.info("Acquired extended Google Play contextual data for " + str(app_id))
             add_results_to_output(apk_file, app_id, app_details, output_filename)
         else:
             empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
             extend_app_details(None, empty_app_details, False)
             add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
     except (ValueError, requests.exceptions.HTTPError):
-        print('AppID not found in the Google Play store')
+        logger.info('AppID not found in the Google Play store')
         empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
         extend_app_details(None, empty_app_details, False)
         add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
 
-
-# run_contextual('../apks/flashlight.apk', 'com.torch.lampe.flashlight')

@@ -162,7 +162,7 @@ def get_keyword_usage(app):
                     if enable_kotlin:
                         for key_pattern in key_patterns_kotlin:
                             keyword_usages_kotlin[key_pattern] += len(re.findall(key_pattern, src))
-                            #keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
+                            # keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
 
                     # Java reflection usage analysis
                     if enable_reflection:
@@ -279,6 +279,7 @@ def get_string_obfuscation(dx):
     code_sentinels = ['{', ';', 'void', '[', 'if (', 'while(', 'for(']
     possible_str_obfs_cnt = 0
     break_flag = False
+
     for string in dx.strings.keys():
         # count base64 encoded string constants as possible obfuscations
         if is_base64_encoded(string):
@@ -287,7 +288,7 @@ def get_string_obfuscation(dx):
         for sentinel in code_sentinels:
             if break_flag:
                 break_flag = False
-                break+
+                break
             for _, method in dx.strings[string].get_xref_from():
                 # excluding toString() methods to minimize false detection of string encrypted code
                 if sentinel in string and method.name != "toString" or has_uncommon_chars(string):
