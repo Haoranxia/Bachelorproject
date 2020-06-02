@@ -65,7 +65,7 @@ def analyze_dex(ds, dx):
     # Use dx object
     try:
         start_time = time.time()
-        kotlin_dict, reflection_dict = get_keyword_usage(dx)
+        kotlin_dict, reflection_dict, keyword_usages_general = get_keyword_usage(dx)
         current_time = time.time()
         sourcecode_logger.info("Time spent on keyword usage: " + str(current_time - start_time))
     except Exception as e:
@@ -74,7 +74,7 @@ def analyze_dex(ds, dx):
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 
-    return opcodes_dict, format_sourcecode_dict(obfuscations_dict, count_histogram, kotlin_dict, reflection_dict) 
+    return opcodes_dict, format_sourcecode_dict(obfuscations_dict, count_histogram, kotlin_dict, reflection_dict, keyword_usages_general) 
 
 
 # Return a dictionary of opcodes and the nr of occurrences of that opcode
@@ -158,7 +158,7 @@ def get_keyword_usage(app):
     # General obfuscation keywords
     general_keywords = [r'goto']
     keyword_usages_general = collections.OrderedDict()
-    keyword_usages_general = {key_pattern: 0 for key_pattern in keyword_usages_general}
+    keyword_usages_general = {key_pattern: 0 for key_pattern in general_keywords}
 
     if enable_reflection or enable_kotlin:
         for cl in app.get_classes():
@@ -195,7 +195,7 @@ def get_keyword_usage(app):
                             keyword_usages_general[pattern] += len(re.findall(pattern, src))
 
             
-    return keyword_usages_kotlin, reflection_dict
+    return keyword_usages_kotlin, reflection_dict, keyword_usages_general
 
 
 def update_count_histogram(identifier_name, count_histogram):
@@ -323,10 +323,11 @@ def get_string_obfuscation(dx):
 
 
 # Output formatting function
-def format_sourcecode_dict(obfuscations_dict, obfuscations_histogram, kotlin_dict, reflection_dict):
+def format_sourcecode_dict(obfuscations_dict, obfuscations_histogram, kotlin_dict, reflection_dict, keyword_usages_general):
     sourcecode_features_dict = collections.OrderedDict()
     sourcecode_features_dict["Possible obfuscations"] = list(obfuscations_dict.items())
     sourcecode_features_dict.update(obfuscations_histogram)
     sourcecode_features_dict.update(kotlin_dict)
+    sourcecode_features_dict.update(keyword_usages_general)
     sourcecode_features_dict["Reflection"] = [(key, reflection_dict[key]) for key in reflection_dict.keys()]
     return sourcecode_features_dict

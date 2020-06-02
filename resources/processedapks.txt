@@ -30,3 +30,4 @@ fbcc7b836782351bd8fe2bae8033d872.apk
 025a55c1bcbd3be2ca03aa314ce9a4c2.apk
 025a55c1bcbd3be2ca03aa314ce9a4c2.apk
 025a55c1bcbd3be2ca03aa314ce9a4c2.apk
+app-debug.apk
