@@ -127,14 +127,22 @@ def extract_features(file_path):
 # fernflower_path = D:\Bachelor_project\Bachelorproject\src\fernflower_decompile\tools\fernflower.jar
 
 def run_fernflower_decompile(package_name, file_path):
+    # Decompilation
     start_time = time.time()
     decompile(package_name, file_path)
     fernflower_logger.info("Time spent on decompiling: " + str(time.time() - start_time))
 
+    # Feature extraction
     fernflower_logger.info("### Extracting features from decompiled code ###")
     start_time = time.time()
-    imports_dict, decompile_error_count, reflection_dict = extract_features(fernflower_out)
-    fernflower_logger.info("TIme spent on extracting features: " + str(time.time() - start_time))
+    try:
+        imports_dict, decompile_error_count, reflection_dict = extract_features(fernflower_out)
+        fernflower_logger.info("Time spent on extracting features: " + str(time.time() - start_time))
+    except Exception:
+        fernflower_logger.warning("Could not extract fernflower features")
+        emptyDict = collections.OrderedDict()
+        return emptyDict, emptyDict, emptyDict
+
     return imports_dict, decompile_error_count, reflection_dict
 
 
