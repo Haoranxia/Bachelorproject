@@ -41,6 +41,7 @@ def analyze_dex(ds, dx):
     obfuscations_dict = collections.OrderedDict()
     kotlin_dict = collections.OrderedDict()
     reflection_dict = collections.OrderedDict()
+    keyword_usages_general = collections.OrderedDict()
 
     # Use d object
     for dex in ds:
