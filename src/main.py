@@ -214,7 +214,10 @@ def process_sourcecode(a):
         decompiler = DecompilerDAD(d, dx)
         d.set_decompiler(decompiler)
 
-    dx.create_xref()
+    try:
+        dx.create_xref()
+    except Exception:
+        main_logger.warning("Could not create xrefs properly")
 
     start_time = time.time()
 
@@ -230,7 +233,7 @@ def process_sourcecode(a):
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
 
     sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
-
+    print(sourcecode_dict.keys())
     write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
     write_to_csv(sourcecodecsv, sourcecode_dict)
 
@@ -266,14 +269,8 @@ def inspect_APK(apk_file):
     try:
         a = apk.APK(apk_file)
         return a
-<<<<<<< HEAD
-    except BadZipFile as bzfe: 
-        main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?\n")
-=======
-
     except BadZipFile as bzfe:
         main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?")
->>>>>>> 8d0dc34c5fde8ec7dd9a58874ef79f8653cd8bab
         raise(bzfe)
     except FileNotFoundError as fnfe:
         main_logger.warning("Could not find apk: " + path_leaf(apk_file) + " ...Is it actually there?\n")
@@ -281,7 +278,6 @@ def inspect_APK(apk_file):
     except axml.ResParserError as rpe:
         main_logger.warning("Could not decode manifest properly for apk: " + path_leaf(apk_file) + "\n")
         raise(rpe)
-
     except Exception as e:
         main_logger.warning("Something went wrong with parsing the APK: " + path_leaf(apk_file) + "\n")
         raise(e)
@@ -291,17 +287,10 @@ def update_progresstracker(apk_file):
     # with open(processed_apks_file, 'a') as f:
         #     f.write(a.get_package() + '\n')
         #     f.close()
-<<<<<<< HEAD
         
     with open(processed_apks_file, 'a') as f:
         f.write(path_leaf(apk_file) + '\n')
         f.close()
-=======
-
-        with open(processed_apks_file, 'a') as f:
-            f.write(path_leaf(apk_file) + '\n')
-            f.close()
->>>>>>> 8d0dc34c5fde8ec7dd9a58874ef79f8653cd8bab
     
 
 if __name__ == '__main__':

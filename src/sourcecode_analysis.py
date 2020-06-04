@@ -41,6 +41,7 @@ def analyze_dex(ds, dx):
     obfuscations_dict = collections.OrderedDict()
     kotlin_dict = collections.OrderedDict()
     reflection_dict = collections.OrderedDict()
+    keyword_usages_general = collections.OrderedDict()
 
     # Use d object
     for dex in ds:
@@ -52,6 +53,7 @@ def analyze_dex(ds, dx):
                 sourcecode_logger.info("Time spent on opcodes: " + str(current_time - start_time))
             except Exception as e:
                 sourcecode_logger.error("Opcodes extraction failed: " + str(e))
+                
 
         if enable_obfuscation:
             try:
@@ -70,7 +72,6 @@ def analyze_dex(ds, dx):
         sourcecode_logger.info("Time spent on keyword usage: " + str(current_time - start_time))
     except Exception as e:
         sourcecode_logger.error("Koltin/Reflection extraction failed: " + str(e))
-        traceback.print_exc()
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 
@@ -169,8 +170,8 @@ def get_keyword_usage(app):
                 if m and isinstance(m, bytecodes.dvm.EncodedMethod):
                     try:
                         src = m.get_source()
-                    except:
-                        sourcecode_logger.warning("Could not decompile method: " + m.name)
+                    except Exception:
+                        sourcecode_logger.warning("Could not decompile method: " + str(m.name))
                         src = None
 
                     #Kotlin keyword analysis
