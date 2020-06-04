@@ -269,8 +269,13 @@ def inspect_APK(apk_file):
     try:
         a = apk.APK(apk_file)
         return a
+<<<<<<< HEAD
     except BadZipFile as bzfe:
         main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?")
+=======
+    except BadZipFile as bzfe: 
+        main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?\n")
+>>>>>>> a31b32f6f00d2f2453f470d9a925c7864855a23c
         raise(bzfe)
     except FileNotFoundError as fnfe:
         main_logger.warning("Could not find apk: " + path_leaf(apk_file) + " ...Is it actually there?\n")
