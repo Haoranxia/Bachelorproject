@@ -214,7 +214,10 @@ def process_sourcecode(a):
         decompiler = DecompilerDAD(d, dx)
         d.set_decompiler(decompiler)
 
-    dx.create_xref()
+    try:
+        dx.create_xref()
+    except Exception:
+        main_logger.warning("Could not create xrefs properly")
 
     start_time = time.time()
 
@@ -230,7 +233,7 @@ def process_sourcecode(a):
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
 
     sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
-
+    print(sourcecode_dict.keys())
     write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
     write_to_csv(sourcecodecsv, sourcecode_dict)
 
@@ -266,8 +269,13 @@ def inspect_APK(apk_file):
     try:
         a = apk.APK(apk_file)
         return a
+<<<<<<< HEAD
+    except BadZipFile as bzfe:
+        main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?")
+=======
     except BadZipFile as bzfe: 
         main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?\n")
+>>>>>>> a31b32f6f00d2f2453f470d9a925c7864855a23c
         raise(bzfe)
     except FileNotFoundError as fnfe:
         main_logger.warning("Could not find apk: " + path_leaf(apk_file) + " ...Is it actually there?\n")
