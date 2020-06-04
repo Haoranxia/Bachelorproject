@@ -4,6 +4,9 @@ import configparser
 import collections
 import logging 
 import time
+import matplotlib.pyplot as plt
+import networkx as nx
+from pathlib import Path
 
 from zipfile import BadZipFile
 from os import listdir
@@ -46,6 +49,8 @@ enable_manifest = (config["Settings"]["Manifest"] == "yes")
 enable_sourcecode = (config["Settings"]["Sourcecode"] == "yes")
 enable_progresstracker = (config["Misc"]["Progresstracker"] == "yes")
 enable_fernflower = (config["Settings"]["Fernflower"] == "yes")
+enable_xrefgraph = (config["Settings"]["Xrefgraph"] == "yes")
+enable_performancelogging = (config["Settings"]["Performancelogging"] == "yes")
 
 
 # Progress tracking stuff
@@ -121,6 +126,11 @@ def main():
             process_time = current_time - start_time
             start_time = current_time
             totaltime += process_time
+
+            # Log elapsed time and size per apk
+            if enable_performancelogging:
+                logtime(a.get_package(), process_time, Path(apk_file).stat().st_size)
+
             main_logger.info("Total time spent on this apk: " + str(process_time) + "\n")
         else:
             main_logger.info("apk already processed... skipping...")
@@ -216,6 +226,8 @@ def process_sourcecode(a):
 
     try:
         dx.create_xref()
+        if enable_xrefgraph:
+            construct_xrefgraph(dx)
     except Exception:
         main_logger.warning("Could not create xrefs properly")
 
@@ -233,7 +245,7 @@ def process_sourcecode(a):
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
 
     sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
-    print(sourcecode_dict.keys())
+
     write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
     write_to_csv(sourcecodecsv, sourcecode_dict)
 
@@ -269,19 +281,14 @@ def inspect_APK(apk_file):
     try:
         a = apk.APK(apk_file)
         return a
-<<<<<<< HEAD
-    except BadZipFile as bzfe:
-        main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?")
-=======
     except BadZipFile as bzfe: 
         main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?\n")
->>>>>>> a31b32f6f00d2f2453f470d9a925c7864855a23c
         raise(bzfe)
     except FileNotFoundError as fnfe:
         main_logger.warning("Could not find apk: " + path_leaf(apk_file) + " ...Is it actually there?\n")
         raise(fnfe)
     except axml.ResParserError as rpe:
-        main_logger.warning("Could not decode manifest properly for apk: " + path_leaf(apk_file) + "\n")
+        main_logger.warning("Could not decode APK properly: " + path_leaf(apk_file) + "\n")
         raise(rpe)
     except Exception as e:
         main_logger.warning("Something went wrong with parsing the APK: " + path_leaf(apk_file) + "\n")
@@ -296,7 +303,21 @@ def update_progresstracker(apk_file):
     with open(processed_apks_file, 'a') as f:
         f.write(path_leaf(apk_file) + '\n')
         f.close()
+
+
+def logtime(apk_name, process_time, apk_size):
+    filename = "../static_out/performance.csv"
+    time_dict = collections.OrderedDict()
+    time_dict["package-name"] = apk_name
+    time_dict["process-time (sec)"] = process_time
+    time_dict["apk size (KB)"] = float(apk_size) / float(1000)
+    write_to_csv(filename, time_dict)
     
+
+# TODO: Implement xref graph
+def construct_xrefgraph(dx):
+    main_logger.debug("TODO: Implement xref graph")
+
 
 if __name__ == '__main__':
     main()

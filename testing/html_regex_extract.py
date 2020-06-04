@@ -23,6 +23,7 @@ softwarefeatures_path = "./features.txt"
 opcodes_regex = r'\<td style="vertical-align: top;"\>(.*?)\</td\>' #r'<tr>((?s).*?)</tr>'
 opcodes_path = "./opcodeshtml2.txt"
 
+
 def extractfeatures(filepath, regex):
     with open(filepath, 'rb') as f:
         src = f.read().decode('utf-8')
