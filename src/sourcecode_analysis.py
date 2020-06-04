@@ -171,7 +171,7 @@ def get_keyword_usage(app):
                     try:
                         src = m.get_source()
                     except:
-                        sourcecode_logger.warning("Could not decompile method: " + m.name)
+                        sourcecode_logger.warning("Could not decompile method: " + str(m.name))
                         src = None
 
                     #Kotlin keyword analysis
