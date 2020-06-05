@@ -10,9 +10,11 @@ from androguard.core import androconf
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes.dvm import ClassDefItem, EncodedMethod
 
+
 # Logger
 sourcecode_logger = logging.getLogger()
 sourcecode_logger.setLevel(logging.INFO)
+
 
 # Config file parsing
 config = configparser.ConfigParser()
@@ -20,8 +22,10 @@ config.read("../settings.ini")
 
 enable_opcodes = (config["Sourcecode_Settings"]["Opcodes"] == "yes")
 enable_obfuscation = (config["Sourcecode_Settings"]["Obfuscation"] == "yes")
+enable_keywordusage = (config["Sourcecode_settings"]["Keywordusage"] == "yes")
 enable_kotlin = (config["Sourcecode_Settings"]["Kotlin"] == "yes")
 enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
+enable_commonkeywords = (config["Sourcecode_Settings"]["Commonkeywords"] == "yes")
 enable_string_constants = (config["Sourcecode_Settings"]["StringConstants"] == "yes")
 enable_api_methods = (config["Sourcecode_Settings"]["APIMethods"] == "yes")
 
@@ -49,6 +53,7 @@ def analyze_dex(ds, dx):
     possible_str_obfs_cnt = 0
     api_methods_dict = {}
     keyword_usages_general = {}
+    keyword_usages_general = collections.OrderedDict()
 
     # Use d object
     for dex in ds:
@@ -60,6 +65,7 @@ def analyze_dex(ds, dx):
                 sourcecode_logger.info("Time spent on opcodes: " + str(current_time - start_time))
             except Exception as e:
                 sourcecode_logger.error("Opcodes extraction failed: " + str(e))
+
 
         if enable_obfuscation:
             try:
@@ -148,8 +154,6 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
     return (obfuscation_score / total_evaluated), obfuscations_dict, count_histogram
 
 
-# Function that checks for certain keywords in the sourcecode
-# TODO: Refactor function to allow the user to specify a pattern
 def get_keyword_usage(app):
     """
     Scan the source code for kotlin keyword/pattern usage
@@ -158,21 +162,18 @@ def get_keyword_usage(app):
     """
 
     # Kotlin 
-    key_patterns_kotlin = [r'new StringBuilder\(\)', r'\bkotlin\b', r'\b.kotlin\b', r'@NotNull']
+    key_patterns_kotlin = [r'new StringBuilder\(\)', r'\bkotlin\b', r'kotlin\.([a-zA-Z]+)', r'@NotNull']
     keyword_usages_kotlin = collections.OrderedDict()
-    if enable_kotlin:
-        keyword_usages_kotlin = {key_pattern: 0 for key_pattern in key_patterns_kotlin}
-    else:
-        keyword_usages_kotlin = {key_pattern: None for key_pattern in key_patterns_kotlin}
+    keyword_usages_kotlin = initialize_keyword_dict(key_patterns_kotlin, enable_kotlin)
 
     # Reflection
     reflection_regex = r'reflect\.([a-zA-Z]+)'
     reflection_dict = collections.OrderedDict()
 
     # General obfuscation keywords
-    general_keywords = [r'goto']
-    keyword_usages_general = collections.OrderedDict()
-    keyword_usages_general = {key_pattern: 0 for key_pattern in general_keywords}
+    common_keywords = [r'goto']
+    keyword_usages_common = collections.OrderedDict()
+    keyword_usages_common = initialize_keyword_dict(common_keywords, enable_kotlin)
 
     if enable_reflection or enable_kotlin:
         for cl in app.get_classes():
@@ -184,31 +185,47 @@ def get_keyword_usage(app):
                     try:
                         src = m.get_source()
                     except Exception:
-                        sourcecode_logger.warning("Could not decompile method: " + m.name)
+                        sourcecode_logger.warning("Could not decompile method: " + str(m.name))
                         src = None
 
                     # Kotlin keyword analysis
                     if src and enable_kotlin:
-                        for key_pattern in key_patterns_kotlin:
-                            keyword_usages_kotlin[key_pattern] += len(re.findall(key_pattern, src))
-                            # keyword_usages_kotlin[key_pattern] += count_overlapping_distinct(key_pattern, src)
+                        key_patterns_kotlin = find_pattern_usage(src, key_patterns_kotlin, keyword_usages_kotlin)
 
                     # Java reflection usage analysis
                     if src and enable_reflection:
-                        reflections = re.findall(reflection_regex, src)
-                        for reflection in reflections:
-                            reflection = "java.lang.reflect." + reflection  # Specify the full name for formatting sakes
-                            if reflection not in reflection_dict:
-                                reflection_dict[reflection] = 1
-                            else:
-                                reflection_dict[reflection] += 1
+                        reflection_dict = find_reflection_usage(src, reflection_regex, reflection_dict)
 
                     # General keyword analysis
-                    if src:
-                        for pattern in general_keywords:
-                            keyword_usages_general[pattern] += len(re.findall(pattern, src))
+                    if src and enable_commonkeywords:
+                        keyword_usages_common = find_pattern_usage(src, common_keywords, keyword_usages_common)
 
-    return keyword_usages_kotlin, reflection_dict, keyword_usages_general
+    return keyword_usages_kotlin, reflection_dict, keyword_usages_common
+
+
+# Keyword usage helper functions
+def find_pattern_usage(src, patterns, dictionary):
+    for pattern in patterns:
+        dictionary[pattern] += len(re.findall(pattern, src))
+    return dictionary
+
+
+def find_reflection_usage(src, reflection_regex, reflection_dict):
+    reflections = re.findall(reflection_regex, src)
+    for reflection in reflections:
+        reflection = "java.lang.reflect." + reflection # Specify the full name for formatting sakes
+        if reflection not in reflection_dict:
+            reflection_dict[reflection] = 1
+        else:
+            reflection_dict[reflection] += 1
+    return reflection_dict
+
+
+def initialize_keyword_dict(patterns, enable):
+    if enable:
+        return {pattern: 0 for pattern in patterns}
+    else:
+        return {pattern: None for pattern in patterns}
 
 
 def get_api_methods(dx):

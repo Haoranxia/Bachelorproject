@@ -24,13 +24,13 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
     """
 
     # decrease the maxInt value by factor 10 as long as the OverflowError occurs.
-    max_int = sys.maxsize
+    maxInt = sys.maxsize
     while True:
         try:
-            csv.field_size_limit(max_int)
+            csv.field_size_limit(maxInt)
             break
         except OverflowError:
-            max_int = int(max_int / 10)
+            maxInt = int(maxInt/10)
 
     if header is None:
         header = file_dict.keys()
@@ -200,6 +200,4 @@ def get_feature(manifest_dict, dictkey, headerfile):
 def path_leaf(path):
     head, tail = ntpath.split(path)
     return tail or ntpath.basename(head)
-
-
 

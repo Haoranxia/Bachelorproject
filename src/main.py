@@ -4,6 +4,9 @@ import configparser
 import collections
 import logging
 import time
+import matplotlib.pyplot as plt
+import networkx as nx
+from pathlib import Path
 
 from zipfile import BadZipFile
 from os import listdir
@@ -46,6 +49,9 @@ enable_manifest = (config["Settings"]["Manifest"] == "yes")
 enable_sourcecode = (config["Settings"]["Sourcecode"] == "yes")
 enable_progresstracker = (config["Misc"]["Progresstracker"] == "yes")
 enable_fernflower = (config["Settings"]["Fernflower"] == "yes")
+enable_xrefgraph = (config["Settings"]["Xrefgraph"] == "yes")
+enable_performancelogging = (config["Settings"]["Performancelogging"] == "yes")
+
 
 # Progress tracking stuff
 processed_apks = None
@@ -71,7 +77,9 @@ def main():
     start_time = time.time()
     totaltime = 0
 
-    for apk_file in apk_files:
+    nrapks = len(apk_files)
+    for apk_index, apk_file in enumerate(apk_files):
+        print("Processing apk: " + str(apk_index) + " out of " + str(nrapks) + " apks")
 
         # Try to inspect/parse the APK
         try:
@@ -119,6 +127,11 @@ def main():
             process_time = current_time - start_time
             start_time = current_time
             totaltime += process_time
+
+            # Log elapsed time and size per apk
+            if enable_performancelogging:
+                logtime(a.get_package(), process_time, Path(apk_file).stat().st_size)
+
             main_logger.info("Total time spent on this apk: " + str(process_time) + "\n")
         else:
             main_logger.info("apk already processed... skipping...")
@@ -147,8 +160,8 @@ def parse_arguments():
     :return: list of apk file(s) with their relative file path(s)
     """
     args = init_args_parser()
-    apk_folder = args.sourceFoldr  # example. apk_folder = "apks/"
-    apk_file = args.sourceAPK  # example. apk_file   = "apks/flashlight.apk"
+    apk_folder = args.sourceFoldr     # example. apk_folder = "apks/"
+    apk_file = args.sourceAPK         # example. apk_file   = "apks/flashlight.apk"
     apk_files = []
 
     if apk_folder:
@@ -212,7 +225,12 @@ def process_sourcecode(a):
         decompiler = DecompilerDAD(d, dx)
         d.set_decompiler(decompiler)
 
-    dx.create_xref()
+    try:
+        dx.create_xref()
+        if enable_xrefgraph:
+            construct_xrefgraph(dx)
+    except Exception:
+        main_logger.warning("Could not create xrefs properly")
 
     start_time = time.time()
 
@@ -230,6 +248,7 @@ def process_sourcecode(a):
     sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
     api_methods_dict = format_api_dict(api_methods_dict, a.get_package())
     string_constants_dict = format_string_constants_dict(string_constants, possible_str_obfs_cnt, a.get_package())
+
     write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
     write_to_csv(sourcecodecsv, sourcecode_dict)
     write_to_csv(apimethodscsv, api_methods_dict)
@@ -277,31 +296,42 @@ def inspect_APK(apk_file):
     try:
         a = apk.APK(apk_file)
         return a
-
     except BadZipFile as bzfe:
-        main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?")
-        raise (bzfe)
+        main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?\n")
+        raise(bzfe)
     except FileNotFoundError as fnfe:
-        main_logger.warning("Could not find apk: " + path_leaf(apk_file) + " ...Is it actually there?")
-        raise (fnfe)
+        main_logger.warning("Could not find apk: " + path_leaf(apk_file) + " ...Is it actually there?\n")
+        raise(fnfe)
     except axml.ResParserError as rpe:
-        main_logger.warning("Could not decode manifest properly for apk: " + path_leaf(apk_file))
-        raise (rpe)
+        main_logger.warning("Could not decode APK properly: " + path_leaf(apk_file) + "\n")
+        raise(rpe)
     except Exception as e:
-        main_logger.warning("Something went wrong with parsing the APK: " + path_leaf(apk_file))
-        raise (e)
-
-    return None
+        main_logger.warning("Something went wrong with parsing the APK: " + path_leaf(apk_file) + "\n")
+        raise(e)
 
 
 def update_progresstracker(apk_file):
     # with open(processed_apks_file, 'a') as f:
-    #     f.write(a.get_package() + '\n')
-    #     f.close()
+        #     f.write(a.get_package() + '\n')
+        #     f.close()
 
     with open(processed_apks_file, 'a') as f:
         f.write(path_leaf(apk_file) + '\n')
         f.close()
+
+
+def logtime(apk_name, process_time, apk_size):
+    filename = "../static_out/performance.csv"
+    time_dict = collections.OrderedDict()
+    time_dict["package-name"] = apk_name
+    time_dict["process-time (sec)"] = process_time
+    time_dict["apk size (KB)"] = float(apk_size) / float(1000)
+    write_to_csv(filename, time_dict)
+    
+
+# TODO: Implement xref graph
+def construct_xrefgraph(dx):
+    main_logger.debug("TODO: Implement xref graph")
 
 
 if __name__ == '__main__':
