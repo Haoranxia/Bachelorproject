@@ -9,6 +9,7 @@ import ntpath
 from os import path, devnull
 from tempfile import NamedTemporaryFile
 
+
 # TODO: This function sometimes breaks when odd characters are encountered (also breaks csv)
 def write_to_csv(file, file_dict, key='package-name', header=None):
     """
@@ -21,6 +22,16 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
     :param header: table header
     :return:
     """
+
+    # decrease the maxInt value by factor 10 as long as the OverflowError occurs.
+    max_int = sys.maxsize
+    while True:
+        try:
+            csv.field_size_limit(max_int)
+            break
+        except OverflowError:
+            max_int = int(max_int / 10)
+
     if header is None:
         header = file_dict.keys()
 

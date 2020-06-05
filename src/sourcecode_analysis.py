@@ -10,11 +10,9 @@ from androguard.core import androconf
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes.dvm import ClassDefItem, EncodedMethod
 
-
 # Logger
 sourcecode_logger = logging.getLogger()
 sourcecode_logger.setLevel(logging.INFO)
-
 
 # Config file parsing
 config = configparser.ConfigParser()
@@ -24,6 +22,8 @@ enable_opcodes = (config["Sourcecode_Settings"]["Opcodes"] == "yes")
 enable_obfuscation = (config["Sourcecode_Settings"]["Obfuscation"] == "yes")
 enable_kotlin = (config["Sourcecode_Settings"]["Kotlin"] == "yes")
 enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
+enable_string_constants = (config["Sourcecode_Settings"]["StringConstants"] == "yes")
+enable_api_methods = (config["Sourcecode_Settings"]["APIMethods"] == "yes")
 
 
 # TODO: Look for common obfuscation techniques and pattern match for that
@@ -39,8 +39,16 @@ def analyze_dex(ds, dx):
     opcodes_dict = collections.OrderedDict()
     obfuscation_score = 0
     obfuscations_dict = collections.OrderedDict()
+    count_histogram = collections.OrderedDict()
+    count_histogram["Length 1 identifier"] = 0
+    count_histogram["Length 2 identifier"] = 0
+    count_histogram["Length 3 identifier"] = 0
     kotlin_dict = collections.OrderedDict()
     reflection_dict = collections.OrderedDict()
+    string_constants = []
+    possible_str_obfs_cnt = 0
+    api_methods_dict = {}
+    keyword_usages_general = {}
 
     # Use d object
     for dex in ds:
@@ -56,7 +64,8 @@ def analyze_dex(ds, dx):
         if enable_obfuscation:
             try:
                 start_time = time.time()
-                obfuscation_score, obfuscations_dict, count_histogram = get_obfuscation_naming_total(dex, obfuscations_dict)
+                obfuscation_score, obfuscations_dict, count_histogram = get_obfuscation_naming_total(dex,
+                                                                                                     obfuscations_dict)
                 current_time = time.time()
                 sourcecode_logger.info("Time spent on obfuscation: " + str(current_time - start_time))
             except Exception as e:
@@ -66,6 +75,10 @@ def analyze_dex(ds, dx):
     try:
         start_time = time.time()
         kotlin_dict, reflection_dict, keyword_usages_general = get_keyword_usage(dx)
+        if enable_api_methods:
+            api_methods_dict = get_api_methods(dx)
+        if enable_string_constants:
+            string_constants, possible_str_obfs_cnt = get_strings_with_obfuscation(dx)
         current_time = time.time()
         sourcecode_logger.info("Time spent on keyword usage: " + str(current_time - start_time))
     except Exception as e:
@@ -74,7 +87,8 @@ def analyze_dex(ds, dx):
 
     obfuscations_dict["obfuscation-score"] = obfuscation_score
 
-    return opcodes_dict, format_sourcecode_dict(obfuscations_dict, count_histogram, kotlin_dict, reflection_dict, keyword_usages_general) 
+    return opcodes_dict, format_sourcecode_dict(obfuscations_dict, count_histogram, kotlin_dict, reflection_dict,
+                                                keyword_usages_general), api_methods_dict, string_constants, possible_str_obfs_cnt
 
 
 # Return a dictionary of opcodes and the nr of occurrences of that opcode
@@ -169,11 +183,11 @@ def get_keyword_usage(app):
                 if m and isinstance(m, bytecodes.dvm.EncodedMethod):
                     try:
                         src = m.get_source()
-                    except:
+                    except Exception:
                         sourcecode_logger.warning("Could not decompile method: " + m.name)
                         src = None
 
-                    #Kotlin keyword analysis
+                    # Kotlin keyword analysis
                     if src and enable_kotlin:
                         for key_pattern in key_patterns_kotlin:
                             keyword_usages_kotlin[key_pattern] += len(re.findall(key_pattern, src))
@@ -183,19 +197,38 @@ def get_keyword_usage(app):
                     if src and enable_reflection:
                         reflections = re.findall(reflection_regex, src)
                         for reflection in reflections:
-                            reflection = "java.lang.reflect." + reflection # Specify the full name for formatting sakes
+                            reflection = "java.lang.reflect." + reflection  # Specify the full name for formatting sakes
                             if reflection not in reflection_dict:
                                 reflection_dict[reflection] = 1
                             else:
                                 reflection_dict[reflection] += 1
-                    
+
                     # General keyword analysis
                     if src:
                         for pattern in general_keywords:
                             keyword_usages_general[pattern] += len(re.findall(pattern, src))
 
-            
     return keyword_usages_kotlin, reflection_dict, keyword_usages_general
+
+
+def get_api_methods(dx):
+    """
+    gets the external method calls (api methods)
+    :param dx: dalvik analysis object about apk
+    :return:
+    """
+    api_calls_dict = {}
+    for external_class in dx.get_external_classes():
+        external_methods = external_class.get_methods()
+        for method in external_methods:
+            method_name = method.get_method().get_name()
+            class_name = method.get_method().get_class_name()
+            full_method = class_name + method_name
+            if full_method in api_calls_dict.keys():
+                api_calls_dict[full_method] += 1
+            else:
+                api_calls_dict[full_method] = 1
+    return api_calls_dict
 
 
 def update_count_histogram(identifier_name, count_histogram):
@@ -292,17 +325,20 @@ def is_base64_encoded(string):
     return pattern.match(string)
 
 
-def get_string_obfuscation(dx):
+def get_strings_with_obfuscation(dx):
     """
+    returns a list of string constants from apk source code and
     checks for a possible obfuscated code within string constants
     :param dx: Analysis object
-    :return: a count of strings that have possible string obfuscation
+    :return:
     """
     code_sentinels = ['{', ';', 'void', '[', 'if (', 'while(', 'for(']
     possible_str_obfs_cnt = 0
     break_flag = False
 
-    for string in dx.strings.keys():
+    const_strings_dict = dx.strings
+    const_strings = list(const_strings_dict.keys())
+    for string in const_strings:
         # count base64 encoded string constants as possible obfuscations
         if is_base64_encoded(string):
             possible_str_obfs_cnt += 1
@@ -311,20 +347,19 @@ def get_string_obfuscation(dx):
             if break_flag:
                 break_flag = False
                 break
-            for _, method in dx.strings[string].get_xref_from():
+            for _, method in const_strings_dict[string].get_xref_from():
                 # excluding toString() methods to minimize false detection of string encrypted code
                 if sentinel in string and method.name != "toString" or has_uncommon_chars(string):
-                    # print(string)
-                    # print("Class name: {} -- Method name: {}".format(method.class_name, method.name))
                     possible_str_obfs_cnt += 1
                     break_flag = True
                     break
 
-    return possible_str_obfs_cnt
+    return const_strings, possible_str_obfs_cnt
 
 
 # Output formatting function
-def format_sourcecode_dict(obfuscations_dict, obfuscations_histogram, kotlin_dict, reflection_dict, keyword_usages_general):
+def format_sourcecode_dict(obfuscations_dict, obfuscations_histogram, kotlin_dict, reflection_dict,
+                           keyword_usages_general):
     sourcecode_features_dict = collections.OrderedDict()
     sourcecode_features_dict["Possible obfuscations"] = list(obfuscations_dict.items())
     sourcecode_features_dict.update(obfuscations_histogram)

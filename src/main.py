@@ -2,7 +2,7 @@ import sys
 import argparse
 import configparser
 import collections
-import logging 
+import logging
 import time
 
 from zipfile import BadZipFile
@@ -27,16 +27,16 @@ main_logger = logging.getLogger()
 main_logger.setLevel(logging.INFO)
 logging.basicConfig(filename='main.log', level=logging.INFO)
 
-
 # CSV output files (Relative path to this file)
 manifestcsv = "../static_out/manifest_features.csv"
 permissionscsv = "../static_out/permissions.csv"
 hardwarefeaturescsv = "../static_out/hardware_features.csv"
 softwarefeaturescsv = "../static_out/software_features.csv"
 sourcecodecsv = "../static_out/sourcecode_features.csv"
+apimethodscsv = "../static_out/api_method_features.csv"
+stringconstcsv = "../static_out/string_constant_features.csv"
 opcodescsv = "../static_out/sourcecode_opcodes.csv"
 fernflowercsv = "../static_out/fernflower_features.csv"
-
 
 # Config file parsing
 config = configparser.ConfigParser()
@@ -47,12 +47,12 @@ enable_sourcecode = (config["Settings"]["Sourcecode"] == "yes")
 enable_progresstracker = (config["Misc"]["Progresstracker"] == "yes")
 enable_fernflower = (config["Settings"]["Fernflower"] == "yes")
 
-
 # Progress tracking stuff
 processed_apks = None
 processed_apks_file = "../resources/processedapks.txt"
 if enable_progresstracker:
     processed_apks = get_processed_apks(processed_apks_file)
+
 
 # TODOLIST
 # TODO: Check kotlin patterns (ask supervisor)
@@ -72,6 +72,7 @@ def main():
     totaltime = 0
 
     for apk_file in apk_files:
+
         # Try to inspect/parse the APK
         try:
             a = inspect_APK(apk_file)
@@ -124,7 +125,7 @@ def main():
 
     main_logger.info("Finished analysis of apks")
     main_logger.info("Total executiontime: " + str(totaltime))
-        
+
 
 def init_args_parser():
     """
@@ -146,8 +147,8 @@ def parse_arguments():
     :return: list of apk file(s) with their relative file path(s)
     """
     args = init_args_parser()
-    apk_folder = args.sourceFoldr     # example. apk_folder = "apks/"
-    apk_file = args.sourceAPK         # example. apk_file   = "apks/flashlight.apk"
+    apk_folder = args.sourceFoldr  # example. apk_folder = "apks/"
+    apk_file = args.sourceAPK  # example. apk_file   = "apks/flashlight.apk"
     apk_files = []
 
     if apk_folder:
@@ -215,7 +216,7 @@ def process_sourcecode(a):
 
     start_time = time.time()
 
-    opcodes_dict, sourcecode_dict = analyze_dex(ds, dx)
+    opcodes_dict, sourcecode_dict, api_methods_dict, string_constants, possible_str_obfs_cnt = analyze_dex(ds, dx)
     glogger.enabled = True
     dlogger.enabled = True
 
@@ -227,8 +228,12 @@ def process_sourcecode(a):
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
 
     sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
+    api_methods_dict = format_api_dict(api_methods_dict, a.get_package())
+    string_constants_dict = format_string_constants_dict(string_constants, possible_str_obfs_cnt, a.get_package())
     write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
     write_to_csv(sourcecodecsv, sourcecode_dict)
+    write_to_csv(apimethodscsv, api_methods_dict)
+    write_to_csv(stringconstcsv, string_constants_dict)
 
 
 def format_sourcecode_dict(sourcecode_dict, package_name):
@@ -236,7 +241,17 @@ def format_sourcecode_dict(sourcecode_dict, package_name):
     return_dict["package-name"] = package_name
     return_dict.update(sourcecode_dict)
     return return_dict
- 
+
+
+def format_api_dict(api_methods_dict, package_name):
+    return_dict = {'package-name': package_name, 'api-methods': api_methods_dict}
+    return return_dict
+
+
+def format_string_constants_dict(string_constants, possible_str_obfs_cnt, package_name):
+    return {'package-name': package_name, 'possible_str_obfs_cnt': possible_str_obfs_cnt,
+            'string-constants': string_constants}
+
 
 def process_fernflower(package_name, apk_file):
     """
@@ -265,30 +280,29 @@ def inspect_APK(apk_file):
 
     except BadZipFile as bzfe:
         main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?")
-        raise(bzfe)
+        raise (bzfe)
     except FileNotFoundError as fnfe:
         main_logger.warning("Could not find apk: " + path_leaf(apk_file) + " ...Is it actually there?")
-        raise(fnfe)
+        raise (fnfe)
     except axml.ResParserError as rpe:
         main_logger.warning("Could not decode manifest properly for apk: " + path_leaf(apk_file))
-        raise(rpe)
+        raise (rpe)
     except Exception as e:
         main_logger.warning("Something went wrong with parsing the APK: " + path_leaf(apk_file))
-        raise(e)
+        raise (e)
 
     return None
 
 
-
 def update_progresstracker(apk_file):
     # with open(processed_apks_file, 'a') as f:
-        #     f.write(a.get_package() + '\n')
-        #     f.close()
+    #     f.write(a.get_package() + '\n')
+    #     f.close()
 
-        with open(processed_apks_file, 'a') as f:
-            f.write(path_leaf(apk_file) + '\n')
-            f.close()
-    
+    with open(processed_apks_file, 'a') as f:
+        f.write(path_leaf(apk_file) + '\n')
+        f.close()
+
 
 if __name__ == '__main__':
     main()

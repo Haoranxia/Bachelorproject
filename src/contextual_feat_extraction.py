@@ -264,6 +264,7 @@ def get_app_id(apk_file):
     print(re.findall(r"package: name='(.*?)'", meta_info_stdout.decode('utf-8'))[0])
 
 
+# TODO:: ADD SHA256 digest into csv table
 def run_contextual(apk_file, app_id):
     """
     runs the contextual component, get contextual details from google play and also request report from VirusTotal
