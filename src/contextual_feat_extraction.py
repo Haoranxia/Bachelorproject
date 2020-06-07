@@ -35,7 +35,7 @@ def reformat_dictionary(app_details, app_id):
     insert escaping for new lines
     :param app_details: a dictionary that contains the contextual features
     :param app_id: the id of a given app
-    :return:
+    :return: TODO:: REMOVE DESCRIPTION HTML
     """
     updated_dict = {"package-name": app_id}
     del app_details["app_id"]
@@ -211,7 +211,6 @@ def add_results_to_output(apk_file, app_id, app_details, output_filename):
     if virus_total_enabled:
         app_details['vt_positives'], app_details['vt_positives_list'] = get_virus_total_positives(apk_file)
         logger.info("Received Virus Total contextual data")
-
     else:
         app_details['vt_positives'], app_details['vt_positives_list'] = (None, None)
     if OPSWAT_enabled:
@@ -255,7 +254,7 @@ def extend_app_details(app_id, app_details, gp_available):
 
 def get_app_id(apk_file):
     """
-    gets an app id given an apk file
+    gets an app id given an apk file, requires aapt to be installed within the system
     :param apk_file: an android app
     :return:
     """
@@ -265,6 +264,7 @@ def get_app_id(apk_file):
 
 
 # TODO:: ADD SHA256 digest into csv table
+# TODO:: OPTION NOT TO SPECIFY APK FILE AND SPECIFY SHA256
 def run_contextual(apk_file, app_id):
     """
     runs the contextual component, get contextual details from google play and also request report from VirusTotal
@@ -274,9 +274,9 @@ def run_contextual(apk_file, app_id):
     try:
         if google_play_enabled:
             app_details = play_scraper.details(app_id)
-            logger.info("Acquired Google Play contextual data for " + str(app_id))
+            # logger.info("Acquired Google Play contextual data for " + str(app_id))
             extend_app_details(app_id, app_details, True)
-            logger.info("Acquired extended Google Play contextual data for " + str(app_id))
+            logger.info("Acquired Google Play contextual data for " + str(app_id))
             add_results_to_output(apk_file, app_id, app_details, output_filename)
         else:
             empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}

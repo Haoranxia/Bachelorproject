@@ -22,7 +22,7 @@ config.read("../settings.ini")
 
 enable_opcodes = (config["Sourcecode_Settings"]["Opcodes"] == "yes")
 enable_obfuscation = (config["Sourcecode_Settings"]["Obfuscation"] == "yes")
-enable_keywordusage = (config["Sourcecode_settings"]["Keywordusage"] == "yes")
+enable_keywordusage = (config["Sourcecode_Settings"]["Keywordusage"] == "yes")
 enable_kotlin = (config["Sourcecode_Settings"]["Kotlin"] == "yes")
 enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
 enable_commonkeywords = (config["Sourcecode_Settings"]["Commonkeywords"] == "yes")
@@ -52,7 +52,6 @@ def analyze_dex(ds, dx):
     string_constants = []
     possible_str_obfs_cnt = 0
     api_methods_dict = {}
-    keyword_usages_general = {}
     keyword_usages_general = collections.OrderedDict()
 
     # Use d object
@@ -65,7 +64,6 @@ def analyze_dex(ds, dx):
                 sourcecode_logger.info("Time spent on opcodes: " + str(current_time - start_time))
             except Exception as e:
                 sourcecode_logger.error("Opcodes extraction failed: " + str(e))
-
 
         if enable_obfuscation:
             try:
@@ -163,7 +161,6 @@ def get_keyword_usage(app):
 
     # Kotlin 
     key_patterns_kotlin = [r'new StringBuilder\(\)', r'\bkotlin\b', r'kotlin\.([a-zA-Z]+)', r'@NotNull']
-    keyword_usages_kotlin = collections.OrderedDict()
     keyword_usages_kotlin = initialize_keyword_dict(key_patterns_kotlin, enable_kotlin)
 
     # Reflection
@@ -172,7 +169,6 @@ def get_keyword_usage(app):
 
     # General obfuscation keywords
     common_keywords = [r'goto']
-    keyword_usages_common = collections.OrderedDict()
     keyword_usages_common = initialize_keyword_dict(common_keywords, enable_kotlin)
 
     if enable_reflection or enable_kotlin:
@@ -241,10 +237,8 @@ def get_api_methods(dx):
             method_name = method.get_method().get_name()
             class_name = method.get_method().get_class_name()
             full_method = class_name + method_name
-            if full_method in api_calls_dict.keys():
-                api_calls_dict[full_method] += 1
-            else:
-                api_calls_dict[full_method] = 1
+            add_to_dict_unique(full_method, api_calls_dict)
+
     return api_calls_dict
 
 
