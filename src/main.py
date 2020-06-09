@@ -56,6 +56,8 @@ enable_performancelogging = (config["Settings"]["Performancelogging"] == "yes")
 # Progress tracking stuff
 processed_apks = None
 processed_apks_file = "../resources/processedapks.txt"
+if not isfile(processed_apks_file):
+    open(processed_apks_file, "w+")
 if enable_progresstracker:
     processed_apks = get_processed_apks(processed_apks_file)
 
@@ -227,7 +229,7 @@ def process_sourcecode(a):
     try:
         dx.create_xref()
         if enable_xrefgraph:
-            construct_xrefgraph(dx)
+            construct_xrefgraph(a, dx)
     except Exception:
         main_logger.warning("Could not create xrefs properly")
 
@@ -315,8 +317,14 @@ def logtime(apk_name, process_time, apk_size):
     
 
 # TODO: Implement xref graph
-def construct_xrefgraph(dx):
-    main_logger.debug("TODO: Implement xref graph")
+# NOTE: Quite performance heavy
+def construct_xrefgraph(a, dx):
+    # We only construct a xref graph for the MainActivity component
+    print("Drawing xrefgraph")
+    callgraph = Analysis.get_call_graph(self=a, classname=r"(.*)MainActivity(.*)")
+    nx.draw_networkx(callgraph)
+    plt.draw()
+    plt.show()
 
 
 if __name__ == '__main__':

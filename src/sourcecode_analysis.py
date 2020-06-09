@@ -22,7 +22,7 @@ config.read("../settings.ini")
 
 enable_opcodes = (config["Sourcecode_Settings"]["Opcodes"] == "yes")
 enable_obfuscation = (config["Sourcecode_Settings"]["Obfuscation"] == "yes")
-enable_keywordusage = (config["Sourcecode_settings"]["Keywordusage"] == "yes")
+enable_keywordusage = (config["Sourcecode_Settings"]["Keywordusage"] == "yes")
 enable_kotlin = (config["Sourcecode_Settings"]["Kotlin"] == "yes")
 enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
 enable_commonkeywords = (config["Sourcecode_Settings"]["Commonkeywords"] == "yes")
@@ -146,7 +146,7 @@ def get_keyword_usage(app):
     """
 
     # Kotlin 
-    key_patterns_kotlin = [r'new StringBuilder\(\)', r'\bkotlin\b', r'kotlin\.([a-zA-Z]+)', r'@NotNull']
+    key_patterns_kotlin = [r'new StringBuilder\(\)', r'\bkotlin\b', r'kotlin\.([a-zA-Z]+)']
     keyword_usages_kotlin = collections.OrderedDict()
     keyword_usages_kotlin = initialize_keyword_dict(key_patterns_kotlin, enable_kotlin)
 
