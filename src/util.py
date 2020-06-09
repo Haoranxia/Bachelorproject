@@ -22,7 +22,7 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
     :param header: table header
     :return:
     """
-    
+
     # decrease the maxInt value by factor 10 as long as the OverflowError occurs.
     maxInt = sys.maxsize
     while True:
@@ -201,4 +201,3 @@ def path_leaf(path):
     head, tail = ntpath.split(path)
     return tail or ntpath.basename(head)
 
-    
