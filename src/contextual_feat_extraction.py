@@ -1,6 +1,8 @@
 import re
 import logging
 import http.client
+import time
+
 import requests
 import configparser
 import play_scraper
@@ -26,7 +28,7 @@ OPSWAT_THREAT_CODE = 1  # opswat designated code for threats in API response (sc
 logging.basicConfig(format='%(asctime)s %(message)s')
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-# logger.disabled = True
+logger.disabled = True  # TODO:: ENABLE LOGGER
 
 
 def reformat_dictionary(app_details, app_id):
@@ -44,20 +46,20 @@ def reformat_dictionary(app_details, app_id):
         key.encode('utf-8')
         if isinstance(val, str):
             val.encode('utf-8')
-            updated_dict[key] = val.replace('\n', '\\n')
+            updated_dict[key] = val.replace('\n', '\\n')  # FIXME:: THE DOUBLE SLASH NEW LINE PROBLEM FOR JSON OUTPUT
     if 'description_html' in updated_dict and updated_dict['description_html']:
         updated_dict['description_html'] = updated_dict['description_html'].decode("utf-8")
     return updated_dict
 
 
-def get_opswat_positives(apk_file):
+def get_opswat_positives(file_hash):
     """
     Sends request to get a report from OPSWAT meta-scan api by using sha256 hash value of an apk file
-    :param apk_file: apk file to be hashed and queried in the OPSWAT api
+    :param file_hash hash digest of file to be queried
     :return:
     """
     try:
-        url = "https://api.metadefender.com/v4/hash/" + str(calculate_sha256(apk_file))
+        url = "https://api.metadefender.com/v4/hash/" + file_hash
         headers = {'apikey': OPSWAT_API_KEY}
         response = requests.request("GET", url, headers=headers)
         response.raise_for_status()
@@ -72,15 +74,14 @@ def get_opswat_positives(apk_file):
     return None, None
 
 
-def get_hybrid_analysis_positives(apk_file):
+def get_hybrid_analysis_positives(file_hash):
     """
     Sends request to get a report from hybrid-analysis api by using sha256 hash value of an apk file
-    :param apk_file: file to be examined for av report
+    :param file_hash: hash of file to be examined for av report
     :return: list of anti-virus scanners that detected the file to be positive
     """
     try:
-        sha_digest = calculate_sha256(apk_file)
-        url = 'https://www.hybrid-analysis.com/api/v2/overview/' + sha_digest
+        url = 'https://www.hybrid-analysis.com/api/v2/overview/' + file_hash
         response = requests.get(url=url, headers={'api-key': HA_API_KEY, 'user-agent': 'Falcon Sandbox'}, timeout=4)
         response.raise_for_status()
         response_json = response.json()
@@ -97,18 +98,17 @@ def get_hybrid_analysis_positives(apk_file):
         return None, None, None
 
 
-def get_virus_total_positives(apk_file):
+def get_virus_total_positives(apk_file, file_hash):
     """
     Sends request to get a report from TotalVirus by sending sha256 hash value of an apk file
     or uploading the file if the hash value is not found in vt database
     :return: the number of positives and list of anti-virus scanners that detected the positive
     """
     vt_size_limit = 32000000  # 32MB size limit -> upload file via special url and queue for report
-    sha_digest = calculate_sha256(apk_file)
 
     try:
         url = 'https://www.virustotal.com/vtapi/v2/file/report'
-        params = {'apikey': VT_API_KEY, 'resource': sha_digest}
+        params = {'apikey': VT_API_KEY, 'resource': file_hash}
         response = requests.get(url, params=params, timeout=4)
         if response.status_code == 204:
             logger.info('Virus Total API quota reached')
@@ -208,28 +208,50 @@ def add_results_to_output(apk_file, app_id, app_details, output_filename):
     :param output_filename: the name of output file with directory
     :return:
     """
+    file_hash = str(calculate_sha256(apk_file))
+    app_details['sha256'] = file_hash
+    app_details['filename'] = apk_file.split('/')[-1]
     if virus_total_enabled:
-        app_details['vt_positives'], app_details['vt_positives_list'] = get_virus_total_positives(apk_file)
+        start_time = time.time()
+        app_details['vt_positives'], app_details['vt_positives_list'] = get_virus_total_positives(apk_file, file_hash)
+        current_time = time.time()
+        print("virustotal: ", current_time - start_time)
         logger.info("Received Virus Total contextual data")
     else:
         app_details['vt_positives'], app_details['vt_positives_list'] = (None, None)
     if OPSWAT_enabled:
-        app_details['opswat_result'], app_details['opswat_positives_list'] = get_opswat_positives(apk_file)
+        start_time = time.time()
+        app_details['opswat_result'], app_details['opswat_positives_list'] = get_opswat_positives(file_hash)
+        current_time = time.time()
+        print("opswat: ", current_time - start_time)
         logger.info("Received META-SCAN's OPSWAT contextual data")
     else:
         app_details['opswat_result'], app_details['opswat_positives_list'] = (None, None)
     if hybrid_analysis_enabled:
+        start_time = time.time()
         app_details['HA_threat_score'], app_details['HA_positives'], app_details['HA_positives_list'] = \
-            get_hybrid_analysis_positives(apk_file)
+            get_hybrid_analysis_positives(file_hash)
+        current_time = time.time()
+        print("hybrid-analysis: ", current_time - start_time)
         logger.info("Received Hybrid analysis's contextual data")
     else:
         app_details['HA_threat_score'], app_details['HA_positives'], app_details['HA_positives_list'] = (None, None,
                                                                                                          None)
-
+    start_time = time.time()
     app_details['store-availability'] = get_app_stores_availability(app_id)
+    current_time = time.time()
+    print("app store availability: ", current_time - start_time)
     formatted_app_details = reformat_dictionary(app_details, app_id)
+
+    start_time = time.time()
     write_to_csv(output_filename + '.csv', formatted_app_details, key='package-name')
+    current_time = time.time()
+    print("Writing to csv: ", current_time - start_time)
+
+    start_time = time.time()
     write_to_json(output_filename + '.json', formatted_app_details)
+    current_time = time.time()
+    print("Writing to json: ", current_time - start_time)
 
 
 def extend_app_details(app_id, app_details, gp_available):
@@ -270,12 +292,22 @@ def run_contextual(apk_file, app_id):
     runs the contextual component, get contextual details from google play and also request report from VirusTotal
     :return:
     """
+    # logger.disabled = True
     output_filename = '../contextual_out/contextual_features'
+    print("--------contextual start-------------------------------------------------------------------")
     try:
         if google_play_enabled:
+            start_time = time.time()
             app_details = play_scraper.details(app_id)
+            current_time = time.time()
+            print("play scraper: ",  current_time - start_time)
+
             # logger.info("Acquired Google Play contextual data for " + str(app_id))
+            start_time = time.time()
             extend_app_details(app_id, app_details, True)
+            current_time = time.time()
+            print("extended play scraper: ", current_time - start_time)
+
             logger.info("Acquired Google Play contextual data for " + str(app_id))
             add_results_to_output(apk_file, app_id, app_details, output_filename)
         else:

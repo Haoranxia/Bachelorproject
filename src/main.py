@@ -83,7 +83,10 @@ def main():
 
         # Try to inspect/parse the APK
         try:
+            start_time2 = time.time()
             a = inspect_APK(apk_file)
+            current_time2 = time.time()
+            print("Creating androguard apk object: ", current_time2 - start_time2)
         except Exception:
             update_progresstracker(apk_file)
             continue
@@ -100,7 +103,10 @@ def main():
             # Contextual features
             if enable_contextual:
                 main_logger.info("Running contextual")
+                start_time2 = time.time()
                 run_contextual(apk_file=apk_file, app_id=a.get_package())
+                current_time2 = time.time()
+                print("Total: ", current_time2 - start_time2)
 
             # Manifest features
             if enable_manifest:
@@ -211,6 +217,7 @@ def process_sourcecode(a):
     # It seems like DAD has issues with decompiling some apks and will then show this message
     dlogger.disabled = True
 
+    start_time = time.time()
     # Create the d (DalvikVMFormat object) for each dex, and dx (Analysis object) 
     # for all dex files for sourcecode analysis
     ds = [dvm.DalvikVMFormat(dex, using_api=a.get_target_sdk_version()) for dex in a.get_all_dex()]
@@ -231,6 +238,8 @@ def process_sourcecode(a):
             construct_xrefgraph(dx)
     except Exception:
         main_logger.warning("Could not create xrefs properly")
+    current_time = time.time()
+    print("Time spent on creating dx: " + str(current_time - start_time))
 
     start_time = time.time()
 
@@ -241,18 +250,28 @@ def process_sourcecode(a):
     current_time = time.time()
     main_logger.info("Apk: " + a.get_package() + " || Time spent on analysis: " + str(current_time - start_time))
 
-    # Output formatting
-    opcodes_header = get_full_header("../resources/opcodes.txt")
-    opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
+    # Output formatting # todo:: uncomment
+    # opcodes_header = get_full_header("../resources/opcodes.txt")
+    # opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
 
-    sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
+    # todo:: uncomment sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
     api_methods_dict = format_api_dict(api_methods_dict, a.get_package())
     string_constants_dict = format_string_constants_dict(string_constants, possible_str_obfs_cnt, a.get_package())
 
-    write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
-    write_to_csv(sourcecodecsv, sourcecode_dict)
+    # FIXME:: DO NOT WRITE TO CSV IF YOU'RE DISABLED!!!
+    # write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
+    # write_to_csv(sourcecodecsv, sourcecode_dict)
+    start_time = time.time()
     write_to_csv(apimethodscsv, api_methods_dict)
     write_to_csv(stringconstcsv, string_constants_dict)
+    current_time = time.time()
+    print("Writing to csv: ", current_time - start_time)
+
+    start_time = time.time()
+    write_to_json("../static_out/api_method_features.json", api_methods_dict)
+    write_to_json("../static_out/string_constant_features.json", string_constants_dict)
+    current_time = time.time()
+    print("Writing to json: ", current_time - start_time)
 
 
 def format_sourcecode_dict(sourcecode_dict, package_name):
