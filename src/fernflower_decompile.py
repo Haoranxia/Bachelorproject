@@ -109,7 +109,7 @@ def extract_features(file_path):
         if filename.endswith(".java"):
             with archive.open(filename) as javafile:
                 src_string = javafile.read().decode("utf-8")
-          
+                print(src_string)
                 # Imports
                 imports_dict = find_pattern(imports_dict, import_regex, src_string)
 

@@ -111,6 +111,11 @@ def get_opcodes(app, opcodes_dict):
                         opcodes_dict[instr_name] += 1
     return opcodes_dict
 
+def get_opcodes2(d):
+    for c in d.get_classes():
+        for m in c.get_methods():
+            return m.get_code().get_instructions()
+
 
 # Function that checks of common obfuscation techniques
 def get_obfuscation_naming_total(app, obfuscations_dict):
@@ -160,12 +165,7 @@ def get_keyword_usage(app):
     """
 
     # Kotlin 
-<<<<<<< HEAD
-    key_patterns_kotlin = [r'new StringBuilder\(\)', r'\bkotlin\b', r'kotlin\.([a-zA-Z]+)']
-    keyword_usages_kotlin = collections.OrderedDict()
-=======
     key_patterns_kotlin = [r'new StringBuilder\(\)', r'\bkotlin\b', r'kotlin\.([a-zA-Z]+)', r'@NotNull']
->>>>>>> 1adf97721071e33dceca73be70d7df4a5da07ae0
     keyword_usages_kotlin = initialize_keyword_dict(key_patterns_kotlin, enable_kotlin)
 
     # Reflection
@@ -185,6 +185,7 @@ def get_keyword_usage(app):
                 if m and isinstance(m, bytecodes.dvm.EncodedMethod):
                     try:
                         src = m.get_source()
+                        print(src)
                     except Exception:
                         sourcecode_logger.warning("Could not decompile method: " + str(m.name))
                         src = None
