@@ -81,24 +81,24 @@ from androguard.core.bytecodes import dvm, apk
 # # HERE
 #
 #
-a = apk.APK("../../WhatsApp.apk")
-# a = apk.APK("../apks/benign/full/3827cb806c32d1b53c545604e12bb916.apk")
-ds = [dvm.DalvikVMFormat(dex, using_api=a.get_target_sdk_version()) for dex in a.get_all_dex()]
-dx = Analysis()
-
-for d in ds:
-    dx.add(d)
-
-for d in ds:
-    # NOTE: We use the DAD decompiler (build-in androguard decompiler). Another option would be JADX
-    # However, JADX stops decompiling when it encounters a problem (which happens quite often with obfuscated apks)
-    decompiler = DecompilerDAD(d, dx)
-    d.set_decompiler(decompiler)
-
-dx.create_xref()
-
-const_strings = dx.strings.keys()
-print(const_strings)
+# a = apk.APK("../../WhatsApp.apk")
+# # a = apk.APK("../apks/benign/full/3827cb806c32d1b53c545604e12bb916.apk")
+# ds = [dvm.DalvikVMFormat(dex, using_api=a.get_target_sdk_version()) for dex in a.get_all_dex()]
+# dx = Analysis()
+#
+# for d in ds:
+#     dx.add(d)
+#
+# for d in ds:
+#     # NOTE: We use the DAD decompiler (build-in androguard decompiler). Another option would be JADX
+#     # However, JADX stops decompiling when it encounters a problem (which happens quite often with obfuscated apks)
+#     decompiler = DecompilerDAD(d, dx)
+#     d.set_decompiler(decompiler)
+#
+# dx.create_xref()
+#
+# const_strings = dx.strings.keys()
+# print(const_strings)
 # print(type())
 # print(len(dx.strings.keys()))
 # print(dx.strings.keys())
@@ -119,3 +119,7 @@ print(const_strings)
 
 # Close the file
 # file_object.close()
+
+
+maxVal = 0
+maxKey = ''

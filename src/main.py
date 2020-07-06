@@ -83,10 +83,7 @@ def main():
 
         # Try to inspect/parse the APK
         try:
-            start_time2 = time.time()
             a = inspect_APK(apk_file)
-            current_time2 = time.time()
-            print("Creating androguard apk object: ", current_time2 - start_time2)
         except Exception:
             update_progresstracker(apk_file)
             continue
@@ -103,10 +100,7 @@ def main():
             # Contextual features
             if enable_contextual:
                 main_logger.info("Running contextual")
-                start_time2 = time.time()
                 run_contextual(apk_file=apk_file, app_id=a.get_package())
-                current_time2 = time.time()
-                print("Total: ", current_time2 - start_time2)
 
             # Manifest features
             if enable_manifest:
@@ -156,7 +150,6 @@ def init_args_parser():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-s', '--sourceFoldr', help='Source folder containing apk files')
     group.add_argument('-sAPK', '--sourceAPK', help='Source apk file')
-    # parser.add_argument('-o', '--outputDir', help='Output folder for extracted feature', required=False)
     return parser.parse_args()
 
 
@@ -217,8 +210,7 @@ def process_sourcecode(a):
     # It seems like DAD has issues with decompiling some apks and will then show this message
     dlogger.disabled = True
 
-    start_time = time.time()
-    # Create the d (DalvikVMFormat object) for each dex, and dx (Analysis object) 
+    # Create the d (DalvikVMFormat object) for each dex, and dx (Analysis object)
     # for all dex files for sourcecode analysis
     ds = [dvm.DalvikVMFormat(dex, using_api=a.get_target_sdk_version()) for dex in a.get_all_dex()]
     dx = Analysis()
@@ -238,8 +230,6 @@ def process_sourcecode(a):
             construct_xrefgraph(dx)
     except Exception:
         main_logger.warning("Could not create xrefs properly")
-    current_time = time.time()
-    print("Time spent on creating dx: " + str(current_time - start_time))
 
     start_time = time.time()
 
@@ -261,17 +251,11 @@ def process_sourcecode(a):
     # FIXME:: DO NOT WRITE TO CSV IF YOU'RE DISABLED!!!
     # write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
     # write_to_csv(sourcecodecsv, sourcecode_dict)
-    start_time = time.time()
     write_to_csv(apimethodscsv, api_methods_dict)
     write_to_csv(stringconstcsv, string_constants_dict)
-    current_time = time.time()
-    print("Writing to csv: ", current_time - start_time)
 
-    start_time = time.time()
     write_to_json("../static_out/api_method_features.json", api_methods_dict)
     write_to_json("../static_out/string_constant_features.json", string_constants_dict)
-    current_time = time.time()
-    print("Writing to json: ", current_time - start_time)
 
 
 def format_sourcecode_dict(sourcecode_dict, package_name):

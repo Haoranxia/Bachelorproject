@@ -1,7 +1,5 @@
 import re
 import logging
-import http.client
-import time
 
 import requests
 import configparser
@@ -10,7 +8,7 @@ from pathlib import Path
 from subprocess import Popen, PIPE
 from google_play_scraper import app
 from requests.exceptions import HTTPError
-from util import write_to_json, write_to_csv, calculate_sha256, file_contains, delete_row
+from util import write_to_json, write_to_csv, calculate_sha256
 
 config = configparser.ConfigParser()
 config.read("../settings.ini")
@@ -23,12 +21,17 @@ google_play_enabled = (config["Contextual_Settings"]["app_store"] == 'yes')
 hybrid_analysis_enabled = (config["Contextual_Settings"]["hybrid_analysis"] == 'yes')
 virus_total_enabled = (config["Contextual_Settings"]["virus_total"] == 'yes')
 file_upload_enabled = (config["Contextual_Settings"]['virus_total_enable_file_upload'] == 'yes')
+csv_enabled = (config["Output_Format"]['CSV'] == 'yes')
+json_enabled = (config["Output_Format"]['JSON'] == 'yes')
+debug_enabled = (config["Misc"]['DEBUG'] == 'TRUE')
 OPSWAT_THREAT_CODE = 1  # opswat designated code for threats in API response (scan_all_result_i)
 
 logging.basicConfig(format='%(asctime)s %(message)s')
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-logger.disabled = True  # TODO:: ENABLE LOGGER
+if debug_enabled:
+    logger.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.INFO)
 
 
 def reformat_dictionary(app_details, app_id):
@@ -37,7 +40,7 @@ def reformat_dictionary(app_details, app_id):
     insert escaping for new lines
     :param app_details: a dictionary that contains the contextual features
     :param app_id: the id of a given app
-    :return: TODO:: REMOVE DESCRIPTION HTML
+    :return:
     """
     updated_dict = {"package-name": app_id}
     del app_details["app_id"]
@@ -46,7 +49,7 @@ def reformat_dictionary(app_details, app_id):
         key.encode('utf-8')
         if isinstance(val, str):
             val.encode('utf-8')
-            updated_dict[key] = val.replace('\n', '\\n')  # FIXME:: THE DOUBLE SLASH NEW LINE PROBLEM FOR JSON OUTPUT
+            updated_dict[key] = val.replace('\n', '\\n')
     if 'description_html' in updated_dict and updated_dict['description_html']:
         updated_dict['description_html'] = updated_dict['description_html'].decode("utf-8")
     return updated_dict
@@ -70,7 +73,7 @@ def get_opswat_positives(file_hash):
                 positives_list.append(antivirus_name)
         return response.json()['scan_results']['scan_all_result_a'], positives_list
     except requests.exceptions.RequestException:
-        logger.error('Apk file not found in Meta-scan database.')
+        logger.info('Apk file not found in Meta-scan database.')
     return None, None
 
 
@@ -111,7 +114,7 @@ def get_virus_total_positives(apk_file, file_hash):
         params = {'apikey': VT_API_KEY, 'resource': file_hash}
         response = requests.get(url, params=params, timeout=4)
         if response.status_code == 204:
-            logger.info('Virus Total API quota reached')
+            logger.debug('Virus Total API quota reached')
             return None, 'vt quota reached'
         response.raise_for_status()
 
@@ -133,7 +136,7 @@ def get_virus_total_positives(apk_file, file_hash):
         else:
             return compile_vt_result(response)
     except requests.exceptions.RequestException:
-        logger.error('Failed to receive VirusTotal report')
+        logger.debug('Failed to receive VirusTotal report')
         return None, None
 
 
@@ -152,7 +155,7 @@ def request_vt_response(apk_file, upload_url, params, url):
     else:
         response = requests.post(upload_url, files=files)
     response.raise_for_status()
-    logger.info('Finished uploading source apk to Virus Total.')
+    logger.debug('Finished uploading source apk to Virus Total.')
     if 'scans' not in response.json():  # if request is queued
         logger.info('Request to Virus Total is queued. Rerun contextual component to get full report')
         return None, 'Request queued. Rerun to get report'
@@ -191,9 +194,9 @@ def get_app_stores_availability(app_id):
             response = requests.head(url, timeout=4)
             response.raise_for_status()
         except HTTPError:
-            logger.info(app_id + ' not found in ' + app_store + ' app store.')
+            logger.debug(app_id + ' not found in ' + app_store + ' app store.')
         except Exception as err:
-            logger.error(err)
+            logger.debug(err)
         else:
             available_stores.append(app_store)  # no raised exceptions
     return available_stores
@@ -212,46 +215,28 @@ def add_results_to_output(apk_file, app_id, app_details, output_filename):
     app_details['sha256'] = file_hash
     app_details['filename'] = apk_file.split('/')[-1]
     if virus_total_enabled:
-        start_time = time.time()
         app_details['vt_positives'], app_details['vt_positives_list'] = get_virus_total_positives(apk_file, file_hash)
-        current_time = time.time()
-        print("virustotal: ", current_time - start_time)
-        logger.info("Received Virus Total contextual data")
+        logger.debug("Received Virus Total contextual data")
     else:
         app_details['vt_positives'], app_details['vt_positives_list'] = (None, None)
     if OPSWAT_enabled:
-        start_time = time.time()
         app_details['opswat_result'], app_details['opswat_positives_list'] = get_opswat_positives(file_hash)
-        current_time = time.time()
-        print("opswat: ", current_time - start_time)
-        logger.info("Received META-SCAN's OPSWAT contextual data")
+        logger.debug("Received META-SCAN's OPSWAT contextual data")
     else:
         app_details['opswat_result'], app_details['opswat_positives_list'] = (None, None)
     if hybrid_analysis_enabled:
-        start_time = time.time()
         app_details['HA_threat_score'], app_details['HA_positives'], app_details['HA_positives_list'] = \
             get_hybrid_analysis_positives(file_hash)
-        current_time = time.time()
-        print("hybrid-analysis: ", current_time - start_time)
-        logger.info("Received Hybrid analysis's contextual data")
+        logger.debug("Received Hybrid analysis's contextual data")
     else:
         app_details['HA_threat_score'], app_details['HA_positives'], app_details['HA_positives_list'] = (None, None,
                                                                                                          None)
-    start_time = time.time()
     app_details['store-availability'] = get_app_stores_availability(app_id)
-    current_time = time.time()
-    print("app store availability: ", current_time - start_time)
     formatted_app_details = reformat_dictionary(app_details, app_id)
-
-    start_time = time.time()
-    write_to_csv(output_filename + '.csv', formatted_app_details, key='package-name')
-    current_time = time.time()
-    print("Writing to csv: ", current_time - start_time)
-
-    start_time = time.time()
-    write_to_json(output_filename + '.json', formatted_app_details)
-    current_time = time.time()
-    print("Writing to json: ", current_time - start_time)
+    if csv_enabled:
+        write_to_csv(output_filename + '.csv', formatted_app_details, key='package-name')
+    if json_enabled:
+        write_to_json(output_filename + '.json', formatted_app_details)
 
 
 def extend_app_details(app_id, app_details, gp_available):
@@ -285,30 +270,18 @@ def get_app_id(apk_file):
     print(re.findall(r"package: name='(.*?)'", meta_info_stdout.decode('utf-8'))[0])
 
 
-# TODO:: ADD SHA256 digest into csv table
-# TODO:: OPTION NOT TO SPECIFY APK FILE AND SPECIFY SHA256
 def run_contextual(apk_file, app_id):
     """
     runs the contextual component, get contextual details from google play and also request report from VirusTotal
     :return:
     """
-    # logger.disabled = True
     output_filename = '../contextual_out/contextual_features'
-    print("--------contextual start-------------------------------------------------------------------")
     try:
         if google_play_enabled:
-            start_time = time.time()
             app_details = play_scraper.details(app_id)
-            current_time = time.time()
-            print("play scraper: ",  current_time - start_time)
-
-            # logger.info("Acquired Google Play contextual data for " + str(app_id))
-            start_time = time.time()
-            extend_app_details(app_id, app_details, True)
-            current_time = time.time()
-            print("extended play scraper: ", current_time - start_time)
-
             logger.info("Acquired Google Play contextual data for " + str(app_id))
+            extend_app_details(app_id, app_details, True)
+            logger.debug("Acquired Google Play contextual data for " + str(app_id))
             add_results_to_output(apk_file, app_id, app_details, output_filename)
         else:
             empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
