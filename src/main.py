@@ -31,15 +31,15 @@ main_logger.setLevel(logging.INFO)
 logging.basicConfig(filename='main.log', level=logging.INFO)
 
 # CSV output files (Relative path to this file)
-manifestcsv = "../static_out/manifest_features.csv"
-permissionscsv = "../static_out/permissions.csv"
-hardwarefeaturescsv = "../static_out/hardware_features.csv"
-softwarefeaturescsv = "../static_out/software_features.csv"
-sourcecodecsv = "../static_out/sourcecode_features.csv"
-apimethodscsv = "../static_out/api_method_features.csv"
-stringconstcsv = "../static_out/string_constant_features.csv"
-opcodescsv = "../static_out/sourcecode_opcodes.csv"
-fernflowercsv = "../static_out/fernflower_features.csv"
+manifestcsv = "../output/static_out/manifest_features.csv"
+permissionscsv = "../output/static_out/permissions.csv"
+hardwarefeaturescsv = "../output/static_out/hardware_features.csv"
+softwarefeaturescsv = "../output/static_out/software_features.csv"
+sourcecodecsv = "../output/static_out/sourcecode_features.csv"
+apimethodscsv = "../output/static_out/api_method_features.csv"
+stringconstcsv = "../output/static_out/string_constant_features.csv"
+opcodescsv = "../output/static_out/sourcecode_opcodes.csv"
+fernflowercsv = "../output/static_out/fernflower_features.csv"
 
 # Config file parsing
 config = configparser.ConfigParser()
@@ -158,7 +158,6 @@ def init_args_parser():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-s', '--sourceFoldr', help='Source folder containing apk files')
     group.add_argument('-sAPK', '--sourceAPK', help='Source apk file')
-    # parser.add_argument('-o', '--outputDir', help='Output folder for extracted feature', required=False)
     return parser.parse_args()
 
 
@@ -250,7 +249,7 @@ def process_sourcecode(a):
     current_time = time.time()
     main_logger.info("Apk: " + a.get_package() + " || Time spent on analysis: " + str(current_time - start_time))
 
-    # Output formatting # todo:: uncomment
+    # Output formatting
     opcodes_header = get_full_header("../resources/opcodes.txt")
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
 
@@ -264,8 +263,8 @@ def process_sourcecode(a):
     write_to_csv(apimethodscsv, api_methods_dict)
     write_to_csv(stringconstcsv, string_constants_dict)
 
-    write_to_json("../static_out/api_method_features.json", api_methods_dict)
-    write_to_json("../static_out/string_constant_features.json", string_constants_dict)
+    write_to_json("../output/static_out/api_method_features.json", api_methods_dict)
+    write_to_json("../output/static_out/string_constant_features.json", string_constants_dict)
 
 
 def format_sourcecode_dict(sourcecode_dict, package_name):
@@ -334,7 +333,7 @@ def update_progresstracker(apk_file):
 
 
 def logtime(apk_name, process_time, apk_size):
-    filename = "../static_out/performance.csv"
+    filename = "../output/static_out/performance.csv"
     time_dict = collections.OrderedDict()
     time_dict["package-name"] = apk_name
     time_dict["process-time (sec)"] = process_time

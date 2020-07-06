@@ -2,8 +2,8 @@
 
 # Input/Output files
 apks/*
-static_out/*
-contextual_out/*
+output/static_out/*
+output/contextual_out/*
 non_dataset_apks/*
 
 # Pycharm

@@ -275,7 +275,7 @@ def run_contextual(apk_file, app_id):
     runs the contextual component, get contextual details from google play and also request report from VirusTotal
     :return:
     """
-    output_filename = '../contextual_out/contextual_features'
+    output_filename = '../output/contextual_out/contextual_features'
     try:
         if google_play_enabled:
             app_details = play_scraper.details(app_id)
