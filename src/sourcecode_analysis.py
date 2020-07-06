@@ -68,8 +68,7 @@ def analyze_dex(ds, dx):
         if enable_obfuscation:
             try:
                 start_time = time.time()
-                obfuscation_score, obfuscations_dict, count_histogram = get_obfuscation_naming_total(dex,
-                                                                                                     obfuscations_dict)
+                obfuscation_score, obfuscations_dict, count_histogram = get_obfuscation_naming_total(dex, obfuscations_dict)
                 current_time = time.time()
                 sourcecode_logger.info("Time spent on obfuscation: " + str(current_time - start_time))
             except Exception as e:
@@ -77,14 +76,24 @@ def analyze_dex(ds, dx):
 
     # Use dx object
     try:
-        start_time = time.time()
-        kotlin_dict, reflection_dict, keyword_usages_general = get_keyword_usage(dx)
+        if enable_keywordusage:
+            start_time = time.time()
+            kotlin_dict, reflection_dict, keyword_usages_general = get_keyword_usage(dx)
+            current_time = time.time()
+            sourcecode_logger.info("Time spent on keyword usage: " + str(current_time - start_time))
+
         if enable_api_methods:
+            start_time = time.time()
             api_methods_dict = get_api_methods(dx)
+            current_time = time.time()
+            print("Time spent on api methods: " + str(current_time - start_time))
+            
         if enable_string_constants:
+            start_time = time.time()
             string_constants, possible_str_obfs_cnt = get_strings_with_obfuscation(dx)
-        current_time = time.time()
-        sourcecode_logger.info("Time spent on keyword usage: " + str(current_time - start_time))
+            current_time = time.time()
+            print("Time spent on string constants: " + str(current_time - start_time))
+
     except Exception as e:
         sourcecode_logger.error("Koltin/Reflection extraction failed: " + str(e))
         traceback.print_exc()
@@ -176,31 +185,30 @@ def get_keyword_usage(app):
     common_keywords = [r'goto']
     keyword_usages_common = initialize_keyword_dict(common_keywords, enable_kotlin)
 
-    if enable_reflection or enable_kotlin:
-        for cl in app.get_classes():
-            for method in cl.get_methods():
-                m = method.get_method()
+    for cl in app.get_classes():
+        for method in cl.get_methods():
+            m = method.get_method()
 
-                # We only care about code in methods. We check those for patterns
-                if m and isinstance(m, bytecodes.dvm.EncodedMethod):
-                    try:
-                        src = m.get_source()
-                        print(src)
-                    except Exception:
-                        sourcecode_logger.warning("Could not decompile method: " + str(m.name))
-                        src = None
+            # We only care about code in methods. We check those for patterns
+            if m and isinstance(m, bytecodes.dvm.EncodedMethod):
+                try:
+                    src = m.get_source()
+                    print(src)
+                except Exception:
+                    sourcecode_logger.warning("Could not decompile method: " + str(m.name))
+                    src = None
 
-                    # Kotlin keyword analysis
-                    if src and enable_kotlin:
-                        key_patterns_kotlin = find_pattern_usage(src, key_patterns_kotlin, keyword_usages_kotlin)
+                # Kotlin keyword analysis
+                if src and enable_kotlin:
+                    key_patterns_kotlin = find_pattern_usage(src, key_patterns_kotlin, keyword_usages_kotlin)
 
-                    # Java reflection usage analysis
-                    if src and enable_reflection:
-                        reflection_dict = find_reflection_usage(src, reflection_regex, reflection_dict)
+                # Java reflection usage analysis
+                if src and enable_reflection:
+                    reflection_dict = find_reflection_usage(src, reflection_regex, reflection_dict)
 
-                    # General keyword analysis
-                    if src and enable_commonkeywords:
-                        keyword_usages_common = find_pattern_usage(src, common_keywords, keyword_usages_common)
+                # General keyword analysis
+                if src and enable_commonkeywords:
+                    keyword_usages_common = find_pattern_usage(src, common_keywords, keyword_usages_common)
 
     return keyword_usages_kotlin, reflection_dict, keyword_usages_common
 
@@ -215,7 +223,7 @@ def find_pattern_usage(src, patterns, dictionary):
 def find_reflection_usage(src, reflection_regex, reflection_dict):
     reflections = re.findall(reflection_regex, src)
     for reflection in reflections:
-        reflection = "java.lang.reflect." + reflection # Specify the full name for formatting sakes
+        reflection = "java.lang.reflect." + reflection  # Specify the full name for formatting sakes
         if reflection not in reflection_dict:
             reflection_dict[reflection] = 1
         else:
@@ -242,7 +250,7 @@ def get_api_methods(dx):
         for method in external_methods:
             method_name = method.get_method().get_name()
             class_name = method.get_method().get_class_name()
-            full_method = class_name + method_name
+            full_method = class_name.replace(';', '::') + method_name
             add_to_dict_unique(full_method, api_calls_dict)
 
     return api_calls_dict
@@ -353,7 +361,9 @@ def get_strings_with_obfuscation(dx):
     possible_str_obfs_cnt = 0
     break_flag = False
 
-    const_strings_dict = dx.strings
+    const_strings_dict = dx.strings  #
+    # TODO:: MAKE THIS GET STRINGS!!! list(dx.get_strings())[0].get_xref_from()
+    # TODO:: take out the sentinels and have a separate variable for sentinels
     const_strings = list(const_strings_dict.keys())
     for string in const_strings:
         # count base64 encoded string constants as possible obfuscations
