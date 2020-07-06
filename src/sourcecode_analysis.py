@@ -68,8 +68,7 @@ def analyze_dex(ds, dx):
         if enable_obfuscation:
             try:
                 start_time = time.time()
-                obfuscation_score, obfuscations_dict, count_histogram = get_obfuscation_naming_total(dex,
-                                                                                                     obfuscations_dict)
+                obfuscation_score, obfuscations_dict, count_histogram = get_obfuscation_naming_total(dex, obfuscations_dict)
                 current_time = time.time()
                 sourcecode_logger.info("Time spent on obfuscation: " + str(current_time - start_time))
             except Exception as e:
@@ -88,6 +87,7 @@ def analyze_dex(ds, dx):
             api_methods_dict = get_api_methods(dx)
             current_time = time.time()
             print("Time spent on api methods: " + str(current_time - start_time))
+            
         if enable_string_constants:
             start_time = time.time()
             string_constants, possible_str_obfs_cnt = get_strings_with_obfuscation(dx)
@@ -119,6 +119,11 @@ def get_opcodes(app, opcodes_dict):
                     else:
                         opcodes_dict[instr_name] += 1
     return opcodes_dict
+
+def get_opcodes2(d):
+    for c in d.get_classes():
+        for m in c.get_methods():
+            return m.get_code().get_instructions()
 
 
 # Function that checks of common obfuscation techniques
@@ -180,30 +185,30 @@ def get_keyword_usage(app):
     common_keywords = [r'goto']
     keyword_usages_common = initialize_keyword_dict(common_keywords, enable_kotlin)
 
-    if enable_reflection or enable_kotlin:
-        for cl in app.get_classes():
-            for method in cl.get_methods():
-                m = method.get_method()
+    for cl in app.get_classes():
+        for method in cl.get_methods():
+            m = method.get_method()
 
-                # We only care about code in methods. We check those for patterns
-                if m and isinstance(m, bytecodes.dvm.EncodedMethod):
-                    try:
-                        src = m.get_source()
-                    except Exception:
-                        sourcecode_logger.warning("Could not decompile method: " + str(m.name))
-                        src = None
+            # We only care about code in methods. We check those for patterns
+            if m and isinstance(m, bytecodes.dvm.EncodedMethod):
+                try:
+                    src = m.get_source()
+                    print(src)
+                except Exception:
+                    sourcecode_logger.warning("Could not decompile method: " + str(m.name))
+                    src = None
 
-                    # Kotlin keyword analysis
-                    if src and enable_kotlin:
-                        key_patterns_kotlin = find_pattern_usage(src, key_patterns_kotlin, keyword_usages_kotlin)
+                # Kotlin keyword analysis
+                if src and enable_kotlin:
+                    key_patterns_kotlin = find_pattern_usage(src, key_patterns_kotlin, keyword_usages_kotlin)
 
-                    # Java reflection usage analysis
-                    if src and enable_reflection:
-                        reflection_dict = find_reflection_usage(src, reflection_regex, reflection_dict)
+                # Java reflection usage analysis
+                if src and enable_reflection:
+                    reflection_dict = find_reflection_usage(src, reflection_regex, reflection_dict)
 
-                    # General keyword analysis
-                    if src and enable_commonkeywords:
-                        keyword_usages_common = find_pattern_usage(src, common_keywords, keyword_usages_common)
+                # General keyword analysis
+                if src and enable_commonkeywords:
+                    keyword_usages_common = find_pattern_usage(src, common_keywords, keyword_usages_common)
 
     return keyword_usages_kotlin, reflection_dict, keyword_usages_common
 

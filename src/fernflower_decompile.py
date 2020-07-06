@@ -109,7 +109,6 @@ def extract_features(file_path):
         if filename.endswith(".java"):
             with archive.open(filename) as javafile:
                 src_string = javafile.read().decode("utf-8")
-          
                 # Imports
                 imports_dict = find_pattern(imports_dict, import_regex, src_string)
 
@@ -132,7 +131,7 @@ def run_fernflower_decompile(package_name, file_path):
     decompile(package_name, file_path)
     fernflower_logger.info("Time spent on decompiling: " + str(time.time() - start_time))
 
-    # Feature extraction
+    #Feature extraction
     fernflower_logger.info("### Extracting features from decompiled code ###")
     start_time = time.time()
     try:
