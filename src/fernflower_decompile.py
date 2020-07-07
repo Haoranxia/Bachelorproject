@@ -3,6 +3,7 @@ import platform, subprocess, zipfile, configparser, re
 import collections
 import time
 import logging
+from util import write_to_csv
 
 isWindows = False
 if platform.system() == 'Windows':
@@ -121,10 +122,6 @@ def extract_features(file_path):
     return imports_dict, failed_decompilation_count, reflection_dict
 
 
-# decompile("/home/yona/PycharmProjects/Bachelorproject/apks/flashlight.apk")
-# dex2jar_path = D:\Bachelor_project\Bachelorproject\src\fernflower_decompile\tools\dex2jar-2.0\d2j-dex2jar.bat
-# fernflower_path = D:\Bachelor_project\Bachelorproject\src\fernflower_decompile\tools\fernflower.jar
-
 def run_fernflower_decompile(package_name, file_path):
     # Decompilation
     start_time = time.time()
@@ -137,15 +134,24 @@ def run_fernflower_decompile(package_name, file_path):
     try:
         imports_dict, decompile_error_count, reflection_dict = extract_features(fernflower_out)
         fernflower_logger.info("Time spent on extracting features: " + str(time.time() - start_time))
+        write_output(package_name, imports_dict, decompile_error_count, reflection_dict)
     except Exception:
         fernflower_logger.warning("Could not extract fernflower features")
         emptyDict = collections.OrderedDict()
-        return emptyDict, emptyDict, emptyDict
-
-    return imports_dict, decompile_error_count, reflection_dict
+        write_output(package_name, emptyDict, emptyDict, emptyDict)
 
 
 # Helper functions
+def write_output(package_name, imports_dict, decompile_error_count, reflection_dict):
+    fernflowercsv = "../output/static_out/fernflower_features.csv"
+    fernflower_dict = collections.OrderedDict()
+    fernflower_dict["package-name"] = package_name
+    fernflower_dict["imports"] = list(imports_dict.items())
+    fernflower_dict["compile-error count"] = decompile_error_count
+    fernflower_dict["reflection usage"] = list(reflection_dict.items())
+    write_to_csv(fernflowercsv, fernflower_dict)
+
+
 def write_to_file(filepath, data):
     with open(filepath, 'wb+') as f:
         f.write(data)

@@ -1,6 +1,7 @@
 import collections
 import logging
 
+from util import get_full_header, create_complete_dict, write_to_csv
 from androguard.core.analysis import analysis
 
 # Logger
@@ -65,22 +66,48 @@ def analyze_manifest(a):
     except Exception:
         manifest_logger.warning("Could not extract all intent filters")
 
-
     # Libraries
     try:
         dict_manifest_features["libraries"] = a.get_libraries()
     except Exception:
         manifest_logger.warning("Could not extract libraries")
 
-    # TODO Meta data
-    # meta_data = list()
-    # meta_data.append(a.get_attribute_value("meta-data", "android:name"))
-    # meta_data.append(a.get_attribute_value("meta-data", "android:value"))
-    # meta_data.append(a.get_attribute_value("meta-data", "android:resource"))
-    # dict_manifest_features["meta-data"] = meta_data
+    # Write collected data to CSV
+    write_csv(dict_manifest_features)
+    return 
     
-    return dict_manifest_features
-    
+
+def write_csv(manifest_dict):
+    # Output CSV files
+    manifestcsv = "../output/static_out/manifest_features.csv"
+    permissionscsv = "../output/static_out/permissions.csv"
+    hardwarefeaturescsv = "../output/static_out/hardware_features.csv"
+    softwarefeaturescsv = "../output/static_out/software_features.csv"
+
+    # Manifest file 
+    write_to_csv(manifestcsv, manifest_dict)
+
+    # Permissions
+    permissions_header, permissions_dict = get_feature(manifest_dict, "permissions", "../resources/permissions.txt")
+    write_to_csv(permissionscsv, permissions_dict, header=permissions_header)
+
+    # Hardware features
+    hardware_header, hardware_dict = get_feature(manifest_dict, "features", "../resources/hardware_features.txt")
+    write_to_csv(hardwarefeaturescsv, hardware_dict, header=hardware_header)
+
+    # Software features
+    software_header, software_dict = get_feature(manifest_dict, "features", "../resources/software_features.txt")
+    write_to_csv(softwarefeaturescsv, software_dict, header=software_header)
+
+    return 
+
+
+def get_feature(manifest_dict, dictkey, headerfile):
+    feature = manifest_dict[dictkey]
+    feature_header = get_full_header(headerfile)
+    feature_dict = create_complete_dict(feature, feature_header, manifest_dict["package-name"])
+    return feature_header, feature_dict
+
 
 # Each type of parent item (activities, services, receivers) can have intent filters. Thus we loop over those and
 # extract all intent filters

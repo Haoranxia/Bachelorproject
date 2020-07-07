@@ -9,7 +9,7 @@ from androguard.core import bytecodes
 from androguard.core import androconf
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes.dvm import ClassDefItem, EncodedMethod
-
+from util import get_full_header, write_to_csv, create_complete_dict, write_to_json
 
 # Logger
 sourcecode_logger = logging.getLogger()
@@ -30,9 +30,7 @@ enable_string_constants = (config["Sourcecode_Settings"]["StringConstants"] == "
 enable_api_methods = (config["Sourcecode_Settings"]["APIMethods"] == "yes")
 
 
-# TODO: Look for common obfuscation techniques and pattern match for that
-# TODO: Look for more kotlin code patterns and pattern match for that
-def analyze_dex(ds, dx):
+def analyze_dex(a, ds, dx):
     """
     analyze Dex file
     :param ds: list of dalvikVMformat objects
@@ -40,20 +38,25 @@ def analyze_dex(ds, dx):
     :return:
     """
     # Initialization
+    package_name = a.get_package()
+
     opcodes_dict = collections.OrderedDict()
+
     obfuscation_score = 0
     obfuscations_dict = collections.OrderedDict()
     count_histogram = collections.OrderedDict()
     count_histogram["Length 1 identifier"] = 0
     count_histogram["Length 2 identifier"] = 0
     count_histogram["Length 3 identifier"] = 0
+
     kotlin_dict = collections.OrderedDict()
     reflection_dict = collections.OrderedDict()
+    
     string_constants = []
     possible_str_obfs_cnt = 0
     api_methods_dict = {}
     keyword_usages_general = collections.OrderedDict()
-
+    
     # Use d object
     for dex in ds:
         if enable_opcodes:
@@ -70,6 +73,7 @@ def analyze_dex(ds, dx):
                 start_time = time.time()
                 obfuscation_score, obfuscations_dict, count_histogram = get_obfuscation_naming_total(dex, obfuscations_dict)
                 current_time = time.time()
+                obfuscations_dict["obfuscation-score"] = obfuscation_score
                 sourcecode_logger.info("Time spent on obfuscation: " + str(current_time - start_time))
             except Exception as e:
                 sourcecode_logger.error("Obfuscation extraction failed: " + str(e))
@@ -86,22 +90,50 @@ def analyze_dex(ds, dx):
             start_time = time.time()
             api_methods_dict = get_api_methods(dx)
             current_time = time.time()
-            print("Time spent on api methods: " + str(current_time - start_time))
+            sourcecode_logger.info("Time spent on api methods: " + str(current_time - start_time))
             
         if enable_string_constants:
             start_time = time.time()
             string_constants, possible_str_obfs_cnt = get_strings_with_obfuscation(dx)
             current_time = time.time()
-            print("Time spent on string constants: " + str(current_time - start_time))
-
+            sourcecode_logger.info("Time spent on string constants: " + str(current_time - start_time))
     except Exception as e:
         sourcecode_logger.error("Koltin/Reflection extraction failed: " + str(e))
-        traceback.print_exc()
 
-    obfuscations_dict["obfuscation-score"] = obfuscation_score
 
-    return opcodes_dict, format_sourcecode_dict(obfuscations_dict, count_histogram, kotlin_dict, reflection_dict,
-                                                keyword_usages_general), api_methods_dict, string_constants, possible_str_obfs_cnt
+    # Write obtained data to output files
+    formatted_sourcecode_dict = format_sourcecode_dict(package_name, obfuscations_dict, count_histogram, kotlin_dict, reflection_dict, keyword_usages_general)
+    write_output(package_name, opcodes_dict, api_methods_dict, string_constants, possible_str_obfs_cnt, formatted_sourcecode_dict)
+    return
+    
+
+def write_output(package_name, opcodes_dict, api_methods_dict, string_constants_dict, possible_str_obfs_cnt, formatted_sourcecode_dict):
+    # CSV Output files
+    sourcecodecsv = "../output/static_out/sourcecode_features.csv"
+    apimethodscsv = "../output/static_out/api_method_features.csv"
+    stringconstcsv = "../output/static_out/string_constant_features.csv"
+    opcodescsv = "../output/static_out/sourcecode_opcodes.csv"
+
+    # Header files
+    opcodes_header = get_full_header("../resources/opcodes.txt")
+
+    if enable_opcodes:
+        opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, package_name, frequency=True)
+        write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
+
+    if enable_api_methods:
+        api_methods_dict = {'package-name': package_name, 'api_methods': api_methods_dict}
+        write_to_csv(apimethodscsv, api_methods_dict)
+        write_to_json("../output/static_out/api_method_features.json", api_methods_dict)
+
+    if enable_string_constants:
+        string_constants_dict = {'package-name': package_name, 'possible_str_obfs_cnt': possible_str_obfs_cnt, 'string-constants': string_constants_dict}
+        write_to_csv(stringconstcsv, string_constants_dict)
+        write_to_json("../output/static_out/string_constant_features.json", string_constants_dict)
+
+    if enable_obfuscation or enable_kotlin or enable_reflection or enable_keywordusage:
+        write_to_csv(sourcecodecsv, formatted_sourcecode_dict)
+    
 
 
 # Return a dictionary of opcodes and the nr of occurrences of that opcode
@@ -120,11 +152,6 @@ def get_opcodes(app, opcodes_dict):
                         opcodes_dict[instr_name] += 1
     return opcodes_dict
 
-def get_opcodes2(d):
-    for c in d.get_classes():
-        for m in c.get_methods():
-            return m.get_code().get_instructions()
-
 
 # Function that checks of common obfuscation techniques
 def get_obfuscation_naming_total(app, obfuscations_dict):
@@ -137,7 +164,7 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
     :param obfuscations_dict:
     :return:
     """
-    # TODO explain how obfuscation score is calculated
+    
     obfuscation_score = 0
     total_evaluated = 0
     count_histogram = collections.OrderedDict()
@@ -193,7 +220,7 @@ def get_keyword_usage(app):
             if m and isinstance(m, bytecodes.dvm.EncodedMethod):
                 try:
                     src = m.get_source()
-                    print(src)
+
                 except Exception:
                     sourcecode_logger.warning("Could not decompile method: " + str(m.name))
                     src = None
@@ -385,9 +412,9 @@ def get_strings_with_obfuscation(dx):
 
 
 # Output formatting function
-def format_sourcecode_dict(obfuscations_dict, obfuscations_histogram, kotlin_dict, reflection_dict,
-                           keyword_usages_general):
+def format_sourcecode_dict(package_name, obfuscations_dict, obfuscations_histogram, kotlin_dict, reflection_dict, keyword_usages_general):
     sourcecode_features_dict = collections.OrderedDict()
+    sourcecode_features_dict["package-name"] = package_name
     sourcecode_features_dict["Possible obfuscations"] = list(obfuscations_dict.items())
     sourcecode_features_dict.update(obfuscations_histogram)
     sourcecode_features_dict.update(kotlin_dict)

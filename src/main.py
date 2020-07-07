@@ -25,21 +25,12 @@ from sourcecode_analysis import analyze_dex
 from manifest_analysis import analyze_manifest
 from contextual_feat_extraction import run_contextual
 
+
 # Logger
 main_logger = logging.getLogger()
 main_logger.setLevel(logging.INFO)
 logging.basicConfig(filename='main.log', level=logging.INFO)
 
-# CSV output files (Relative path to this file)
-manifestcsv = "../output/static_out/manifest_features.csv"
-permissionscsv = "../output/static_out/permissions.csv"
-hardwarefeaturescsv = "../output/static_out/hardware_features.csv"
-softwarefeaturescsv = "../output/static_out/software_features.csv"
-sourcecodecsv = "../output/static_out/sourcecode_features.csv"
-apimethodscsv = "../output/static_out/api_method_features.csv"
-stringconstcsv = "../output/static_out/string_constant_features.csv"
-opcodescsv = "../output/static_out/sourcecode_opcodes.csv"
-fernflowercsv = "../output/static_out/fernflower_features.csv"
 
 # Config file parsing
 config = configparser.ConfigParser()
@@ -49,7 +40,6 @@ enable_manifest = (config["Settings"]["Manifest"] == "yes")
 enable_sourcecode = (config["Settings"]["Sourcecode"] == "yes")
 enable_progresstracker = (config["Misc"]["Progresstracker"] == "yes")
 enable_fernflower = (config["Settings"]["Fernflower"] == "yes")
-enable_xrefgraph = (config["Settings"]["Xrefgraph"] == "yes")
 enable_performancelogging = (config["Settings"]["Performancelogging"] == "yes")
 
 
@@ -61,34 +51,19 @@ if not isfile(processed_apks_file):
 if enable_progresstracker:
     processed_apks = get_processed_apks(processed_apks_file)
 
-
-# TODOLIST
-# TODO: Check kotlin patterns (ask supervisor)
-# TODO: Perhaps change logger output
-# TODO: Test benign dataset
-# TODO: Test malware dataset
-# TODO: Compare results between benign/malware
-# TODO: Obtain statistics from output (benign/malware)
-# TODO: Compare results between fernflower/DAD
-# TODO: Possibly write classification algorithms for our obtained results
-
 def main():
     # Argument parsing
     apk_files = parse_arguments()
 
     start_time = time.time()
     totaltime = 0
-
     nrapks = len(apk_files)
     for apk_index, apk_file in enumerate(apk_files):
         print("Processing apk: " + str(apk_index) + " out of " + str(nrapks) + " apks")
 
         # Try to inspect/parse the APK
         try:
-            start_time2 = time.time()
             a = inspect_APK(apk_file)
-            current_time2 = time.time()
-            print("Creating androguard apk object: ", current_time2 - start_time2)
         except Exception:
             update_progresstracker(apk_file)
             continue
@@ -105,15 +80,12 @@ def main():
             # Contextual features
             if enable_contextual:
                 main_logger.info("Running contextual")
-                start_time2 = time.time()
                 run_contextual(apk_file=apk_file, app_id=a.get_package())
-                current_time2 = time.time()
-                print("Total: ", current_time2 - start_time2)
 
             # Manifest features
             if enable_manifest:
                 main_logger.info("Running manifest")
-                process_manifest(a)
+                analyze_manifest(a)
 
             # Source code features
             if enable_sourcecode:
@@ -181,30 +153,6 @@ def parse_arguments():
     return apk_files
 
 
-# Helper functions
-def process_manifest(a):
-    """
-    This function processes the extracted information from the manifest file
-    :param a: Analysis object from androguard
-    :return:
-    """
-    # Main manifest features
-    manifest_dict = analyze_manifest(a)
-    write_to_csv(manifestcsv, manifest_dict)
-
-    # Permissions
-    permissions_header, permissions_dict = get_feature(manifest_dict, "permissions", "../resources/permissions.txt")
-    write_to_csv(permissionscsv, permissions_dict, header=permissions_header)
-
-    # Hardware features
-    hardware_header, hardware_dict = get_feature(manifest_dict, "features", "../resources/hardware_features.txt")
-    write_to_csv(hardwarefeaturescsv, hardware_dict, header=hardware_header)
-
-    # Software features
-    software_header, software_dict = get_feature(manifest_dict, "features", "../resources/software_features.txt")
-    write_to_csv(softwarefeaturescsv, software_dict, header=software_header)
-
-
 def process_sourcecode(a):
     """
     This function constructs the relevant objects for sourcecode analysis using androguard.
@@ -219,6 +167,7 @@ def process_sourcecode(a):
     dlogger.disabled = True
 
     start_time = time.time()
+
     # Create the d (DalvikVMFormat object) for each dex, and dx (Analysis object) 
     # for all dex files for sourcecode analysis
     ds = [dvm.DalvikVMFormat(dex, using_api=a.get_target_sdk_version()) for dex in a.get_all_dex()]
@@ -228,60 +177,23 @@ def process_sourcecode(a):
         dx.add(d)
 
     for d in ds:
-        # NOTE: We use the DAD decompiler (build-in androguard decompiler). Another option would be JADX
-        # However, JADX stops decompiling when it encounters a problem (which happens quite often with obfuscated apks)
         decompiler = DecompilerDAD(d, dx)
         d.set_decompiler(decompiler)
 
     try:
         dx.create_xref()
-        if enable_xrefgraph:
-            construct_xrefgraph(a, dx)
     except Exception:
         main_logger.warning("Could not create xrefs properly")
 
     start_time = time.time()
 
-    opcodes_dict, sourcecode_dict, api_methods_dict, string_constants, possible_str_obfs_cnt = analyze_dex(ds, dx)
+    analyze_dex(a, ds, dx)
+
     glogger.enabled = True
     dlogger.enabled = True
 
     current_time = time.time()
     main_logger.info("Apk: " + a.get_package() + " || Time spent on analysis: " + str(current_time - start_time))
-
-    # Output formatting
-    opcodes_header = get_full_header("../resources/opcodes.txt")
-    opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, a.get_package(), frequency=True)
-
-    sourcecode_dict = format_sourcecode_dict(sourcecode_dict, a.get_package())
-    api_methods_dict = format_api_dict(api_methods_dict, a.get_package())
-    string_constants_dict = format_string_constants_dict(string_constants, possible_str_obfs_cnt, a.get_package())
-
-    # FIXME:: DO NOT WRITE TO CSV IF YOU'RE DISABLED!!!
-    write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
-    write_to_csv(sourcecodecsv, sourcecode_dict)
-    write_to_csv(apimethodscsv, api_methods_dict)
-    write_to_csv(stringconstcsv, string_constants_dict)
-
-    write_to_json("../output/static_out/api_method_features.json", api_methods_dict)
-    write_to_json("../output/static_out/string_constant_features.json", string_constants_dict)
-
-
-def format_sourcecode_dict(sourcecode_dict, package_name):
-    return_dict = collections.OrderedDict()
-    return_dict["package-name"] = package_name
-    return_dict.update(sourcecode_dict)
-    return return_dict
-
-
-def format_api_dict(api_methods_dict, package_name):
-    return_dict = {'package-name': package_name, 'api-methods': api_methods_dict}
-    return return_dict
-
-
-def format_string_constants_dict(string_constants, possible_str_obfs_cnt, package_name):
-    return {'package-name': package_name, 'possible_str_obfs_cnt': possible_str_obfs_cnt,
-            'string-constants': string_constants}
 
 
 def process_fernflower(package_name, apk_file):
@@ -291,19 +203,12 @@ def process_fernflower(package_name, apk_file):
     :param apk_file: the path to the to be analyzed apk file
     """
     start_time = time.time()
-    imports_dict, compile_error_count, reflection_dict = run_fernflower_decompile(package_name, apk_file)
+    run_fernflower_decompile(package_name, apk_file)
     finish_time = time.time()
     main_logger.info("Time spent on feature extraction (fernflower): " + str(finish_time - start_time))
 
-    # Output formatting
-    fernflower_dict = collections.OrderedDict()
-    fernflower_dict["package-name"] = package_name
-    fernflower_dict["imports"] = list(imports_dict.items())
-    fernflower_dict["compile-error count"] = compile_error_count
-    fernflower_dict["reflection usage"] = list(reflection_dict.items())
-    write_to_csv(fernflowercsv, fernflower_dict)
 
-
+# Helper function that catches errors possibly generated when analyzing an APK 
 def inspect_APK(apk_file):
     try:
         a = apk.APK(apk_file)
@@ -322,16 +227,14 @@ def inspect_APK(apk_file):
         raise(e)
 
 
+# Updates the processedapks.txt file with the file name (not package name)
 def update_progresstracker(apk_file):
-    # with open(processed_apks_file, 'a') as f:
-        #     f.write(a.get_package() + '\n')
-        #     f.close()
-
     with open(processed_apks_file, 'a') as f:
         f.write(path_leaf(apk_file) + '\n')
         f.close()
 
 
+# Function that logs performance per apk
 def logtime(apk_name, process_time, apk_size):
     filename = "../output/static_out/performance.csv"
     time_dict = collections.OrderedDict()
@@ -339,11 +242,6 @@ def logtime(apk_name, process_time, apk_size):
     time_dict["process-time (sec)"] = process_time
     time_dict["apk size (KB)"] = float(apk_size) / float(1000)
     write_to_csv(filename, time_dict)
-    
-
-# TODO: Implement xref graph
-def construct_xrefgraph(dx):
-    main_logger.debug("TODO: Implement xref graph")
 
 
 if __name__ == '__main__':
