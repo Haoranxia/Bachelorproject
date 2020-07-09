@@ -267,7 +267,7 @@ def get_app_id(apk_file):
     """
     meta_info = Popen(['aapt', 'dump', 'badging', apk_file], stdout=PIPE, stderr=PIPE)
     meta_info_stdout, stderr = meta_info.communicate()
-    print(re.findall(r"package: name='(.*?)'", meta_info_stdout.decode('utf-8'))[0])
+    return re.findall(r"package: name='(.*?)'", meta_info_stdout.decode('utf-8'))[0]
 
 
 def run_contextual(apk_file, app_id):
