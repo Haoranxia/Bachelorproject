@@ -48,6 +48,7 @@ processed_apks = None
 processed_apks_file = "../resources/processedapks.txt"
 if not isfile(processed_apks_file):
     open(processed_apks_file, "w+")
+
 if enable_progresstracker:
     processed_apks = get_processed_apks(processed_apks_file)
 
@@ -145,8 +146,7 @@ def parse_arguments():
 
     if apk_folder:
         # if an apk folder is specified
-        apk_files = [join(apk_folder, file) for file in listdir(apk_folder) if isfile(join(apk_folder, file)) and
-                     file.endswith(".apk")]
+        apk_files = [join(apk_folder, file) for file in listdir(apk_folder) if isfile(join(apk_folder, file)) and file.endswith(".apk")]
     else:
         # if an apk file is specified instead of the folder
         apk_files.append(apk_file)
@@ -159,17 +159,17 @@ def process_sourcecode(a):
     After construction we extract the features we want and process them accordingly.
     :param a: Analysis object from androguard
     """
-    # FIXME glogger disables the "multiple exit nodes found" prints (androguard issue/bug)
+    # FIXME glogger.disabled disables the "multiple exit nodes found" prints (androguard issue/bug)
     glogger.disabled = True
 
     # FIXME dlogger disables the "Error decompiling method class <object>" message. 
-    # It seems like DAD has issues with decompiling some apks and will then show this message
+    # It seems like DAD has issues with decompiling some apks and will then show this message.
+    # We disable it for a prettier output.
     dlogger.disabled = True
 
     start_time = time.time()
 
     # Create the d (DalvikVMFormat object) for each dex, and dx (Analysis object) 
-    # for all dex files for sourcecode analysis
     ds = [dvm.DalvikVMFormat(dex, using_api=a.get_target_sdk_version()) for dex in a.get_all_dex()]
     dx = Analysis()
 
@@ -210,6 +210,11 @@ def process_fernflower(package_name, apk_file):
 
 # Helper function that catches errors possibly generated when analyzing an APK 
 def inspect_APK(apk_file):
+    """
+    This function creates the APK object which is used for manifest file feature extraction.
+    We also catch common exceptions generated in this wrapper function.
+    :param apk_file: path to the apk to be analyzed
+    """
     try:
         a = apk.APK(apk_file)
         return a

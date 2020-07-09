@@ -10,7 +10,7 @@ from os import path, devnull
 from tempfile import NamedTemporaryFile
 
 
-# TODO: This function sometimes breaks when odd characters are encountered (also breaks csv)
+# FIXME: A possible bug might exist where csv writing might break if very odd characters are encountered. This issue has not been encountered so far
 def write_to_csv(file, file_dict, key='package-name', header=None):
     """
     Writes the data in file_dict to a csv file where the fieldnames are the keys of the dictionary.
@@ -32,6 +32,7 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
         except OverflowError:
             maxInt = int(maxInt/10)
 
+    # Set default header if its not given as a parameter
     if header is None:
         header = file_dict.keys()
 
@@ -61,8 +62,9 @@ def write_to_csv(file, file_dict, key='package-name', header=None):
 
                 if not row_exists:
                     writer.writerow(file_dict)
-            except Exception as e:
-                raise(e)
+            except Exception:
+                # TODO: Properly handle bad writes. We should probably just ignore such issues
+                print("Error in writing data. Ignoring...")
         
         shutil.move(temp_file.name, file)
 
