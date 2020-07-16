@@ -105,18 +105,6 @@ def write_output(manifest_dict):
         write_to_csv(permissionscsv, permissions_dict, header=permissions_header)
         write_to_csv(hardwarefeaturescsv, hardware_dict, header=hardware_header)
         write_to_csv(softwarefeaturescsv, software_dict, header=software_header)
-    
-    # if enable_json:
-    #     # JSON output files
-    #     manifestjson = "../output/static_out/manifest_features.json"
-    #     permissionsjson = "../output/static_out/permissions.json"
-    #     hardwarefeaturesjson = "../output/static_out/hardware_features.json"
-    #     softwarefeaturesjson = "../output/static_out/software_features.json"
-        
-    #     # write_to_json(manifestjson, dict(manifest_dict))
-    #     # write_to_json(permissionsjson, dict(permissions_dict))
-    #     # write_to_json(hardwarefeaturesjson, dict(hardware_dict))
-    #     # write_to_json(softwarefeaturesjson, dict(software_dict))
 
     return 
 

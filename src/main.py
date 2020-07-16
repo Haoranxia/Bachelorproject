@@ -1,29 +1,23 @@
-import sys
 import argparse
 import configparser
-import collections
 import logging
 import time
-import matplotlib.pyplot as plt
-import networkx as nx
 from pathlib import Path
 
 from zipfile import BadZipFile
 from os import listdir
 from os.path import isfile, join
 from androguard.core.bytecodes import dvm, apk, axml
-from androguard.misc import AnalyzeAPK
 from androguard.decompiler.dad.graph import logger as glogger
 from androguard.decompiler.dad.decompile import logger as dlogger
 from androguard.core.analysis.analysis import Analysis
 from androguard.decompiler.decompiler import DecompilerDAD
-from androguard.decompiler.decompiler import DecompilerJADX
 
 from util import *
-from fernflower_decompile import run_fernflower_decompile
-from sourcecode_analysis import analyze_dex
-from manifest_analysis import analyze_manifest
-from contextual_feat_extraction import run_contextual
+from Fernflower.fernflower_decompile import run_fernflower_decompile
+from Sourcecode.sourcecode_analysis import analyze_dex
+from Manifest.manifest_analysis import analyze_manifest
+from Contextual.contextual_feat_extraction import run_contextual
 
 
 # Logger
