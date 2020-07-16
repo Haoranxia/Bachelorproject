@@ -1,4 +1,3 @@
-from os import path, devnull 
 import platform, subprocess, zipfile, configparser, re
 import collections
 import time
@@ -8,7 +7,6 @@ from util import write_to_csv
 isWindows = False
 if platform.system() == 'Windows':
     isWindows = True
-
 
 # Logger
 fernflower_logger = logging.getLogger()
@@ -21,11 +19,11 @@ config.read("../settings.ini")
 
 d2j_path = config["Paths"]["dex2jar_path"]
 fernflower_path = config["Paths"]["fernflower_path"]
-dex2jar_out = "./fernflower_decompile/dex2jar_out/dex2jar_out.jar"
-fernflower_out = "./fernflower_decompile/fernflower_out/dex2jar_out.jar"
+dex2jar_out = "./dex2jar_out/dex2jar_out.jar"
+fernflower_out = "./fernflower_out/dex2jar_out.jar"
 
-dex2jar_log = "./fernflower_decompile/dex2jar_out/dex2jar.log"
-fernflower_log = "./fernflower_decompile/fernflower_out/fernflower.log"
+dex2jar_log = "./dex2jar_out/dex2jar.log"
+fernflower_log = "./fernflower_out/fernflower.log"
 
 
 # Pipeline: apk -> dex2jar -> jar with classes -> fernflower -> jar with javacode
@@ -70,7 +68,7 @@ def dex2jar(package_name, apk):
     p = subprocess.Popen(d2j_args, stdout=subprocess.PIPE)
     log = p.communicate()[0]
     if log:
-        logfile_path = "./fernflower_decompile/dex2jar_out/" + package_name + "_dex2jar.log"
+        logfile_path = "./Fernflower/dex2jar_out/" + package_name + "_dex2jar.log"
         write_to_file(logfile_path, log)
 
 
@@ -80,11 +78,11 @@ def fernflower_decompile(package_name, file_path):
     :param package_name:
     :param file_path: path to the jar file containing .class files
     """
-    fernflower_args = ["java", "-jar", fernflower_path, file_path, "./fernflower_decompile/fernflower_out"]
+    fernflower_args = ["java", "-jar", fernflower_path, file_path, "./Fernflower/fernflower_out"]
     p = subprocess.Popen(fernflower_args, stdout=subprocess.PIPE)
     log = p.communicate()[0]
     if log:
-        logfile_path = "./fernflower_decompile/fernflower_out/" + package_name + "_fernflower.log"
+        logfile_path = "./Fernflower/fernflower_out/" + package_name + "_fernflower.log"
         write_to_file(logfile_path, log)
 
 

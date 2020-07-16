@@ -122,7 +122,7 @@ def write_output(package_name, opcodes_dict, api_methods_dict, string_constants_
     opcodescsv = "../output/static_out/sourcecode_opcodes.csv"
 
     # Header files
-    opcodes_header = get_full_header("../resources/opcodes.txt")
+    opcodes_header = get_full_header("../../resources/opcodes.txt")
 
     if enable_opcodes:
         opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, package_name, frequency=True)
@@ -131,7 +131,7 @@ def write_output(package_name, opcodes_dict, api_methods_dict, string_constants_
     if enable_api_methods:
         api_methods_dict = {'package-name': package_name, 'api_methods': api_methods_dict}
         write_to_csv(apimethodscsv, api_methods_dict)
-        write_to_json("../output/static_out/api_method_features.json", api_methods_dict)
+        write_to_json("../../output/static_out/api_method_features.json", api_methods_dict)
 
     if enable_string_constants or enable_string_obfuscations:
         string_constants_dict = {'package-name': package_name,
@@ -139,7 +139,7 @@ def write_output(package_name, opcodes_dict, api_methods_dict, string_constants_
                                  'possible_obfus_strings': possible_obfus_strings,
                                  'all-string-constants': string_constants_dict}
         write_to_csv(stringconstcsv, string_constants_dict)
-        write_to_json("../output/static_out/string_constant_features.json", string_constants_dict)
+        write_to_json("../../output/static_out/string_constant_features.json", string_constants_dict)
 
     if enable_obfuscation or enable_kotlin or enable_reflection or enable_keywordusage:
         write_to_csv(sourcecodecsv, formatted_sourcecode_dict)
