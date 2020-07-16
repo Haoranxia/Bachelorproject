@@ -10,7 +10,6 @@ from Sourcecode.string_constants import run_string_constants_extraction
 
 from util import get_full_header, write_to_csv, create_complete_dict, write_to_json, add_to_dict_unique
 
-# add paths
 sys.path.append("../util.py")
 from util import get_full_header, write_to_csv, create_complete_dict, write_to_json
 
@@ -27,6 +26,9 @@ config.read("../settings.ini")
 enable_opcodes = (config["Sourcecode_Settings"]["Opcodes"] == "yes")
 enable_obfuscation = (config["Sourcecode_Settings"]["Obfuscation"] == "yes")
 enable_keywordusage = (config["Sourcecode_Settings"]["Keywordusage"] == "yes")
+enable_api_methods = (config["Sourcecode_Settings"]["APIMethods"] == "yes")
+enable_string_constants = (config["Sourcecode_Settings"]["StringConstants"] == "yes")
+enable_string_obfuscations = (config["Sourcecode_Settings"]["StringObfuscations"] == "yes")
 
 
 def analyze_dex(a, ds, dx):
@@ -51,3 +53,10 @@ def analyze_dex(a, ds, dx):
     if enable_keywordusage:
         run_keyword_extraction(package_name, dx, sourcecode_logger)
 
+    # Get API methods
+    if enable_api_methods:
+        run_api_methods_extraction(dx, package_name, sourcecode_logger)
+
+    # Get string constants and obfuscation
+    if enable_string_constants or enable_string_obfuscations:
+        run_string_constants_extraction(dx, package_name, sourcecode_logger)

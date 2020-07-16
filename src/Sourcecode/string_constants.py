@@ -103,15 +103,14 @@ def run_string_constants_extraction(dx, package_name, sourcecode_logger):
     :return:
     """
     try:
-        if enable_string_constants or enable_string_obfuscations:
-            start_time = time.time()
-            str_config = configparser.ConfigParser()
-            str_config.read(config['Paths']['string_obfs_sentinel_items'])
-            code_sentinels = json.loads(str_config['String_Obfuscation_Sentinel_List']['sentinels'])
-            string_constants, possible_str_obfs_cnt, possible_obfus_strings = get_strings_with_obfuscation(dx,
-                                                                                                           code_sentinels)
-            write_to_output(package_name, string_constants, possible_str_obfs_cnt, possible_obfus_strings)
-            current_time = time.time()
-            sourcecode_logger.info("Time spent on string constants: " + str(current_time - start_time))
+        start_time = time.time()
+        str_config = configparser.ConfigParser()
+        str_config.read(config['Paths']['string_obfs_sentinel_items'])
+        code_sentinels = json.loads(str_config['String_Obfuscation_Sentinel_List']['sentinels'])
+        string_constants, possible_str_obfs_cnt, possible_obfus_strings = get_strings_with_obfuscation(dx,
+                                                                                                       code_sentinels)
+        write_to_output(package_name, string_constants, possible_str_obfs_cnt, possible_obfus_strings)
+        current_time = time.time()
+        sourcecode_logger.info("Time spent on string constants: " + str(current_time - start_time))
     except Exception as e:
         sourcecode_logger.error("Koltin/Reflection extraction failed: " + str(e))
