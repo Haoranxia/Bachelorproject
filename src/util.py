@@ -197,3 +197,17 @@ def path_leaf(path):
     head, tail = ntpath.split(path)
     return tail or ntpath.basename(head)
 
+
+def add_to_dict_unique(name, dictionary):
+    """
+    adds a tally to an occurrence of an obfuscated class, field or method name
+    :param name: class, field or method name
+    :param dictionary: contains the tally
+    :return:
+    """
+    if name not in dictionary:
+        dictionary[name] = 1
+    else:
+        dictionary[name] += 1
+
+    return dictionary

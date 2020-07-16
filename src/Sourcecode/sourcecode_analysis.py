@@ -12,10 +12,12 @@ from androguard.core import androconf
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes.dvm import ClassDefItem, EncodedMethod
 
+from Sourcecode.api_methods import run_api_methods_extraction
+from Sourcecode.string_constants import run_string_constants_extraction
+from util import get_full_header, write_to_csv, create_complete_dict, write_to_json, add_to_dict_unique
+
 # add paths
 sys.path.append("../util.py")
-from util import get_full_header, write_to_csv, create_complete_dict, write_to_json
-
 
 # Logger
 sourcecode_logger = logging.getLogger()
@@ -32,9 +34,6 @@ enable_keywordusage = (config["Sourcecode_Settings"]["Keywordusage"] == "yes")
 enable_kotlin = (config["Sourcecode_Settings"]["Kotlin"] == "yes")
 enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
 enable_commonkeywords = (config["Sourcecode_Settings"]["Commonkeywords"] == "yes")
-enable_string_constants = (config["Sourcecode_Settings"]["StringConstants"] == "yes")
-enable_string_obfuscations = (config["Sourcecode_Settings"]["StringObfuscations"] == "yes")
-enable_api_methods = (config["Sourcecode_Settings"]["APIMethods"] == "yes")
 
 
 def analyze_dex(a, ds, dx):
@@ -94,24 +93,11 @@ def analyze_dex(a, ds, dx):
             current_time = time.time()
             sourcecode_logger.info("Time spent on keyword usage: " + str(current_time - start_time))
 
-        if enable_api_methods:
-            start_time = time.time()
-            api_methods_dict = get_api_methods(dx)
-            current_time = time.time()
-            sourcecode_logger.info("Time spent on api methods: " + str(current_time - start_time))
-            
-        if enable_string_constants or enable_string_obfuscations:
-            start_time = time.time()
-            str_config = configparser.ConfigParser()
-            str_config.read(config['Paths']['string_obfs_sentinel_items'])
-            code_sentinels = json.loads(str_config['String_Obfuscation_Sentinel_List']['sentinels'])
-            string_constants, possible_str_obfs_cnt, possible_obfus_strings = get_strings_with_obfuscation(dx, code_sentinels)
-            current_time = time.time()
-            sourcecode_logger.info("Time spent on string constants: " + str(current_time - start_time))
-    except Exception as e:
-        traceback.print_exc()
-        sourcecode_logger.error("Koltin/Reflection extraction failed: " + str(e))
+        run_string_constants_extraction(dx, package_name, sourcecode_logger)
+        run_api_methods_extraction(dx, package_name, sourcecode_logger)
 
+    except Exception as e:
+        sourcecode_logger.error("Koltin/Reflection extraction failed: " + str(e))
 
     # Write obtained data to output files
     formatted_sourcecode_dict = format_sourcecode_dict(package_name, obfuscations_dict, count_histogram, kotlin_dict, reflection_dict, keyword_usages_general)
@@ -122,8 +108,7 @@ def analyze_dex(a, ds, dx):
 def write_output(package_name, opcodes_dict, api_methods_dict, string_constants_dict, possible_str_obfs_cnt, possible_obfus_strings, formatted_sourcecode_dict):
     # CSV Output files
     sourcecodecsv = "../output/static_out/sourcecode_features.csv"
-    apimethodscsv = "../output/static_out/api_method_features.csv"
-    stringconstcsv = "../output/static_out/string_constant_features.csv"
+
     opcodescsv = "../output/static_out/sourcecode_opcodes.csv"
 
     # Header files
@@ -132,19 +117,6 @@ def write_output(package_name, opcodes_dict, api_methods_dict, string_constants_
     if enable_opcodes:
         opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, package_name, frequency=True)
         write_to_csv(opcodescsv, opcodes_dict, header=opcodes_header)
-
-    if enable_api_methods:
-        api_methods_dict = {'package-name': package_name, 'api_methods': api_methods_dict}
-        write_to_csv(apimethodscsv, api_methods_dict)
-        write_to_json("../output/static_out/api_method_features.json", api_methods_dict)
-
-    if enable_string_constants or enable_string_obfuscations:
-        string_constants_dict = {'package-name': package_name,
-                                 'possible_str_obfs_cnt': possible_str_obfs_cnt,
-                                 'possible_obfus_strings': possible_obfus_strings,
-                                 'all-string-constants': string_constants_dict}
-        write_to_csv(stringconstcsv, string_constants_dict)
-        write_to_json("../output/static_out/string_constant_features.json", string_constants_dict)
 
     if enable_obfuscation or enable_kotlin or enable_reflection or enable_keywordusage:
         write_to_csv(sourcecodecsv, formatted_sourcecode_dict)
@@ -279,24 +251,6 @@ def initialize_keyword_dict(patterns, enable):
         return {pattern: None for pattern in patterns}
 
 
-def get_api_methods(dx):
-    """
-    gets the external method calls (api methods)
-    :param dx: dalvik analysis object about apk
-    :return:
-    """
-    api_calls_dict = {}
-    for external_class in dx.get_external_classes():
-        external_methods = external_class.get_methods()
-        for method in external_methods:
-            method_name = method.get_method().get_name()
-            class_name = method.get_method().get_class_name()
-            full_method = class_name.replace(';', '::') + method_name
-            add_to_dict_unique(full_method, api_calls_dict)
-
-    return api_calls_dict
-
-
 def update_count_histogram(identifier_name, count_histogram):
     if len(identifier_name) < 4:
         count_histogram["Length " + str(len(identifier_name)) + " identifier"] += 1
@@ -339,21 +293,6 @@ def obfuscation_evaluator(name):
     return 0
 
 
-def add_to_dict_unique(name, dictionary):
-    """
-    adds a tally to an occurrence of an obfuscated class, field or method name
-    :param name: class, field or method name
-    :param dictionary: contains the tally
-    :return:
-    """
-    if name not in dictionary:
-        dictionary[name] = 1
-    else:
-        dictionary[name] += 1
-
-    return dictionary
-
-
 def count_overlapping_distinct(pattern, text):
     """
     counts the number of patterns found in text
@@ -370,66 +309,6 @@ def count_overlapping_distinct(pattern, text):
         if mo is None: return total
         total += 1
         start = 1 + mo.start()
-
-
-def has_uncommon_chars(string):
-    """
-    returns true if string contains ascii control characters (non-printable chars) or otherwise non-ascii characters
-    :param string: string to be evaluated
-    :return:
-    """
-    return all(32 > ord(c) or ord(c) >= 128 for c in string)
-
-
-def is_base64_encoded(string):
-    """
-    returns true if given string is encoded in base64
-    :param string: string to be evaluated
-    :return:
-    """
-    pattern = re.compile("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$")
-    return pattern.match(string)
-
-
-def get_strings_with_obfuscation(dx, code_sentinels):
-    """
-    returns a list of string constants from apk source code and
-    checks for a possible obfuscated code within string constants
-    :param code_sentinels: are characters/strings/symbols that when found in a string constant count as a possible
-    string obfuscation variable
-    :param dx: Analysis object
-    :return:
-    """
-
-    possible_str_obfs_cnt = 0
-    break_flag = False
-    possible_obfus_strings = []
-    const_strings_dict = dx.get_strings_analysis()
-    const_strings = list(const_strings_dict.keys())
-    for string in const_strings:
-        # count base64 encoded string constants as possible obfuscations
-        if is_base64_encoded(string):
-            possible_str_obfs_cnt += 1
-            possible_obfus_strings.append(string)
-            continue
-        for sentinel in code_sentinels:
-            if break_flag:
-                break_flag = False
-                break
-            for _, method in const_strings_dict[string].get_xref_from():
-                # excluding toString() methods to minimize false detection of string encrypted code
-                if sentinel in string and method.name != "toString" or has_uncommon_chars(string):
-                    possible_str_obfs_cnt += 1
-                    possible_obfus_strings.append(string)
-                    break_flag = True
-                    break
-
-    if not enable_string_obfuscations:
-        possible_obfus_strings = None
-    if not enable_string_constants:
-        const_strings = None
-
-    return const_strings, possible_str_obfs_cnt, possible_obfus_strings
 
 
 # Output formatting function
