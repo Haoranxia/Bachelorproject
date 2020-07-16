@@ -23,7 +23,7 @@ hybrid_analysis_enabled = (config["Contextual_Settings"]["hybrid_analysis"] == '
 file_upload_enabled = (config["Contextual_Settings"]['virus_total_enable_file_upload'] == 'yes')
 OPSWAT_THREAT_CODE = 1  # opswat designated code for threats in API response (scan_all_result_i)
 
-logging.basicConfig(format='%(asctime)s %(message)s')
+logging.basicConfig(filename='../log_files/contextual.log', format='%(asctime)s %(message)s')
 logger = logging.getLogger()
 if debug_enabled:
     logger.setLevel(logging.DEBUG)
