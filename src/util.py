@@ -160,7 +160,7 @@ def read_headers(headerfile):
 # and if the header is present in 'data' then we denote it
 # with a 1. Otherwise a 0.
 def create_complete_dict(data_dict, headers, package_name, frequency=False):
-    returndict = collections.OrderedDict()
+    returndict = {}
     for header in headers:
         if header in data_dict:
             if frequency is False:
