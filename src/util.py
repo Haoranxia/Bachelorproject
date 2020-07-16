@@ -4,7 +4,6 @@ import json
 import mmap
 import shutil
 import hashlib
-import collections
 import ntpath
 from os import path, devnull
 from tempfile import NamedTemporaryFile

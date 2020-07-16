@@ -10,15 +10,15 @@ The project requires that Python 3 and Pipenv are installed in the work environm
 ### Installation
 Follow the following steps to install the tool:
 1. Download or clone the project from git.
-```
-git clone https://github.com/Haoranxia/Bachelorproject.git
-```
+	```
+	git clone https://github.com/Haoranxia/Bachelorproject.git
+	```
 2. Navigate to where the tool is downloaded and create/activate Pipenv environment.
-```
-pipenv shell
-```
+	```
+	pipenv shell
+	```
 ### Configuration
-You can navigate to the configuration file `settings.ini` and configure the tool to toggle components you want to enable or disable for your execution
+You can navigate to the configuration file `settings.ini` and configure the tool to toggle components you want to enable or disable for your execution. To enable a component provide "`yes`" as a parameter otherwise it is taken as not enabled. We provide a default configuration and this configuration step is optional.
 
 ### Execution
 You can execute the tool in either one of the following two modes:

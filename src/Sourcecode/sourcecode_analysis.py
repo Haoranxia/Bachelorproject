@@ -5,12 +5,11 @@ import sys
 from Sourcecode.keyword_extraction import run_keyword_extraction
 from Sourcecode.obfuscation_extraction import run_obfuscation_extraction
 from Sourcecode.opcodes_extraction import run_opcodes_extraction
-
 from Sourcecode.api_methods import run_api_methods_extraction
 from Sourcecode.string_constants import run_string_constants_extraction
+
 from util import get_full_header, write_to_csv, create_complete_dict, write_to_json, add_to_dict_unique
 
-# add paths
 sys.path.append("../util.py")
 from util import get_full_header, write_to_csv, create_complete_dict, write_to_json
 
@@ -27,9 +26,6 @@ config.read("../settings.ini")
 enable_opcodes = (config["Sourcecode_Settings"]["Opcodes"] == "yes")
 enable_obfuscation = (config["Sourcecode_Settings"]["Obfuscation"] == "yes")
 enable_keywordusage = (config["Sourcecode_Settings"]["Keywordusage"] == "yes")
-enable_kotlin = (config["Sourcecode_Settings"]["Kotlin"] == "yes")
-enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
-enable_commonkeywords = (config["Sourcecode_Settings"]["Commonkeywords"] == "yes")
 enable_api_methods = (config["Sourcecode_Settings"]["APIMethods"] == "yes")
 enable_string_constants = (config["Sourcecode_Settings"]["StringConstants"] == "yes")
 enable_string_obfuscations = (config["Sourcecode_Settings"]["StringObfuscations"] == "yes")
@@ -37,7 +33,7 @@ enable_string_obfuscations = (config["Sourcecode_Settings"]["StringObfuscations"
 
 def analyze_dex(a, ds, dx):
     """
-    analyze Dex file
+    This function analyzes Dex files and extract the enabled features from it
     :param ds: list of dalvikVMformat objects
     :param dx: Analysis object
     :return:

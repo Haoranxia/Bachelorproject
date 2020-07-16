@@ -2,6 +2,10 @@ import platform, subprocess, zipfile, configparser, re
 import collections
 import time
 import logging
+import os
+import sys 
+
+sys.path.append("../util.py")
 from util import write_to_csv
 
 isWindows = False
@@ -18,15 +22,43 @@ config = configparser.ConfigParser()
 config.read("../settings.ini")
 
 d2j_path = config["Paths"]["dex2jar_path"]
+d2j_path = os.path.abspath(d2j_path)
+
 fernflower_path = config["Paths"]["fernflower_path"]
-dex2jar_out = "./dex2jar_out/dex2jar_out.jar"
-fernflower_out = "./fernflower_out/dex2jar_out.jar"
+fernflower_path = os.path.abspath(fernflower_path)
+
+dex2jar_out = "./Fernflower/dex2jar_out/dex2jar_out.jar"
+fernflower_out = "./Fernflower/fernflower_out/dex2jar_out.jar"
 
 dex2jar_log = "./dex2jar_out/dex2jar.log"
 fernflower_log = "./fernflower_out/fernflower.log"
 
 
-# Pipeline: apk -> dex2jar -> jar with classes -> fernflower -> jar with javacode
+def run_fernflower_decompile(package_name, file_path):
+    """
+    Extract apk features using fernflower decompiled sourcecode
+    :param package_name: the package name of the apk
+    :param file_path: the path of the apk file to be analyzed
+    """
+
+    # Decompilation
+    start_time = time.time()
+    decompile(package_name, file_path)
+    fernflower_logger.info("Time spent on decompiling: " + str(time.time() - start_time))
+
+    #Feature extraction
+    fernflower_logger.info("### Extracting features from decompiled code ###")
+    start_time = time.time()
+    try:
+        imports_dict, decompile_error_count, reflection_dict = extract_features(fernflower_out)
+        fernflower_logger.info("Time spent on extracting features: " + str(time.time() - start_time))
+        write_output(package_name, imports_dict, decompile_error_count, reflection_dict)
+    except Exception:
+        fernflower_logger.warning("Could not extract fernflower features")
+        emptyDict = {}
+        write_output(package_name, emptyDict, emptyDict, emptyDict)
+
+
 def decompile(package_name, apk):
     """
     This is the function that handles the pipeline for decompiling an apks dex files into java sourcecode
@@ -92,14 +124,14 @@ def extract_features(file_path):
     :param file_path: Path to the jar containing .java files
     """
     import_regex = r'import (.*?);'
-    imports_dict = collections.OrderedDict()
+    imports_dict = {}
 
     # Fernflower displays this 'pattern' in methods that cant be decompiled. (src: see decompiled fernflower code)
     decompilation_failure_regex = r"// $FF: Couldn't be decompiled"
     failed_decompilation_count = 0
 
     reflection_regex = r"java.lang.reflect.*;"
-    reflection_dict = collections.OrderedDict()
+    reflection_dict = {}
 
     # if folder: go into folder
     archive = zipfile.ZipFile(file_path, 'r')
@@ -120,29 +152,10 @@ def extract_features(file_path):
     return imports_dict, failed_decompilation_count, reflection_dict
 
 
-def run_fernflower_decompile(package_name, file_path):
-    # Decompilation
-    start_time = time.time()
-    decompile(package_name, file_path)
-    fernflower_logger.info("Time spent on decompiling: " + str(time.time() - start_time))
-
-    #Feature extraction
-    fernflower_logger.info("### Extracting features from decompiled code ###")
-    start_time = time.time()
-    try:
-        imports_dict, decompile_error_count, reflection_dict = extract_features(fernflower_out)
-        fernflower_logger.info("Time spent on extracting features: " + str(time.time() - start_time))
-        write_output(package_name, imports_dict, decompile_error_count, reflection_dict)
-    except Exception:
-        fernflower_logger.warning("Could not extract fernflower features")
-        emptyDict = collections.OrderedDict()
-        write_output(package_name, emptyDict, emptyDict, emptyDict)
-
-
 # Helper functions
 def write_output(package_name, imports_dict, decompile_error_count, reflection_dict):
     fernflowercsv = "../output/static_out/fernflower_features.csv"
-    fernflower_dict = collections.OrderedDict()
+    fernflower_dict = {}
     fernflower_dict["package-name"] = package_name
     fernflower_dict["imports"] = list(imports_dict.items())
     fernflower_dict["compile-error count"] = decompile_error_count

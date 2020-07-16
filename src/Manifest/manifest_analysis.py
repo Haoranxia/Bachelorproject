@@ -13,7 +13,6 @@ manifest_logger.setLevel(logging.INFO)
 config = configparser.ConfigParser()
 config.read("../settings.ini")
 enable_csv = (config["Output_Format"]["CSV"] == "yes")
-enable_json = (config["Output_Format"]["JSON"] == "yes")
 
 def analyze_manifest(a):
     """
@@ -21,7 +20,7 @@ def analyze_manifest(a):
     We extract the most popular/often used features from the android manifest file.
     :param a: Androguard.APK object
     """
-    dict_manifest_features = collections.OrderedDict()
+    dict_manifest_features = {}
 
     # Package-name
     try:
