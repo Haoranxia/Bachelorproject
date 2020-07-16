@@ -47,3 +47,6 @@ After execution, the produced reports and features are presented in `csv` or `js
 * The string literals feature (sub-component) presents the all string constants present for within given application and it is therefore it is advisable to use it for relatively small sample sets.
 * For detecting string obfuscation (in particular obfuscation that involves invoking embedding executable code within string literals), we use simple patterns which can be extended/modified. These patterns are found under resources folder under the file: [string obfuscation sentinel list.ini](https://github.com/Haoranxia/Bachelorproject/blob/development/resources/string_obfuscation_sentinel_list.ini)
 * You can set the Debug mode to `TRUE` in the configuration file to receive a more verbose log information.
+* The account linked to the API services, Username: featureextractor.rug1920@gmail.com and Password: Featureextractor1920
+
+
