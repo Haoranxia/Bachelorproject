@@ -6,16 +6,17 @@ import os
 import sys 
 
 sys.path.append("../util.py")
-from util import write_to_csv
+from util import write_to_csv, setup_logger
 
 isWindows = False
 if platform.system() == 'Windows':
     isWindows = True
 
 # Logger
-fernflower_logger = logging.getLogger()
+#fernflower_logger = setup_logger("fernflower_logger", "../log_files/fernflower.log")
+fernflower_logger = logging.getLogger(__name__)
 fernflower_logger.setLevel(logging.INFO)
-
+logging.basicConfig(filename='main.log', level=logging.INFO)
 
 # Paths
 config = configparser.ConfigParser()
@@ -30,8 +31,8 @@ fernflower_path = os.path.abspath(fernflower_path)
 dex2jar_out = "./Fernflower/dex2jar_out/dex2jar_out.jar"
 fernflower_out = "./Fernflower/fernflower_out/dex2jar_out.jar"
 
-dex2jar_log = "./dex2jar_out/dex2jar.log"
-fernflower_log = "./fernflower_out/fernflower.log"
+dex2jar_log = "./Fernflower/dex2jar_out/dex2jar.log"
+fernflower_log = "./Fernflower/fernflower_out/fernflower.log"
 
 
 def run_fernflower_decompile(package_name, file_path):

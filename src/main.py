@@ -21,10 +21,10 @@ from Contextual.contextual_feat_extraction import run_contextual
 
 
 # Logger
+#main_logger = setup_logger("main_logger", "../log_files/main.log")
 main_logger = logging.getLogger()
 main_logger.setLevel(logging.INFO)
 logging.basicConfig(filename='main.log', level=logging.INFO)
-
 
 # Config file parsing
 config = configparser.ConfigParser()
@@ -109,10 +109,10 @@ def main():
 
             main_logger.info("Total time spent on this apk: " + str(process_time) + "\n")
         else:
-            main_logger.info("apk already processed... skipping...")
+            main_logger.info("apk already processed... skipping...\n")
 
     main_logger.info("Finished analysis of apks")
-    main_logger.info("Total executiontime: " + str(totaltime))
+    main_logger.info("Total executiontime: " + str(totaltime) + "\n\n")
 
 
 def init_args_parser():

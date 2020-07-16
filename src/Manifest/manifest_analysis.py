@@ -2,12 +2,15 @@ import collections
 import logging
 import configparser
 
-from util import get_full_header, create_complete_dict, write_to_csv, write_to_json
+from util import get_full_header, create_complete_dict, write_to_csv, write_to_json, setup_logger
 from androguard.core.analysis import analysis
 
 # Logger
-manifest_logger = logging.getLogger()
+#manifest_logger = setup_logger("manifest_logger", "../log_files/manifest.log")
+manifest_logger = logging.getLogger(__name__)
 manifest_logger.setLevel(logging.INFO)
+logging.basicConfig(filename='main.log', level=logging.INFO)
+
 
 # Settings
 config = configparser.ConfigParser()
@@ -83,6 +86,8 @@ def analyze_manifest(a):
 
     # Write collected data to CSV
     write_output(dict_manifest_features)
+
+    manifest_logger.info("Finished extracting manifest features for apk: " + a.get_package())
     return 
     
 

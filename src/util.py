@@ -5,6 +5,7 @@ import mmap
 import shutil
 import hashlib
 import ntpath
+import logging
 from os import path, devnull
 from tempfile import NamedTemporaryFile
 
@@ -210,3 +211,12 @@ def add_to_dict_unique(name, dictionary):
         dictionary[name] += 1
 
     return dictionary
+
+
+def setup_logger(name, log_file, level=logging.INFO):
+    handler = logging.FileHandler(log_file)        
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
