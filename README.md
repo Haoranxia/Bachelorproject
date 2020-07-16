@@ -1,2 +1,2 @@
-# Bachelorproject
-Bachelor project RUG 19-20
+# Ultimate Feature Extractor - Bachelor Project 2019-20
+### 
