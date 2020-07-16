@@ -18,7 +18,7 @@ Follow the following steps to install the tool:
 	pipenv shell
 	```
 ### Configuration
-You can navigate to the configuration file `settings.ini` and configure the tool to toggle components you want to enable or disable for your execution. To enable a component provide `yes` as a parameter otherwise it is not enabled. We provide a default configuration and this configuration step is optional.
+You can navigate to the configuration file `settings.ini` and configure the tool to toggle components you want to enable or disable for your execution. To enable a component provide "`yes`" as a parameter otherwise it is taken as not enabled. We provide a default configuration and this configuration step is optional.
 
 ### Execution
 You can execute the tool in either one of the following two modes:
