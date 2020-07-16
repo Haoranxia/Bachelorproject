@@ -30,6 +30,9 @@ enable_keywordusage = (config["Sourcecode_Settings"]["Keywordusage"] == "yes")
 enable_kotlin = (config["Sourcecode_Settings"]["Kotlin"] == "yes")
 enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
 enable_commonkeywords = (config["Sourcecode_Settings"]["Commonkeywords"] == "yes")
+enable_api_methods = (config["Sourcecode_Settings"]["APIMethods"] == "yes")
+enable_string_constants = (config["Sourcecode_Settings"]["StringConstants"] == "yes")
+enable_string_obfuscations = (config["Sourcecode_Settings"]["StringObfuscations"] == "yes")
 
 
 def analyze_dex(a, ds, dx):
@@ -54,3 +57,10 @@ def analyze_dex(a, ds, dx):
     if enable_keywordusage:
         run_keyword_extraction(package_name, dx, sourcecode_logger)
 
+    # Get API methods
+    if enable_api_methods:
+        run_api_methods_extraction(dx, package_name, sourcecode_logger)
+
+    # Get string constants and obfuscation
+    if enable_string_constants or enable_string_obfuscations:
+        run_string_constants_extraction(dx, package_name, sourcecode_logger)

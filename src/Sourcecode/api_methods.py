@@ -7,7 +7,6 @@ config = configparser.ConfigParser()
 config.read("../settings.ini")
 csv_enabled = (config["Output_Format"]['CSV'] == 'yes')
 json_enabled = (config["Output_Format"]['JSON'] == 'yes')
-enable_api_methods = (config["Sourcecode_Settings"]["APIMethods"] == "yes")
 api_methods_csv = "../output/static_out/api_method_features.csv"
 api_methods_json = "../output/static_out/api_method_features.json"
 
@@ -37,12 +36,11 @@ def write_to_output(package_name, api_methods_dict):
     :param api_methods_dict:
     :return:
     """
-    if enable_api_methods:
-        api_methods_dict = {'package-name': package_name, 'api_methods': api_methods_dict}
-        if csv_enabled:
-            write_to_csv(api_methods_csv, api_methods_dict)
-        if json_enabled:
-            write_to_json(api_methods_json, api_methods_dict)
+    api_methods_dict = {'package-name': package_name, 'api_methods': api_methods_dict}
+    if csv_enabled:
+        write_to_csv(api_methods_csv, api_methods_dict)
+    if json_enabled:
+        write_to_json(api_methods_json, api_methods_dict)
 
 
 def run_api_methods_extraction(dx, package_name, sourcecode_logger):
@@ -53,9 +51,8 @@ def run_api_methods_extraction(dx, package_name, sourcecode_logger):
     :param sourcecode_logger:
     :return:
     """
-    if enable_api_methods:
-        start_time = time.time()
-        api_methods_dict = get_api_methods(dx)
-        write_to_output(package_name, api_methods_dict)
-        current_time = time.time()
-        sourcecode_logger.info("Time spent on api methods: " + str(current_time - start_time))
+    start_time = time.time()
+    api_methods_dict = get_api_methods(dx)
+    write_to_output(package_name, api_methods_dict)
+    current_time = time.time()
+    sourcecode_logger.info("Time spent on api methods: " + str(current_time - start_time))
