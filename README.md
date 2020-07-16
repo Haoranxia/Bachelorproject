@@ -5,7 +5,7 @@ Feature extractor for Android Applications (Static features)
 The following content provides information on how to get started in using the Ultimate Feature Extractor tool.
 
 ### Prerequisites
-The project requires that Python 3 and Pipenv are installed in the work environment.
+The project requires that Python 3 and Pipenv are installed in the work environment. The tool has been tested and performs as intended on both Windows 10 and Ubuntu (`xubuntu-18.04.4`).
 
 ### Installation
 Follow the following steps to install the tool:
