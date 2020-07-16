@@ -1,11 +1,8 @@
-import re
 import logging
-
 import requests
 import configparser
 import play_scraper
 from pathlib import Path
-from subprocess import Popen, PIPE
 from google_play_scraper import app
 from requests.exceptions import HTTPError
 from util import write_to_json, write_to_csv, calculate_sha256
@@ -13,17 +10,17 @@ from util import write_to_json, write_to_csv, calculate_sha256
 config = configparser.ConfigParser()
 config.read("../settings.ini")
 
-VT_API_KEY = config["Contextual_Settings"]["virus_total_api_key"]
-OPSWAT_API_KEY = config["Contextual_Settings"]["opswat_api_key"]
-HA_API_KEY = config["Contextual_Settings"]["hybrid_analysis_api_key"]
-OPSWAT_enabled = (config["Contextual_Settings"]["opswat"] == 'yes')
-google_play_enabled = (config["Contextual_Settings"]["app_store"] == 'yes')
-hybrid_analysis_enabled = (config["Contextual_Settings"]["hybrid_analysis"] == 'yes')
-virus_total_enabled = (config["Contextual_Settings"]["virus_total"] == 'yes')
-file_upload_enabled = (config["Contextual_Settings"]['virus_total_enable_file_upload'] == 'yes')
+debug_enabled = (config["Misc"]['DEBUG'] == 'TRUE')
 csv_enabled = (config["Output_Format"]['CSV'] == 'yes')
 json_enabled = (config["Output_Format"]['JSON'] == 'yes')
-debug_enabled = (config["Misc"]['DEBUG'] == 'TRUE')
+OPSWAT_API_KEY = config["Contextual_Settings"]["opswat_api_key"]
+VT_API_KEY = config["Contextual_Settings"]["virus_total_api_key"]
+OPSWAT_enabled = (config["Contextual_Settings"]["opswat"] == 'yes')
+HA_API_KEY = config["Contextual_Settings"]["hybrid_analysis_api_key"]
+google_play_enabled = (config["Contextual_Settings"]["app_store"] == 'yes')
+virus_total_enabled = (config["Contextual_Settings"]["virus_total"] == 'yes')
+hybrid_analysis_enabled = (config["Contextual_Settings"]["hybrid_analysis"] == 'yes')
+file_upload_enabled = (config["Contextual_Settings"]['virus_total_enable_file_upload'] == 'yes')
 OPSWAT_THREAT_CODE = 1  # opswat designated code for threats in API response (scan_all_result_i)
 
 logging.basicConfig(format='%(asctime)s %(message)s')
@@ -259,17 +256,6 @@ def extend_app_details(app_id, app_details, gp_available):
         app_details.update(extended_details)
 
 
-def get_app_id(apk_file):
-    """
-    gets an app id given an apk file, requires aapt to be installed within the system
-    :param apk_file: an android app
-    :return:
-    """
-    meta_info = Popen(['aapt', 'dump', 'badging', apk_file], stdout=PIPE, stderr=PIPE)
-    meta_info_stdout, stderr = meta_info.communicate()
-    return re.findall(r"package: name='(.*?)'", meta_info_stdout.decode('utf-8'))[0]
-
-
 def run_contextual(apk_file, app_id):
     """
     runs the contextual component, get contextual details from google play and also request report from VirusTotal
@@ -292,4 +278,3 @@ def run_contextual(apk_file, app_id):
         empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
         extend_app_details(None, empty_app_details, False)
         add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
-
