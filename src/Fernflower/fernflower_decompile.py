@@ -6,7 +6,7 @@ import sys
 import configparser
 
 sys.path.append("../util.py")
-from util import write_to_csv
+from util import write_to_csv, write_to_json
 
 isWindows = False
 if platform.system() == 'Windows':
@@ -18,6 +18,8 @@ config.read("../settings.ini")
 fernflower_logger = logging.getLogger(__name__)
 logging.basicConfig(filename='main.log', level=logging.INFO)
 debug_enabled = (config["Misc"]['DEBUG'] == 'TRUE')
+csv_enabled = (config["Output_Format"]['CSV'] == 'yes')
+json_enabled = (config["Output_Format"]['JSON'] == 'yes')
 
 if debug_enabled:
     fernflower_logger.setLevel(logging.DEBUG)
@@ -162,9 +164,15 @@ def extract_features(file_path):
 # Helper functions
 def write_output(package_name, imports_dict, decompile_error_count, reflection_dict):
     fernflowercsv = "../output/static_out/fernflower_features.csv"
+    fernflowerjson = "../output/static_out/fernflower_features.json"
     fernflower_dict = {"package-name": package_name, "imports": list(imports_dict.items()),
                        "compile-error count": decompile_error_count, "reflection usage": list(reflection_dict.items())}
-    write_to_csv(fernflowercsv, fernflower_dict)
+
+    if csv_enabled:
+        write_to_csv(fernflowercsv, fernflower_dict)
+
+    if json_enabled:
+        write_to_json(fernflowerjson, fernflower_dict)
 
 
 def write_to_file(filepath, data):

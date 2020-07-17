@@ -6,7 +6,7 @@ import time
 from androguard.core import bytecodes
 
 sys.path.append("../util.py")
-from util import write_to_csv
+from util import write_to_csv, write_to_json
 
 
 config = configparser.ConfigParser()
@@ -16,6 +16,8 @@ enable_keywordusage = (config["Sourcecode_Settings"]["Keywordusage"] == "yes")
 enable_kotlin = (config["Sourcecode_Settings"]["Kotlin"] == "yes")
 enable_reflection = (config["Sourcecode_Settings"]["Reflection"] == "yes")
 enable_commonkeywords = (config["Sourcecode_Settings"]["Commonkeywords"] == "yes")
+csv_enabled = (config["Output_Format"]['CSV'] == 'yes')
+json_enabled = (config["Output_Format"]['JSON'] == 'yes')
 
 def run_keyword_extraction(package_name, app, sourcecode_logger):
     kotlin_dict = {}
@@ -106,9 +108,13 @@ def initialize_keyword_dict(patterns, enable):
 
 def write_output(package_name, kotlin_dict, reflection_dict, keyword_usages_general):
     keywordcsv = "../output/static_out/keyword_features.csv"
-    outputdict = {}
-    outputdict["package-name"] = package_name
+    keywordjson = "../output/static_out/keyword_features.json"
+    outputdict = {"package-name": package_name, "Reflection uses": reflection_dict}
     outputdict.update(kotlin_dict)
-    outputdict["Reflection uses"] = reflection_dict
     outputdict.update(keyword_usages_general)
-    write_to_csv(keywordcsv, outputdict)
+
+    if csv_enabled:
+        write_to_csv(keywordcsv, outputdict)
+    
+    if json_enabled:
+        write_to_json(keywordjson, outputdict)

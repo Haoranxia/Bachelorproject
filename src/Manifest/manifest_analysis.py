@@ -1,7 +1,7 @@
 import logging
 import configparser
 
-from util import get_full_header, create_complete_dict, write_to_csv
+from util import get_full_header, create_complete_dict, write_to_csv, write_to_json
 
 # Logger
 config = configparser.ConfigParser()
@@ -9,15 +9,15 @@ config.read("../settings.ini")
 manifest_logger = logging.getLogger(__name__)
 logging.basicConfig(filename='main.log', level=logging.INFO)
 debug_enabled = (config["Misc"]['DEBUG'] == 'TRUE')
+
 if debug_enabled:
     manifest_logger.setLevel(logging.DEBUG)
 else:
     manifest_logger.setLevel(logging.INFO)
 
 # Settings
-config = configparser.ConfigParser()
-config.read("../settings.ini")
 enable_csv = (config["Output_Format"]["CSV"] == "yes")
+enable_json = (config["Output_Format"]["JSON"] == "yes")
 
 def process_manifest(a):
     """
@@ -94,7 +94,6 @@ def process_manifest(a):
     
 
 def write_output(manifest_dict):
-
     # Initialization
     permissions_header, permissions_dict = get_feature(manifest_dict, "permissions", "../resources/permissions.txt")
     hardware_header, hardware_dict = get_feature(manifest_dict, "features", "../resources/hardware_features.txt")
@@ -111,6 +110,17 @@ def write_output(manifest_dict):
         write_to_csv(permissionscsv, permissions_dict, header=permissions_header)
         write_to_csv(hardwarefeaturescsv, hardware_dict, header=hardware_header)
         write_to_csv(softwarefeaturescsv, software_dict, header=software_header)
+
+    if enable_json:
+        # Output JSON files
+        # NOTE Full manifest file json support is not implemented
+        permissionsjson = "../output/static_out/permissions.json"
+        hardwarefeaturesjson = "../output/static_out/hardware_features.json"
+        softwarefeaturesjson = "../output/static_out/software_features.json"
+
+        write_to_json(permissionsjson, permissions_dict)
+        write_to_json(hardwarefeaturesjson, hardware_dict)
+        write_to_json(softwarefeaturesjson, software_dict)
 
     return 
 
