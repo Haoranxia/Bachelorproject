@@ -16,12 +16,11 @@ from androguard.decompiler.decompiler import DecompilerDAD
 from util import *
 from Fernflower.fernflower_decompile import run_fernflower_decompile
 from Sourcecode.sourcecode_analysis import analyze_dex
-from Manifest.manifest_analysis import analyze_manifest
+from Manifest.manifest_analysis import process_manifest
 from Contextual.contextual_feat_extraction import run_contextual
 
 
 # Logger
-#main_logger = setup_logger("main_logger", "../log_files/main.log")
 main_logger = logging.getLogger()
 main_logger.setLevel(logging.INFO)
 logging.basicConfig(filename='main.log', level=logging.INFO)
@@ -54,6 +53,7 @@ def main():
     totaltime = 0
     nrapks = len(apk_files)
     for apk_index, apk_file in enumerate(apk_files):
+        # Print current progress of the tool
         print("Processing apk: " + str(apk_index) + " out of " + str(nrapks) + " apks")
 
         # Try to inspect/parse the APK
@@ -80,7 +80,7 @@ def main():
             # Manifest features
             if enable_manifest:
                 main_logger.info("Running manifest")
-                analyze_manifest(a)
+                process_manifest(a)
 
             # Source code features
             if enable_sourcecode:
@@ -153,10 +153,10 @@ def process_sourcecode(a):
     After construction we extract the features we want and process them accordingly.
     :param a: Analysis object from androguard
     """
-    # FIXME glogger.disabled disables the "multiple exit nodes found" prints (androguard issue/bug)
+    # NOTE glogger.disabled disables the "multiple exit nodes found" prints (androguard issue/bug)
     glogger.disabled = True
 
-    # FIXME dlogger disables the "Error decompiling method class <object>" message. 
+    # NOTE dlogger disables the "Error decompiling method class <object>" message. 
     # It seems like DAD has issues with decompiling some apks and will then show this message.
     # We disable it for a prettier output.
     dlogger.disabled = True
@@ -236,7 +236,7 @@ def update_progresstracker(apk_file):
 # Function that logs performance per apk
 def logtime(apk_name, process_time, apk_size):
     filename = "../output/static_out/performance.csv"
-    time_dict = collections.OrderedDict()
+    time_dict = {}
     time_dict["package-name"] = apk_name
     time_dict["process-time (sec)"] = process_time
     time_dict["apk size (KB)"] = float(apk_size) / float(1000)

@@ -2,11 +2,10 @@ import collections
 import logging
 import configparser
 
-from util import get_full_header, create_complete_dict, write_to_csv, write_to_json, setup_logger
+from util import get_full_header, create_complete_dict, write_to_csv, write_to_json
 from androguard.core.analysis import analysis
 
 # Logger
-#manifest_logger = setup_logger("manifest_logger", "../log_files/manifest.log")
 manifest_logger = logging.getLogger(__name__)
 manifest_logger.setLevel(logging.INFO)
 logging.basicConfig(filename='main.log', level=logging.INFO)
@@ -17,7 +16,7 @@ config = configparser.ConfigParser()
 config.read("../settings.ini")
 enable_csv = (config["Output_Format"]["CSV"] == "yes")
 
-def analyze_manifest(a):
+def process_manifest(a):
     """
     The main function that handles manifest file feature extraction. 
     We extract the most popular/often used features from the android manifest file.

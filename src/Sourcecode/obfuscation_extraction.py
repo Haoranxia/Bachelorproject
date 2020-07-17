@@ -9,6 +9,12 @@ from util import write_to_csv
 
 
 def run_obfuscation_extraction(package_name, ds, sourcecode_logger):
+    """
+    Main function that extracts obfuscation information from the given apk source
+    :param package_name: name of the package
+    :param ds: Analysis object from Androguard
+    :sourcecode_logger: logger object for sourcecode
+    """
     obfuscations_dict = {}
     count_histogram = {}
     count_histogram["Length 1 identifier"] = 0
@@ -57,7 +63,6 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
     return obfuscations_dict, count_histogram
 
 
-
 def update_count_histogram(identifier_name, count_histogram):
     if len(identifier_name) < 4:
         count_histogram["Length " + str(len(identifier_name)) + " identifier"] += 1
@@ -65,7 +70,6 @@ def update_count_histogram(identifier_name, count_histogram):
     return count_histogram
 
 
-# Obfuscation helper functions
 def add_to_obfuscation_histogram(name, obfuscations_dict):
     """
     add obfuscated count using class name, field name or method name to ordered dictionary

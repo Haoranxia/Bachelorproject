@@ -8,14 +8,8 @@ from Sourcecode.opcodes_extraction import run_opcodes_extraction
 from Sourcecode.api_methods import run_api_methods_extraction
 from Sourcecode.string_constants import run_string_constants_extraction
 
-from util import get_full_header, write_to_csv, create_complete_dict, write_to_json, add_to_dict_unique
-
-sys.path.append("../util.py")
-from util import get_full_header, write_to_csv, create_complete_dict, write_to_json, setup_logger
-
 
 # Logger
-#sourcecode_logger = setup_logger("sourcecode_logger", "../log_files/sourcecode.log")
 sourcecode_logger = logging.getLogger(__name__)
 sourcecode_logger.setLevel(logging.INFO)
 logging.basicConfig(filename='main.log', level=logging.INFO)

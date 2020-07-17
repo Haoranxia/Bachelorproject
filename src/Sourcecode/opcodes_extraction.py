@@ -5,7 +5,14 @@ import time
 sys.path.append("../util.py")
 from util import create_complete_dict, write_to_csv, get_full_header
 
+
 def run_opcodes_extraction(package_name, ds, sourcecode_logger):
+    """
+    Main function that extracts opcodes from the apk
+    :param package_name: name of the package
+    :param ds: Analysis object from Androguard
+    :sourcecode_logger: logger object for sourcecode
+    """
     opcodes_dict = {}
     try:
         start_time = time.time()
@@ -17,6 +24,7 @@ def run_opcodes_extraction(package_name, ds, sourcecode_logger):
         write_output(package_name, opcodes_dict)
     except Exception as e:
         sourcecode_logger.error("Opcodes extraction failed: " + str(e))
+
 
 # Return a dictionary of opcodes and the nr of occurrences of that opcode
 # src: http://blog.k3170makan.com/2014/11/automated-dex-decompilation-using.html

@@ -6,14 +6,13 @@ import os
 import sys 
 
 sys.path.append("../util.py")
-from util import write_to_csv, setup_logger
+from util import write_to_csv
 
 isWindows = False
 if platform.system() == 'Windows':
     isWindows = True
 
 # Logger
-#fernflower_logger = setup_logger("fernflower_logger", "../log_files/fernflower.log")
 fernflower_logger = logging.getLogger(__name__)
 fernflower_logger.setLevel(logging.INFO)
 logging.basicConfig(filename='main.log', level=logging.INFO)
