@@ -1,9 +1,7 @@
-import collections
 import logging
 import configparser
 
-from util import get_full_header, create_complete_dict, write_to_csv, write_to_json
-#from androguard.core.analysis import analysis
+from util import get_full_header, create_complete_dict, write_to_csv
 
 # Logger
 manifest_logger = logging.getLogger(__name__)
@@ -135,10 +133,10 @@ def extract_intent_filters(a, dict_manifest_features):
 
 
 # Returns a list of intents for the type of feature
-def get_intents(a, components, componenttype):
+def get_intents(a, components, component_type):
     intents = list()
     for component in components:
-        intent = a.get_intent_filters(componenttype, component)
+        intent = a.get_intent_filters(component_type, component)
         if intent:
             intents.append(intent)
 

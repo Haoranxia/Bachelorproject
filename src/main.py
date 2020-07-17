@@ -1,11 +1,11 @@
+import time
+import logging
 import argparse
 import configparser
-import logging
-import time
 from pathlib import Path
 
-from zipfile import BadZipFile
 from os import listdir
+from zipfile import BadZipFile
 from os.path import isfile, join
 from androguard.core.bytecodes import dvm, apk, axml
 from androguard.decompiler.dad.graph import logger as glogger
@@ -14,13 +14,13 @@ from androguard.core.analysis.analysis import Analysis
 from androguard.decompiler.decompiler import DecompilerDAD
 
 from util import *
+from Sourcecode.sourcecode_analysis import run_sourcecode
+from Manifest.manifest_analysis import analyze_manifest
 from Fernflower.fernflower_decompile import run_fernflower_decompile
-from Sourcecode.sourcecode_analysis import analyze_dex
-from Manifest.manifest_analysis import process_manifest
 from Contextual.contextual_feat_extraction import run_contextual
 
 
-# Logger
+# Creating Logger
 main_logger = logging.getLogger()
 main_logger.setLevel(logging.INFO)
 logging.basicConfig(filename='main.log', level=logging.INFO)
@@ -35,8 +35,7 @@ enable_progresstracker = (config["Misc"]["Progresstracker"] == "yes")
 enable_fernflower = (config["Settings"]["Fernflower"] == "yes")
 enable_performancelogging = (config["Settings"]["Performancelogging"] == "yes")
 
-
-# Progress tracking stuff
+# Progress tracking
 processed_apks = None
 processed_apks_file = "../resources/processedapks.txt"
 if not isfile(processed_apks_file):
@@ -44,6 +43,7 @@ if not isfile(processed_apks_file):
 
 if enable_progresstracker:
     processed_apks = get_processed_apks(processed_apks_file)
+
 
 def main():
     # Argument parsing
@@ -58,15 +58,15 @@ def main():
 
         # Try to inspect/parse the APK
         try:
-            a = inspect_APK(apk_file)
+            a = inspect_apk(apk_file)
         except Exception:
             update_progresstracker(apk_file)
             continue
 
-        # If the progresstracker is enabled we do not want to process any already processed apks
+        # If the progresstracker is enabled we do not want to process any already processed APKs
         processed = False
         if enable_progresstracker and a:
-            if alreadyProcessed(path_leaf(apk_file), processed_apks):
+            if already_processed(path_leaf(apk_file), processed_apks):
                 processed = True
 
         if not processed and a:
@@ -105,7 +105,7 @@ def main():
 
             # Log elapsed time and size per apk
             if enable_performancelogging:
-                logtime(a.get_package(), process_time, Path(apk_file).stat().st_size)
+                log_time(a.get_package(), process_time, Path(apk_file).stat().st_size)
 
             main_logger.info("Total time spent on this apk: " + str(process_time) + "\n")
         else:
@@ -156,12 +156,10 @@ def process_sourcecode(a):
     # NOTE glogger.disabled disables the "multiple exit nodes found" prints (androguard issue/bug)
     glogger.disabled = True
 
-    # NOTE dlogger disables the "Error decompiling method class <object>" message. 
+    # NOTE dlogger disables the "Error decompiling method class <object>" message.
     # It seems like DAD has issues with decompiling some apks and will then show this message.
     # We disable it for a prettier output.
     dlogger.disabled = True
-
-    start_time = time.time()
 
     # Create the d (DalvikVMFormat object) for each dex, and dx (Analysis object) 
     ds = [dvm.DalvikVMFormat(dex, using_api=a.get_target_sdk_version()) for dex in a.get_all_dex()]
@@ -181,7 +179,7 @@ def process_sourcecode(a):
 
     start_time = time.time()
 
-    analyze_dex(a, ds, dx)
+    run_sourcecode(a, ds, dx)
 
     glogger.enabled = True
     dlogger.enabled = True
@@ -203,7 +201,7 @@ def process_fernflower(package_name, apk_file):
 
 
 # Helper function that catches errors possibly generated when analyzing an APK 
-def inspect_APK(apk_file):
+def inspect_apk(apk_file):
     """
     This function creates the APK object which is used for manifest file feature extraction.
     We also catch common exceptions generated in this wrapper function.
@@ -214,32 +212,40 @@ def inspect_APK(apk_file):
         return a
     except BadZipFile as bzfe:
         main_logger.warning("Could not process apk: " + path_leaf(apk_file) + " ...Is it actually an APK?\n")
-        raise(bzfe)
+        raise bzfe
     except FileNotFoundError as fnfe:
         main_logger.warning("Could not find apk: " + path_leaf(apk_file) + " ...Is it actually there?\n")
-        raise(fnfe)
+        raise fnfe
     except axml.ResParserError as rpe:
         main_logger.warning("Could not decode APK properly: " + path_leaf(apk_file) + "\n")
-        raise(rpe)
+        raise rpe
     except Exception as e:
         main_logger.warning("Something went wrong with parsing the APK: " + path_leaf(apk_file) + "\n")
-        raise(e)
+        raise e
 
 
-# Updates the processedapks.txt file with the file name (not package name)
 def update_progresstracker(apk_file):
+    """
+    Updates the processedapks.txt file with the file name (not package name)
+    :param apk_file:
+    :return:
+    """
     with open(processed_apks_file, 'a') as f:
         f.write(path_leaf(apk_file) + '\n')
         f.close()
 
 
-# Function that logs performance per apk
-def logtime(apk_name, process_time, apk_size):
+def log_time(apk_name, process_time, apk_size):
+    """
+    Function that logs performance per apk
+    :param apk_name:
+    :param process_time:
+    :param apk_size:
+    :return:
+    """
     filename = "../output/static_out/performance.csv"
-    time_dict = {}
-    time_dict["package-name"] = apk_name
-    time_dict["process-time (sec)"] = process_time
-    time_dict["apk size (KB)"] = float(apk_size) / float(1000)
+    time_dict = {"package-name": apk_name, "process-time (sec)": process_time,
+                 "apk size (KB)": float(apk_size) / float(1000)}
     write_to_csv(filename, time_dict)
 
 

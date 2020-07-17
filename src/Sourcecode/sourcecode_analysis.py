@@ -26,7 +26,7 @@ enable_string_constants = (config["Sourcecode_Settings"]["StringConstants"] == "
 enable_string_obfuscations = (config["Sourcecode_Settings"]["StringObfuscations"] == "yes")
 
 
-def analyze_dex(a, ds, dx):
+def run_sourcecode(a, ds, dx):
     """
     This function analyzes Dex files and extract the enabled features from it
     :param ds: list of dalvikVMformat objects

@@ -42,7 +42,6 @@ def get_strings_with_obfuscation(dx, code_sentinels):
     :param dx: Analysis object
     :return:
     """
-
     possible_str_obfs_cnt = 0
     break_flag = False
     possible_obfus_strings = []
