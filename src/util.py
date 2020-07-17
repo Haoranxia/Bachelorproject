@@ -181,7 +181,7 @@ def get_full_header(path):
     return header
 
 
-def alreadyProcessed(package_name, processed_apks):
+def already_processed(package_name, processed_apks):
     # TODO Implement more efficient 'in' function
     if package_name in processed_apks: 
         return True
@@ -190,7 +190,6 @@ def alreadyProcessed(package_name, processed_apks):
 
 def get_processed_apks(processed_apks_file):
     return read_headers(processed_apks_file)
-
 
 
 def path_leaf(path):

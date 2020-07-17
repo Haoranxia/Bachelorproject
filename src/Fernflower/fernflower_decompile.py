@@ -1,19 +1,17 @@
 import platform, subprocess, zipfile, configparser, re
-import collections
 import time
 import logging
 import os
-import sys 
+import sys
 
 sys.path.append("../util.py")
-from util import write_to_csv, setup_logger
+from util import write_to_csv
 
 isWindows = False
 if platform.system() == 'Windows':
     isWindows = True
 
 # Logger
-#fernflower_logger = setup_logger("fernflower_logger", "../log_files/fernflower.log")
 fernflower_logger = logging.getLogger(__name__)
 fernflower_logger.setLevel(logging.INFO)
 logging.basicConfig(filename='main.log', level=logging.INFO)
@@ -47,7 +45,7 @@ def run_fernflower_decompile(package_name, file_path):
     decompile(package_name, file_path)
     fernflower_logger.info("Time spent on decompiling: " + str(time.time() - start_time))
 
-    #Feature extraction
+    # Feature extraction
     fernflower_logger.info("### Extracting features from decompiled code ###")
     start_time = time.time()
     try:
@@ -156,11 +154,8 @@ def extract_features(file_path):
 # Helper functions
 def write_output(package_name, imports_dict, decompile_error_count, reflection_dict):
     fernflowercsv = "../output/static_out/fernflower_features.csv"
-    fernflower_dict = {}
-    fernflower_dict["package-name"] = package_name
-    fernflower_dict["imports"] = list(imports_dict.items())
-    fernflower_dict["compile-error count"] = decompile_error_count
-    fernflower_dict["reflection usage"] = list(reflection_dict.items())
+    fernflower_dict = {"package-name": package_name, "imports": list(imports_dict.items()),
+                       "compile-error count": decompile_error_count, "reflection usage": list(reflection_dict.items())}
     write_to_csv(fernflowercsv, fernflower_dict)
 
 
