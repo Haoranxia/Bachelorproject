@@ -49,6 +49,16 @@ def main():
     # Argument parsing
     apk_files = parse_arguments()
 
+    global enable_progresstracker
+    if enable_progresstracker and processed_apks:
+        g = input("Progress tracking is enabled and there is some tracked progress.\n"
+                  "Continue from where the tool left off? [Y/n]\n"
+                  "or reset the Progress tracker? [R]\n")
+        if g.lower() == 'r' or g.lower() == 'reset':
+            open(processed_apks_file, 'w').close()
+        elif g.lower() != 'y' or g.lower() != 'yes':
+            enable_progresstracker = False
+
     start_time = time.time()
     totaltime = 0
     nrapks = len(apk_files)
