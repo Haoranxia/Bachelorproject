@@ -42,7 +42,10 @@ You can execute the tool in either one of the following two modes:
 After execution, the produced reports and features are presented in `csv` or `json` format in a folder named `output`. The contextual and static features are presented within the folders `contexual_out` and `static_out` respectively.
 
 ## Notes
-* Contextual component uses three API tokens for the three virus scanning services in use. These API tokens can be provided through the `settings.ini` configuration file.
+* Contextual component uses three API tokens for the three virus scanning services in use. These API tokens can be provided through the `settings.ini` configuration file. We provide a default API tokens and the account linked to these API tokens has Username: `featureextractor.rug1920@gmail.com` and Password: `Featureextractor1920`.
 * The tools that we use are packaged with the tool. Custom paths for these tools can be provided via the configuration file. Otherwise, the tool should be ready for use out of the box (following the installation instructions).
 * The string literals feature (sub-component) presents the all string constants present for within given application and it is therefore it is advisable to use it for relatively small sample sets.
+* For detecting string obfuscation (in particular obfuscation that involves invoking embedding executable code within string literals), we use simple patterns which can be extended/modified. These patterns are found under resources folder under the file: [string obfuscation sentinel list.ini](https://github.com/Haoranxia/Bachelorproject/blob/development/resources/string_obfuscation_sentinel_list.ini)
 * You can set the Debug mode to `TRUE` in the configuration file to receive a more verbose log information.
+
+
