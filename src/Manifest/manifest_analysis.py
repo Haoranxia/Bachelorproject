@@ -3,7 +3,7 @@ import logging
 import configparser
 
 from util import get_full_header, create_complete_dict, write_to_csv, write_to_json
-from androguard.core.analysis import analysis
+#from androguard.core.analysis import analysis
 
 # Logger
 manifest_logger = logging.getLogger(__name__)
