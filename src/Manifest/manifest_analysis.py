@@ -19,6 +19,7 @@ else:
 enable_csv = (config["Output_Format"]["CSV"] == "yes")
 enable_json = (config["Output_Format"]["JSON"] == "yes")
 
+
 def process_manifest(a):
     """
     The main function that handles manifest file feature extraction. 
@@ -122,7 +123,7 @@ def write_output(manifest_dict):
             permissionsjson = "../output/static_out/permissions.json"
             hardwarefeaturesjson = "../output/static_out/hardware_features.json"
             softwarefeaturesjson = "../output/static_out/software_features.json"
-            
+
             write_to_json(manifestjson, manifest_dict)
             write_to_json(permissionsjson, permissions_dict)
             write_to_json(hardwarefeaturesjson, hardware_dict)
