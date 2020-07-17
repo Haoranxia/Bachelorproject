@@ -1,4 +1,5 @@
 
+
 # Ultimate Feature Extractor - Bachelor Project 2019-20
 Feature extractor for Android Applications (Static features)
 
@@ -55,5 +56,6 @@ After execution, the produced reports and features are presented in `csv` or `js
 * For detecting string obfuscation (in particular obfuscation that involves invoking embedding executable code within string literals), we use simple patterns which can be extended/modified. These patterns are found under resources folder under the file: [string obfuscation sentinel list.ini](https://github.com/Haoranxia/Bachelorproject/blob/development/resources/string_obfuscation_sentinel_list.ini).
 * The logs of previous runs are found under `src/main.log`. This logging includes information such as the time the each components take and the overall performance per processed application.
 * You can set the Debug mode to `TRUE` in the configuration file to receive a more verbose log information.
+* The sub-component `StringConstants`  is not enabled by default as it produces verbose/large output files and `FernFlower` is not enabled by default as it is time intensive. It is advised to enable these components only for a small set/subset of APKs where it is essential to acquire as much information as possible.
 
 
