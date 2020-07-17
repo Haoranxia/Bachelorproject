@@ -5,6 +5,8 @@ apks/*
 output/static_out/*
 output/contextual_out/*
 non_dataset_apks/*
+src/Fernflower/dex2jar_out/*
+src/Fernflower/fernflower_out/*
 
 # Pycharm
 .idea/

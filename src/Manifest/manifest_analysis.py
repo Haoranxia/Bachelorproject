@@ -14,6 +14,7 @@ config = configparser.ConfigParser()
 config.read("../settings.ini")
 enable_csv = (config["Output_Format"]["CSV"] == "yes")
 
+
 def process_manifest(a):
     """
     The main function that handles manifest file feature extraction. 
