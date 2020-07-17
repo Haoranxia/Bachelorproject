@@ -1,7 +1,7 @@
 import logging
 import configparser
 
-from util import get_full_header, create_complete_dict, write_to_csv
+from util import get_full_header, create_complete_dict, write_to_csv, write_to_json
 
 # Logger
 config = configparser.ConfigParser()
@@ -9,15 +9,15 @@ config.read("../settings.ini")
 manifest_logger = logging.getLogger(__name__)
 logging.basicConfig(filename='main.log', level=logging.INFO)
 debug_enabled = (config["Misc"]['DEBUG'] == 'TRUE')
+
 if debug_enabled:
     manifest_logger.setLevel(logging.DEBUG)
 else:
     manifest_logger.setLevel(logging.INFO)
 
 # Settings
-config = configparser.ConfigParser()
-config.read("../settings.ini")
 enable_csv = (config["Output_Format"]["CSV"] == "yes")
+enable_json = (config["Output_Format"]["JSON"] == "yes")
 
 
 def process_manifest(a):
@@ -36,42 +36,42 @@ def process_manifest(a):
 
     # Permissions
     try:
-        dict_manifest_features["permissions"] = a.get_permissions()
+        dict_manifest_features["permissions"] = list(a.get_permissions())
     except Exception:
         manifest_logger.warning("Could not extract permissions")
 
     # Used features
     try:
-        dict_manifest_features["features"] = a.get_features()
+        dict_manifest_features["features"] = list(a.get_features())
     except Exception:
         manifest_logger.warning("Could not extract used features")
 
     # Activities 
     try:
-        dict_manifest_features["main-activities"] = a.get_main_activities()
+        dict_manifest_features["main-activities"] = list(a.get_main_activities())
     except Exception:
         manifest_logger.warning("Could not extract main activities")
     
     try:
-        dict_manifest_features["activities"] = a.get_activities()
+        dict_manifest_features["activities"] = list(a.get_activities())
     except Exception:
         manifest_logger.warning("Could not extract activities")
 
     # Services
     try:
-        dict_manifest_features["services"] = a.get_services()
+        dict_manifest_features["services"] = list(a.get_services())
     except Exception:
         manifest_logger.warning("Could not extract services")
 
     # Receivers
     try:
-        dict_manifest_features["receivers"] = a.get_receivers()
+        dict_manifest_features["receivers"] = list(a.get_receivers())
     except Exception:
         manifest_logger.warning("Could not extract receivers")
 
     # (Content) providers
     try:
-        dict_manifest_features["providers"] = a.get_providers()
+        dict_manifest_features["providers"] = list(a.get_providers())
     except Exception:
         manifest_logger.warning("Could not extract providers")
 
@@ -83,7 +83,7 @@ def process_manifest(a):
 
     # Libraries
     try:
-        dict_manifest_features["libraries"] = a.get_libraries()
+        dict_manifest_features["libraries"] = list(a.get_libraries())
     except Exception:
         manifest_logger.warning("Could not extract libraries")
 
@@ -95,23 +95,41 @@ def process_manifest(a):
     
 
 def write_output(manifest_dict):
-
     # Initialization
-    permissions_header, permissions_dict = get_feature(manifest_dict, "permissions", "../resources/permissions.txt")
-    hardware_header, hardware_dict = get_feature(manifest_dict, "features", "../resources/hardware_features.txt")
-    software_header, software_dict = get_feature(manifest_dict, "features", "../resources/software_features.txt")
+    permissions_header, permissions_dict = get_feature(manifest_dict, "permissions", config["Paths"]["permissions_header"])
+    hardware_header, hardware_dict = get_feature(manifest_dict, "features", config["Paths"]["hardware_features_header"])
+    software_header, software_dict = get_feature(manifest_dict, "features", config["Paths"]["software_features_header"])
 
     if enable_csv:
-        # Output CSV files
-        manifestcsv = "../output/static_out/manifest_features.csv"
-        permissionscsv = "../output/static_out/permissions.csv"
-        hardwarefeaturescsv = "../output/static_out/hardware_features.csv"
-        softwarefeaturescsv = "../output/static_out/software_features.csv"
+        try:
+            # Output CSV files
+            manifestcsv = "../output/static_out/manifest_features.csv"
+            permissionscsv = "../output/static_out/permissions.csv"
+            hardwarefeaturescsv = "../output/static_out/hardware_features.csv"
+            softwarefeaturescsv = "../output/static_out/software_features.csv"
 
-        write_to_csv(manifestcsv, manifest_dict)
-        write_to_csv(permissionscsv, permissions_dict, header=permissions_header)
-        write_to_csv(hardwarefeaturescsv, hardware_dict, header=hardware_header)
-        write_to_csv(softwarefeaturescsv, software_dict, header=software_header)
+            write_to_csv(manifestcsv, manifest_dict)
+            write_to_csv(permissionscsv, permissions_dict, header=permissions_header)
+            write_to_csv(hardwarefeaturescsv, hardware_dict, header=hardware_header)
+            write_to_csv(softwarefeaturescsv, software_dict, header=software_header)
+        except Exception:
+            manifest_logger.error("Failed to write manifest features to CSV")
+
+    if enable_json:
+        # Output JSON files
+        # NOTE Full manifest file json support is not implemented
+        try:
+            manifestjson = "../output/static_out/manifest_features.json"
+            permissionsjson = "../output/static_out/permissions.json"
+            hardwarefeaturesjson = "../output/static_out/hardware_features.json"
+            softwarefeaturesjson = "../output/static_out/software_features.json"
+
+            write_to_json(manifestjson, manifest_dict)
+            write_to_json(permissionsjson, permissions_dict)
+            write_to_json(hardwarefeaturesjson, hardware_dict)
+            write_to_json(softwarefeaturesjson, software_dict)
+        except Exception:
+            manifest_logger.error("Failed to write manifest features to JSON")
 
     return 
 

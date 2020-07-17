@@ -3,9 +3,15 @@ import math
 import collections
 import sys
 import time
+import configparser
 
 sys.path.append("../util.py")
-from util import write_to_csv
+from util import write_to_csv, write_to_json
+
+config = configparser.ConfigParser()
+config.read("../settings.ini")
+csv_enabled = (config["Output_Format"]['CSV'] == 'yes')
+json_enabled = (config["Output_Format"]['JSON'] == 'yes')
 
 def run_obfuscation_extraction(package_name, ds, sourcecode_logger):
     """
@@ -103,8 +109,12 @@ def add_to_dict_unique(name, dictionary):
 
 def write_output(package_name, obfuscations_dict, count_histogram):
     obfuscationscsv = "../output/static_out/obfuscation_features.csv"
-    output_dict = {}
-    output_dict["package-name"] = package_name
-    output_dict["Possible obfuscations"] = obfuscations_dict
+    obfuscationjson = "../output/static_out/obfuscation_features.json"
+    output_dict = {"package-name": package_name, "Possible obfuscations": obfuscations_dict}
     output_dict.update(count_histogram)
-    write_to_csv(obfuscationscsv, output_dict)
+
+    if csv_enabled:
+        write_to_csv(obfuscationscsv, output_dict)
+    
+    if json_enabled:
+        write_to_json(obfuscationjson, output_dict)
