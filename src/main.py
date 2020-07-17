@@ -15,7 +15,7 @@ from androguard.decompiler.decompiler import DecompilerDAD
 
 from util import *
 from Sourcecode.sourcecode_analysis import run_sourcecode
-from Manifest.manifest_analysis import analyze_manifest
+from Manifest.manifest_analysis import process_manifest
 from Fernflower.fernflower_decompile import run_fernflower_decompile
 from Contextual.contextual_feat_extraction import run_contextual
 

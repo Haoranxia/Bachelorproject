@@ -3,6 +3,7 @@ import time
 import logging
 import os
 import sys
+import configparser
 
 sys.path.append("../util.py")
 from util import write_to_csv
@@ -12,9 +13,16 @@ if platform.system() == 'Windows':
     isWindows = True
 
 # Logger
+config = configparser.ConfigParser()
+config.read("../settings.ini")
 fernflower_logger = logging.getLogger(__name__)
-fernflower_logger.setLevel(logging.INFO)
 logging.basicConfig(filename='main.log', level=logging.INFO)
+debug_enabled = (config["Misc"]['DEBUG'] == 'TRUE')
+
+if debug_enabled:
+    fernflower_logger.setLevel(logging.DEBUG)
+else:
+    fernflower_logger.setLevel(logging.INFO)
 
 # Paths
 config = configparser.ConfigParser()
