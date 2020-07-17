@@ -9,6 +9,8 @@ The following content provides information on how to get started in using the Ul
 ### Prerequisites
 The project requires that Python 3 and Pipenv are installed in the work environment. The tool has been tested and performs as intended on both Windows 10 and Ubuntu (`xubuntu-18.04.4`).
 
+Also, this tool has been developed using Python version 3.8.1 and Androguard version 3.4.0a1
+
 ### Installation
 Follow the following steps to install the tool:
 1. Download or clone the project from git.
@@ -57,5 +59,6 @@ After execution, the produced reports and features are presented in `csv` or `js
 * The logs of previous runs are found under `src/main.log`. This logging includes information such as the time the each components take and the overall performance per processed application.
 * You can set the Debug mode to `TRUE` in the configuration file to receive a more verbose log information.
 * The sub-component `StringConstants`  is not enabled by default as it produces verbose/large output files and `FernFlower` is not enabled by default as it is time intensive. It is advised to enable these components only for a small set/subset of APKs where it is essential to acquire as much information as possible.
+* When you wish to provide your own header files in the ./resources folder we heavily recommend starting with a fresh CSV file. If the new header files are incompatible with the current headers of the CSV file then the writing to CSV functionality is not guaranteed to function properly.
 
 
