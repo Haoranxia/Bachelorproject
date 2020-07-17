@@ -17,10 +17,18 @@ Follow the following steps to install the tool:
 	```
 	pipenv shell
 	```
+3. Install Python packages for the tool via Pipenv.
+	```
+	pipenv install
+	```
 ### Configuration
 You can navigate to the configuration file `settings.ini` and configure the tool to toggle components you want to enable or disable for your execution. To enable a component provide "`yes`" as a parameter otherwise it is taken as not enabled. We provide a default configuration and this configuration step is optional.
 
 ### Execution
+Before execution, if the virual enviroment is not activated, activate it via:
+	```
+	pipenv shell
+	```
 You can execute the tool in either one of the following two modes:
 1. Single APK execution mode
 	```
