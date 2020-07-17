@@ -14,8 +14,7 @@ config = configparser.ConfigParser()
 config.read("../settings.ini")
 enable_csv = (config["Output_Format"]["CSV"] == "yes")
 
-
-def analyze_manifest(a):
+def process_manifest(a):
     """
     The main function that handles manifest file feature extraction. 
     We extract the most popular/often used features from the android manifest file.

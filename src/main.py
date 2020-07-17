@@ -19,6 +19,7 @@ from Manifest.manifest_analysis import analyze_manifest
 from Fernflower.fernflower_decompile import run_fernflower_decompile
 from Contextual.contextual_feat_extraction import run_contextual
 
+
 # Creating Logger
 main_logger = logging.getLogger()
 main_logger.setLevel(logging.INFO)
@@ -52,6 +53,7 @@ def main():
     totaltime = 0
     nrapks = len(apk_files)
     for apk_index, apk_file in enumerate(apk_files):
+        # Print current progress of the tool
         print("Processing apk: " + str(apk_index) + " out of " + str(nrapks) + " apks")
 
         # Try to inspect/parse the APK
@@ -78,7 +80,7 @@ def main():
             # Manifest features
             if enable_manifest:
                 main_logger.info("Running manifest")
-                analyze_manifest(a)
+                process_manifest(a)
 
             # Source code features
             if enable_sourcecode:
@@ -151,12 +153,12 @@ def process_sourcecode(a):
     After construction we extract the features we want and process them accordingly.
     :param a: Analysis object from androguard
     """
-    # FIXME glogger.disabled disables the "multiple exit nodes found" prints (androguard issue/bug)
+    # NOTE glogger.disabled disables the "multiple exit nodes found" prints (androguard issue/bug)
     glogger.disabled = True
 
-    # FIXME dlogger disables the "Error decompiling method class <object>" message. 
-    #   It seems like DAD has issues with decompiling some APKs and will then show this message.
-    #   We disable it for a prettier output.
+    # NOTE dlogger disables the "Error decompiling method class <object>" message.
+    # It seems like DAD has issues with decompiling some apks and will then show this message.
+    # We disable it for a prettier output.
     dlogger.disabled = True
 
     # Create the d (DalvikVMFormat object) for each dex, and dx (Analysis object) 
