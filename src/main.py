@@ -4,7 +4,7 @@ import argparse
 import configparser
 from pathlib import Path
 
-from os import listdir
+from os import listdir, stat
 from zipfile import BadZipFile
 from os.path import isfile, join
 from androguard.core.bytecodes import dvm, apk, axml
@@ -50,13 +50,15 @@ def main():
     apk_files = parse_arguments()
 
     global enable_progresstracker
-    if enable_progresstracker and processed_apks:
+    global processed_apks
+    if enable_progresstracker and stat(processed_apks_file).st_size != 0:
         g = input("Progress tracking is enabled and there is some tracked progress.\n"
                   "Continue from where the tool left off? [Y/n]\n"
                   "or reset the Progress tracker? [R]\n")
         if g.lower() == 'r' or g.lower() == 'reset':
+            processed_apks = []
             open(processed_apks_file, 'w').close()
-        elif g.lower() != 'y' or g.lower() != 'yes':
+        elif g.lower() != 'y' and g.lower() != 'yes':
             enable_progresstracker = False
 
     start_time = time.time()
