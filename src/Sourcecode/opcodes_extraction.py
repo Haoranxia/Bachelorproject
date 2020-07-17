@@ -52,7 +52,7 @@ def get_opcodes(app, opcodes_dict):
 def write_output(package_name, opcodes_dict):
     opcodescsv = "../output/static_out/sourcecode_opcodes.csv"
     opcodesjson = "../output/static_out/sourcecode_opcodes.json"
-    opcodes_header = get_full_header("../resources/opcodes.txt")
+    opcodes_header = get_full_header(config["Paths"]["opcodes_header"])
     opcodes_dict = create_complete_dict(opcodes_dict, opcodes_header, package_name, frequency=True)
 
     if csv_enabled:

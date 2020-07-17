@@ -30,7 +30,7 @@ def process_manifest(a):
 
     # Package-name
     try:
-        dict_manifest_features["package-name"] = list(a.get_package())
+        dict_manifest_features["package-name"] = a.get_package()
     except Exception:
         manifest_logger.warning("Could not extract package name")
 
@@ -96,9 +96,9 @@ def process_manifest(a):
 
 def write_output(manifest_dict):
     # Initialization
-    permissions_header, permissions_dict = get_feature(manifest_dict, "permissions", "../resources/permissions.txt")
-    hardware_header, hardware_dict = get_feature(manifest_dict, "features", "../resources/hardware_features.txt")
-    software_header, software_dict = get_feature(manifest_dict, "features", "../resources/software_features.txt")
+    permissions_header, permissions_dict = get_feature(manifest_dict, "permissions", config["Paths"]["permissions_header"])
+    hardware_header, hardware_dict = get_feature(manifest_dict, "features", config["Paths"]["hardware_features_header"])
+    software_header, software_dict = get_feature(manifest_dict, "features", config["Paths"]["software_features_header"])
 
     if enable_csv:
         try:
