@@ -4,10 +4,15 @@ import configparser
 from util import get_full_header, create_complete_dict, write_to_csv
 
 # Logger
+config = configparser.ConfigParser()
+config.read("../settings.ini")
 manifest_logger = logging.getLogger(__name__)
-manifest_logger.setLevel(logging.INFO)
 logging.basicConfig(filename='main.log', level=logging.INFO)
-
+debug_enabled = (config["Misc"]['DEBUG'] == 'TRUE')
+if debug_enabled:
+    manifest_logger.setLevel(logging.DEBUG)
+else:
+    manifest_logger.setLevel(logging.INFO)
 
 # Settings
 config = configparser.ConfigParser()

@@ -8,12 +8,6 @@ from Sourcecode.opcodes_extraction import run_opcodes_extraction
 from Sourcecode.api_methods import run_api_methods_extraction
 from Sourcecode.string_constants import run_string_constants_extraction
 
-
-# Logger
-sourcecode_logger = logging.getLogger(__name__)
-sourcecode_logger.setLevel(logging.INFO)
-logging.basicConfig(filename='main.log', level=logging.INFO)
-
 # Config file parsing
 config = configparser.ConfigParser()
 config.read("../settings.ini")
@@ -24,6 +18,16 @@ enable_keywordusage = (config["Sourcecode_Settings"]["Keywordusage"] == "yes")
 enable_api_methods = (config["Sourcecode_Settings"]["APIMethods"] == "yes")
 enable_string_constants = (config["Sourcecode_Settings"]["StringConstants"] == "yes")
 enable_string_obfuscations = (config["Sourcecode_Settings"]["StringObfuscations"] == "yes")
+
+# Logger
+sourcecode_logger = logging.getLogger(__name__)
+logging.basicConfig(filename='main.log', level=logging.INFO)
+
+debug_enabled = (config["Misc"]['DEBUG'] == 'TRUE')
+if debug_enabled:
+    sourcecode_logger.setLevel(logging.DEBUG)
+else:
+    sourcecode_logger.setLevel(logging.INFO)
 
 
 def run_sourcecode(a, ds, dx):

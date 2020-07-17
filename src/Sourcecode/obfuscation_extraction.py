@@ -7,7 +7,6 @@ import time
 sys.path.append("../util.py")
 from util import write_to_csv
 
-
 def run_obfuscation_extraction(package_name, ds, sourcecode_logger):
     """
     Main function that extracts obfuscation information from the given apk source

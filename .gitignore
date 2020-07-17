@@ -4,9 +4,6 @@
 apks/*
 output/static_out/*
 output/contextual_out/*
-non_dataset_apks/*
-src/Fernflower/dex2jar_out/*
-src/Fernflower/fernflower_out/*
 
 # Pycharm
 .idea/
@@ -35,3 +32,12 @@ settings.ini
 # Log files 
 **/*.log
 *.log
+
+# Dex2jar generated files
+/src/Fernflower/dex2jar_out/*
+
+# Fernflower generated files
+/src/Fernflower/fernflower_out/*
+
+
+
