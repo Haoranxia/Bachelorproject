@@ -45,7 +45,7 @@ def get_keyword_usage(app, sourcecode_logger):
 
     # Reflection
     reflection_regex = r'reflect\.([a-zA-Z]+)'
-    reflection_dict = collections.OrderedDict()
+    reflection_dict = {}
 
     # General obfuscation keywords
     common_keywords = [r'goto']
@@ -109,6 +109,6 @@ def write_output(package_name, kotlin_dict, reflection_dict, keyword_usages_gene
     outputdict = {}
     outputdict["package-name"] = package_name
     outputdict.update(kotlin_dict)
-    outputdict.update(reflection_dict)
+    outputdict["Reflection uses"] = reflection_dict
     outputdict.update(keyword_usages_general)
     write_to_csv(keywordcsv, outputdict)

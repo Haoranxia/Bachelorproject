@@ -54,7 +54,7 @@ def main():
     nrapks = len(apk_files)
     for apk_index, apk_file in enumerate(apk_files):
         # Print current progress of the tool
-        print("Processing apk: " + str(apk_index) + " out of " + str(nrapks) + " apks")
+        print("Processing apk: " + str(apk_index)+1 + " out of " + str(nrapks) + " apks")
 
         # Try to inspect/parse the APK
         try:
