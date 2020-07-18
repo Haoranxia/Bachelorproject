@@ -61,6 +61,6 @@ After execution, the produced reports and features are presented in `csv` or `js
 * You can set the Debug mode to `TRUE` in the configuration file to receive a more verbose log information.
 * The sub-component `StringConstants`  is not enabled by default as it produces verbose/large output files and `FernFlower` is not enabled by default as it is time intensive. It is advised to enable these components only for a small set/subset of APKs where it is essential to acquire as much information as possible.
 * When you wish to provide your own header files in the ./resources folder we heavily recommend starting with a fresh CSV file. If the new header files are incompatible with the current headers of the CSV file then the writing to CSV functionality is not guaranteed to function properly.
-* In any case the step with `pipenv install` does not succeeed for a certain package, you can try reinstalling the package via `pipenv uninstall <package-name>` and `pipenv install <package-name>`
+* In any case the installation step with Pipenv does not succeeed, you can try reinstalling the package via `pipenv uninstall <package-name>` and `pipenv install <package-name>`. The list of packages the tool uses is found under the `Pipfile`.
 
 
