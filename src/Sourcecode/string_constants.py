@@ -112,4 +112,4 @@ def run_string_constants_extraction(dx, package_name, sourcecode_logger):
         current_time = time.time()
         sourcecode_logger.info("Time spent on string constants: " + str(current_time - start_time))
     except Exception as e:
-        sourcecode_logger.error("Koltin/Reflection extraction failed: " + str(e))
+        sourcecode_logger.error("String constants extraction failed: " + str(e))

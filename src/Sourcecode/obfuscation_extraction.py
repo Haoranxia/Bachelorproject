@@ -13,6 +13,7 @@ config.read("../settings.ini")
 csv_enabled = (config["Output_Format"]['CSV'] == 'yes')
 json_enabled = (config["Output_Format"]['JSON'] == 'yes')
 
+
 def run_obfuscation_extraction(package_name, ds, sourcecode_logger):
     """
     Main function that extracts obfuscation information from the given apk source
@@ -21,10 +22,7 @@ def run_obfuscation_extraction(package_name, ds, sourcecode_logger):
     :sourcecode_logger: logger object for sourcecode
     """
     obfuscations_dict = {}
-    count_histogram = {}
-    count_histogram["Length 1 identifier"] = 0
-    count_histogram["Length 2 identifier"] = 0
-    count_histogram["Length 3 identifier"] = 0
+    count_histogram = {"Length 1 identifier": 0, "Length 2 identifier": 0, "Length 3 identifier": 0}
 
     try:
         start_time = time.time()
@@ -111,8 +109,6 @@ def write_output(package_name, obfuscations_dict, count_histogram):
     obfuscations_dict = convert_keys_to_string(obfuscations_dict)
     output_dict = {"package-name": package_name, "Possible obfuscations": obfuscations_dict}
     output_dict.update(count_histogram)
-
-    
 
     if csv_enabled:
         write_to_csv(obfuscationscsv, output_dict)
