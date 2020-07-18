@@ -58,8 +58,8 @@ def get_keyword_usage(app, sourcecode_logger):
             if m and isinstance(m, bytecodes.dvm.EncodedMethod):
                 try:
                     src = m.get_source()
-                    if isinstance(src, bytes):
-                        src = src.decode('utf-8')
+                    if not isinstance(src, str):
+                        continue
 
                 except Exception:
                     sourcecode_logger.warning("Could not decompile method: " + str(m.name))
