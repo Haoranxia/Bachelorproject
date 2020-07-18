@@ -58,11 +58,13 @@ def get_keyword_usage(app, sourcecode_logger):
             if m and isinstance(m, bytecodes.dvm.EncodedMethod):
                 try:
                     src = m.get_source()
+                    if isinstance(src, bytes):
+                        src = src.decode('utf-8')
 
                 except Exception:
                     sourcecode_logger.warning("Could not decompile method: " + str(m.name))
                     src = None
-
+                    
                 # Kotlin keyword analysis
                 if src and enable_kotlin:
                     key_patterns_kotlin = find_pattern_usage(src, key_patterns_kotlin, keyword_usages_kotlin)
