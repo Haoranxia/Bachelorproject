@@ -17,7 +17,7 @@ Follow the following steps to install the tool:
 	```
 	git clone https://github.com/Haoranxia/Bachelorproject.git
 	```
-2. Navigate to where the tool is downloaded and create/activate Pipenv environment.
+2. Navigate to where the tool is downloaded and inside the root folder of the project, create/activate Pipenv environment.
 	```
 	pipenv shell
 	```
@@ -30,7 +30,7 @@ You can navigate to the configuration file `settings.ini` and configure the tool
 
 ### Execution
 Before execution, if the virtual environment is not activated, activate it throught the command `pipenv shell`.
-After activation, you can execute the tool in either one of the following two modes:
+After activation, navigate to `src/` and execute the tool in either one of these two preferred modes:
 1. Single APK execution mode
 	```
 	python main.py -sAPK <path-to-apk>
