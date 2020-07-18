@@ -54,9 +54,12 @@ def run_api_methods_extraction(dx, package_name, sourcecode_logger):
     :param sourcecode_logger:
     :return:
     """
-    start_time = time.time()
-    api_methods_dict = get_api_methods(dx)
-    api_methods_dict = convert_keys_to_string(api_methods_dict)
-    write_to_output(package_name, api_methods_dict)
-    current_time = time.time()
-    sourcecode_logger.info("Time spent on api methods: " + str(current_time - start_time))
+    try:
+        start_time = time.time()
+        api_methods_dict = get_api_methods(dx)
+        api_methods_dict = convert_keys_to_string(api_methods_dict)
+        write_to_output(package_name, api_methods_dict)
+        current_time = time.time()
+        sourcecode_logger.info("Time spent on api methods: " + str(current_time - start_time))
+    except Exception as e:
+        sourcecode_logger.error("API methods extraction failed: " + str(e))

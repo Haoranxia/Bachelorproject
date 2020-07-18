@@ -19,11 +19,8 @@ enable_commonkeywords = (config["Sourcecode_Settings"]["Commonkeywords"] == "yes
 csv_enabled = (config["Output_Format"]['CSV'] == 'yes')
 json_enabled = (config["Output_Format"]['JSON'] == 'yes')
 
-def run_keyword_extraction(package_name, app, sourcecode_logger):
-    kotlin_dict = {}
-    reflection_dict = {}
-    keyword_usages_general = {}
 
+def run_keyword_extraction(package_name, app, sourcecode_logger):
     try:
         start_time = time.time()
         kotlin_dict, reflection_dict, keyword_usages_general = get_keyword_usage(app, sourcecode_logger)
