@@ -52,14 +52,16 @@ def main():
     global enable_progresstracker
     global processed_apks
     if enable_progresstracker and stat(processed_apks_file).st_size != 0:
-        g = input("Progress tracking is enabled and there is some tracked progress.\n"
-                  "Continue from where the tool left off? [Y/n]\n"
-                  "or reset the Progress tracker? [R]\n")
+        g = input("Progress tracking is enabled in the configuration file.\n"
+                  "\tContinue from where the tool left off? \t[Y/n] \t or\n"
+                  "\tReset the Progress tracker? \t\t\t[R]\n")
         if g.lower() == 'r' or g.lower() == 'reset':
             processed_apks = []
             open(processed_apks_file, 'w').close()
+            print('Progress tracker is reset.')
         elif g.lower() != 'y' and g.lower() != 'yes':
             enable_progresstracker = False
+            print('Progress tracker will be not used.')
 
     start_time = time.time()
     totaltime = 0
