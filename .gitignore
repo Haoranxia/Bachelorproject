@@ -1,0 +1,43 @@
+.vscode
+
+# Input/Output files
+apks/*
+output/static_out/*
+output/contextual_out/*
+
+# Pycharm
+.idea/
+
+### Python ###
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IntelliJ
+/out/
+
+# mpeltonen/sbt-idea plugin
+.idea_modules/
+
+# Misc
+dex2jar-2.0/*
+settings.ini
+
+# Testing files
+/testing/features.txt
+/testing/perm_features.html
+/testing/permissions_table.txt
+
+# Log files 
+**/*.log
+*.log
+
+# Dex2jar generated files
+/src/Fernflower/dex2jar_out/*
+
+# Fernflower generated files
+/src/Fernflower/fernflower_out/*
+
+
+
