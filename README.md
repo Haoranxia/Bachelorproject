@@ -30,7 +30,8 @@ You can navigate to the configuration file `settings.ini` and configure the tool
 
 ### Execution
 Before execution, if the virtual environment is not activated, activate it throught the command `pipenv shell`.
-After activation, navigate to `src/` and execute the tool in either one of these two preferred modes:
+
+After activation, navigate to the `src/` folder and execute the tool in either one of these two preferred modes:
 1. Single APK execution mode
 	```
 	python main.py -sAPK <path-to-apk>
