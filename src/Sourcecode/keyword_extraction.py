@@ -19,11 +19,8 @@ enable_commonkeywords = (config["Sourcecode_Settings"]["Commonkeywords"] == "yes
 csv_enabled = (config["Output_Format"]['CSV'] == 'yes')
 json_enabled = (config["Output_Format"]['JSON'] == 'yes')
 
-def run_keyword_extraction(package_name, app, sourcecode_logger):
-    kotlin_dict = {}
-    reflection_dict = {}
-    keyword_usages_general = {}
 
+def run_keyword_extraction(package_name, app, sourcecode_logger):
     try:
         start_time = time.time()
         kotlin_dict, reflection_dict, keyword_usages_general = get_keyword_usage(app, sourcecode_logger)
@@ -31,7 +28,7 @@ def run_keyword_extraction(package_name, app, sourcecode_logger):
         sourcecode_logger.info("Time spent on keyword usage: " + str(current_time - start_time))
         write_output(package_name, kotlin_dict, reflection_dict, keyword_usages_general)
     except Exception as e:
-        sourcecode_logger.error("Koltin/Reflection extraction failed: " + str(e))
+        sourcecode_logger.error("Keyword extraction failed: " + str(e))
 
 
 def get_keyword_usage(app, sourcecode_logger):
@@ -61,11 +58,13 @@ def get_keyword_usage(app, sourcecode_logger):
             if m and isinstance(m, bytecodes.dvm.EncodedMethod):
                 try:
                     src = m.get_source()
+                    if not isinstance(src, str):
+                        continue
 
                 except Exception:
                     sourcecode_logger.warning("Could not decompile method: " + str(m.name))
                     src = None
-
+                    
                 # Kotlin keyword analysis
                 if src and enable_kotlin:
                     key_patterns_kotlin = find_pattern_usage(src, key_patterns_kotlin, keyword_usages_kotlin)

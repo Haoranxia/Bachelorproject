@@ -49,6 +49,16 @@ After activation, navigate to the `src/` folder and execute the tool in either o
 ### Output
 After execution, the produced reports and features are presented in `csv` or `json` format in a folder named `output`. The contextual and static features are presented within the folders `contexual_out` and `static_out` respectively.
 
+### Windows specific notes
+To use dex2jar in Windows make sure the path to dex2jar.bat is provided and not dex2jar.sh.
+
+### Linux specific notes
+To use dex2jar in Linux make sure the path to dex2jar.sh is provided and not dex2jar.bat.
+Linux users might have to grant permissions before being able to use the dex2jar.sh file. This can be solved by executing the command:
+```
+chmod +x FILENAME
+```
+
 ## Notes
 * Contextual component uses three API tokens for the three virus scanning services in use. These API tokens can be provided through the `settings.ini` configuration file. We provide a default API tokens and the account linked to these API tokens has Username: `featureextractor.rug1920@gmail.com` and Password: `Featureextractor1920`.
 * The tools that we use are packaged with the tool. Custom paths for these tools can be provided via the configuration file. Otherwise, the tool should be ready for use out of the box (following the installation instructions).

@@ -6,12 +6,13 @@ import time
 import configparser
 
 sys.path.append("../util.py")
-from util import write_to_csv, write_to_json
+from util import write_to_csv, write_to_json, convert_keys_to_string
 
 config = configparser.ConfigParser()
 config.read("../settings.ini")
 csv_enabled = (config["Output_Format"]['CSV'] == 'yes')
 json_enabled = (config["Output_Format"]['JSON'] == 'yes')
+
 
 def run_obfuscation_extraction(package_name, ds, sourcecode_logger):
     """
@@ -21,10 +22,7 @@ def run_obfuscation_extraction(package_name, ds, sourcecode_logger):
     :sourcecode_logger: logger object for sourcecode
     """
     obfuscations_dict = {}
-    count_histogram = {}
-    count_histogram["Length 1 identifier"] = 0
-    count_histogram["Length 2 identifier"] = 0
-    count_histogram["Length 3 identifier"] = 0
+    count_histogram = {"Length 1 identifier": 0, "Length 2 identifier": 0, "Length 3 identifier": 0}
 
     try:
         start_time = time.time()
@@ -48,10 +46,7 @@ def get_obfuscation_naming_total(app, obfuscations_dict):
     :return:
     """
     
-    count_histogram = collections.OrderedDict()
-    count_histogram["Length 1 identifier"] = 0
-    count_histogram["Length 2 identifier"] = 0
-    count_histogram["Length 3 identifier"] = 0
+    count_histogram = {"Length 1 identifier": 0, "Length 2 identifier": 0, "Length 3 identifier": 0}
 
     for c in app.get_classes():
         count_histogram = update_count_histogram(c.get_name(), count_histogram)
@@ -110,6 +105,8 @@ def add_to_dict_unique(name, dictionary):
 def write_output(package_name, obfuscations_dict, count_histogram):
     obfuscationscsv = "../output/static_out/obfuscation_features.csv"
     obfuscationjson = "../output/static_out/obfuscation_features.json"
+
+    obfuscations_dict = convert_keys_to_string(obfuscations_dict)
     output_dict = {"package-name": package_name, "Possible obfuscations": obfuscations_dict}
     output_dict.update(count_histogram)
 

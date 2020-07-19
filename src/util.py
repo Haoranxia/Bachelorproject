@@ -210,3 +210,11 @@ def add_to_dict_unique(name, dictionary):
         dictionary[name] += 1
 
     return dictionary
+
+
+def convert_keys_to_string(input_dict):
+    return_dict = {}
+    for key in input_dict:
+        return_dict[str(key)] = input_dict[key]
+    
+    return return_dict

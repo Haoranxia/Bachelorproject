@@ -34,10 +34,10 @@ settings.ini
 *.log
 
 # Dex2jar generated files
-/src/Fernflower/dex2jar_out/*
+#/src/Fernflower/dex2jar_out/*
 
 # Fernflower generated files
-/src/Fernflower/fernflower_out/*
+#/src/Fernflower/fernflower_out/*
 
 
 

@@ -53,7 +53,7 @@ def main():
     global processed_apks
     if enable_progresstracker and stat(processed_apks_file).st_size != 0:
         g = input("Progress tracking is enabled in the configuration file.\n"
-                  "\tContinue from where the tool left off? \t[Y/n] \t or\n"
+                  "\tContinue from where the tool left off? \t[Y/N] \t or\n"
                   "\tReset the Progress tracker? \t\t\t[R]\n")
         if g.lower() == 'r' or g.lower() == 'reset':
             processed_apks = []
@@ -66,6 +66,7 @@ def main():
     start_time = time.time()
     totaltime = 0
     nrapks = len(apk_files)
+    main_logger.info("STARTING NEW PROCESS")
     for apk_index, apk_file in enumerate(apk_files):
         # Print current progress of the tool
         print("Processing apk: " + str(apk_index + 1) + " out of " + str(nrapks) + " apks")

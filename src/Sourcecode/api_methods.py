@@ -1,6 +1,9 @@
 import time
 import configparser
-from util import write_to_csv, write_to_json, add_to_dict_unique
+import sys
+
+sys.path.append("../util.py")
+from util import write_to_csv, write_to_json, add_to_dict_unique, convert_keys_to_string
 
 # Config file parsing
 config = configparser.ConfigParser()
@@ -51,8 +54,12 @@ def run_api_methods_extraction(dx, package_name, sourcecode_logger):
     :param sourcecode_logger:
     :return:
     """
-    start_time = time.time()
-    api_methods_dict = get_api_methods(dx)
-    write_to_output(package_name, api_methods_dict)
-    current_time = time.time()
-    sourcecode_logger.info("Time spent on api methods: " + str(current_time - start_time))
+    try:
+        start_time = time.time()
+        api_methods_dict = get_api_methods(dx)
+        api_methods_dict = convert_keys_to_string(api_methods_dict)
+        write_to_output(package_name, api_methods_dict)
+        current_time = time.time()
+        sourcecode_logger.info("Time spent on api methods: " + str(current_time - start_time))
+    except Exception as e:
+        sourcecode_logger.error("API methods extraction failed: " + str(e))

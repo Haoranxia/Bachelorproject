@@ -48,6 +48,10 @@ def get_strings_with_obfuscation(dx, code_sentinels):
     const_strings_dict = dx.get_strings_analysis()
     const_strings = list(const_strings_dict.keys())
     for string in const_strings:
+
+        if not isinstance(string, str):
+            continue
+
         # count base64 encoded string constants as possible obfuscations
         if is_base64_encoded(string):
             possible_str_obfs_cnt += 1
@@ -112,4 +116,4 @@ def run_string_constants_extraction(dx, package_name, sourcecode_logger):
         current_time = time.time()
         sourcecode_logger.info("Time spent on string constants: " + str(current_time - start_time))
     except Exception as e:
-        sourcecode_logger.error("Koltin/Reflection extraction failed: " + str(e))
+        sourcecode_logger.error("String constants extraction failed: " + str(e))
