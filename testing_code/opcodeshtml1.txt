@@ -1,0 +1,978 @@
+
+<tr>
+  <td>00 10x</td>
+  <td>nop</td>
+  <td>&nbsp;</td>
+  <td>Waste cycles.
+    <p class="note"><strong>Note:</strong>
+    Data-bearing pseudo-instructions are tagged with this opcode, in which
+    case the high-order byte of the opcode unit indicates the nature of
+    the data. See "<code translate="no" dir="ltr">packed-switch-payload</code> Format",
+    "<code translate="no" dir="ltr">sparse-switch-payload</code> Format", and
+    "<code translate="no" dir="ltr">fill-array-data-payload</code> Format" below.</p>
+  </td>
+</tr>
+<tr>
+  <td>01 12x</td>
+  <td>move vA, vB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> source register (4 bits)</td>
+  <td>Move the contents of one non-object register to another.</td>
+</tr>
+<tr>
+  <td>02 22x</td>
+  <td>move/from16 vAA, vBBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> source register (16 bits)</td>
+  <td>Move the contents of one non-object register to another.</td>
+</tr>
+<tr>
+  <td>03 32x</td>
+  <td>move/16 vAAAA, vBBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (16 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> source register (16 bits)</td>
+  <td>Move the contents of one non-object register to another.</td>
+</tr>
+<tr>
+  <td>04 12x</td>
+  <td>move-wide vA, vB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register pair (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> source register pair (4 bits)</td>
+  <td>Move the contents of one register-pair to another.
+    <p class="note"><strong>Note:</strong>
+    It is legal to move from <code translate="no" dir="ltr">v<i>N</i></code> to either
+    <code translate="no" dir="ltr">v<i>N-1</i></code> or <code translate="no" dir="ltr">v<i>N+1</i></code>, so implementations
+    must arrange for both halves of a register pair to be read before
+    anything is written.</p>
+  </td>
+</tr>
+<tr>
+  <td>05 22x</td>
+  <td>move-wide/from16 vAA, vBBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register pair (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> source register pair (16 bits)</td>
+  <td>Move the contents of one register-pair to another.
+    <p class="note"><strong>Note:</strong>
+    Implementation considerations are the same as <code translate="no" dir="ltr">move-wide</code>,
+    above.</p>
+  </td>
+</tr>
+<tr>
+  <td>06 32x</td>
+  <td>move-wide/16 vAAAA, vBBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register pair (16 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> source register pair (16 bits)</td>
+  <td>Move the contents of one register-pair to another.
+    <p class="note"><strong>Note:</strong>
+    Implementation considerations are the same as <code translate="no" dir="ltr">move-wide</code>,
+    above.</p>
+  </td>
+</tr>
+<tr>
+  <td>07 12x</td>
+  <td>move-object vA, vB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> source register (4 bits)</td>
+  <td>Move the contents of one object-bearing register to another.</td>
+</tr>
+<tr>
+  <td>08 22x</td>
+  <td>move-object/from16 vAA, vBBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> source register (16 bits)</td>
+  <td>Move the contents of one object-bearing register to another.</td>
+</tr>
+<tr>
+  <td>09 32x</td>
+  <td>move-object/16 vAAAA, vBBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (16 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> source register (16 bits)</td>
+  <td>Move the contents of one object-bearing register to another.</td>
+</tr>
+<tr>
+  <td>0a 11x</td>
+  <td>move-result vAA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)</td>
+  <td>Move the single-word non-object result of the most recent
+    <code translate="no" dir="ltr"><span>invoke-</span><i><span>kind</span></i></code> into the indicated register.
+    This must be done as the instruction immediately after an
+    <code translate="no" dir="ltr"><span>invoke-</span><i><span>kind</span></i></code> whose (single-word, non-object) result
+    is not to be ignored; anywhere else is invalid.</td>
+</tr>
+<tr>
+  <td>0b 11x</td>
+  <td>move-result-wide vAA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register pair (8 bits)</td>
+  <td>Move the double-word result of the most recent
+    <code translate="no" dir="ltr"><span>invoke-</span><i><span>kind</span></i></code> into the indicated register pair.
+    This must be done as the instruction immediately after an
+    <code translate="no" dir="ltr"><span>invoke-</span><i><span>kind</span></i></code> whose (double-word) result
+    is not to be ignored; anywhere else is invalid.</td>
+</tr>
+<tr>
+  <td>0c 11x</td>
+  <td>move-result-object vAA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)</td>
+  <td>Move the object result of the most recent <code translate="no" dir="ltr"><span>invoke-</span><i><span>kind</span></i></code>
+    into the indicated register. This must be done as the instruction
+    immediately after an <code translate="no" dir="ltr"><span>invoke-</span><i><span>kind</span></i></code> or
+    <code translate="no" dir="ltr"><span>filled-new-array</span></code>
+    whose (object) result is not to be ignored; anywhere else is invalid.</td>
+</tr>
+<tr>
+  <td>0d 11x</td>
+  <td>move-exception vAA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)</td>
+  <td>Save a just-caught exception into the given register. This must
+    be the first instruction of any exception handler whose caught
+    exception is not to be ignored, and this instruction must <i>only</i>
+    ever occur as the first instruction of an exception handler; anywhere
+    else is invalid.</td>
+</tr>
+<tr>
+  <td>0e 10x</td>
+  <td>return-void</td>
+  <td>&nbsp;</td>
+  <td>Return from a <code translate="no" dir="ltr"><span>void</span></code> method.</td>
+</tr>
+<tr>
+  <td>0f 11x</td>
+  <td>return vAA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> return value register (8 bits)</td>
+  <td>Return from a single-width (32-bit) non-object value-returning
+    method.
+  </td>
+</tr>
+<tr>
+  <td>10 11x</td>
+  <td>return-wide vAA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> return value register-pair (8 bits)</td>
+  <td>Return from a double-width (64-bit) value-returning method.</td>
+</tr>
+<tr>
+  <td>11 11x</td>
+  <td>return-object vAA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> return value register (8 bits)</td>
+  <td>Return from an object-returning method.</td>
+</tr>
+<tr>
+  <td>12 11n</td>
+  <td>const/4 vA, #+B</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> signed int (4 bits)</td>
+  <td>Move the given literal value (sign-extended to 32 bits) into
+    the specified register.</td>
+</tr>
+<tr>
+  <td>13 21s</td>
+  <td>const/16 vAA, #+BBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> signed int (16 bits)</td>
+  <td>Move the given literal value (sign-extended to 32 bits) into
+    the specified register.</td>
+</tr>
+<tr>
+  <td>14 31i</td>
+  <td>const vAA, #+BBBBBBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> arbitrary 32-bit constant</td>
+  <td>Move the given literal value into the specified register.</td>
+</tr>
+<tr>
+  <td>15 21h</td>
+  <td>const/high16 vAA, #+BBBB0000</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> signed int (16 bits)</td>
+  <td>Move the given literal value (right-zero-extended to 32 bits) into
+    the specified register.</td>
+</tr>
+<tr>
+  <td>16 21s</td>
+  <td>const-wide/16 vAA, #+BBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> signed int (16 bits)</td>
+  <td>Move the given literal value (sign-extended to 64 bits) into
+    the specified register-pair.</td>
+</tr>
+<tr>
+  <td>17 31i</td>
+  <td>const-wide/32 vAA, #+BBBBBBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> signed int (32 bits)</td>
+  <td>Move the given literal value (sign-extended to 64 bits) into
+    the specified register-pair.</td>
+</tr>
+<tr>
+  <td>18 51l</td>
+  <td>const-wide vAA, #+BBBBBBBBBBBBBBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> arbitrary double-width (64-bit) constant</td>
+  <td>Move the given literal value into
+    the specified register-pair.</td>
+</tr>
+<tr>
+  <td>19 21h</td>
+  <td>const-wide/high16 vAA, #+BBBB000000000000</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> signed int (16 bits)</td>
+  <td>Move the given literal value (right-zero-extended to 64 bits) into
+    the specified register-pair.</td>
+</tr>
+<tr>
+  <td>1a 21c</td>
+  <td>const-string vAA, string@BBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> string index</td>
+  <td>Move a reference to the string specified by the given index into the
+    specified register.</td>
+</tr>
+<tr>
+  <td>1b 31c</td>
+  <td>const-string/jumbo vAA, string@BBBBBBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> string index</td>
+  <td>Move a reference to the string specified by the given index into the
+    specified register.</td>
+</tr>
+<tr>
+  <td>1c 21c</td>
+  <td>const-class vAA, type@BBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> type index</td>
+  <td>Move a reference to the class specified by the given index into the
+    specified register. In the case where the indicated type is primitive,
+    this will store a reference to the primitive type's degenerate
+    class.</td>
+</tr>
+<tr>
+  <td>1d 11x</td>
+  <td>monitor-enter vAA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> reference-bearing register (8 bits)</td>
+  <td>Acquire the monitor for the indicated object.</td>
+</tr>
+<tr>
+  <td>1e 11x</td>
+  <td>monitor-exit vAA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> reference-bearing register (8 bits)</td>
+  <td>Release the monitor for the indicated object.
+    <p class="note"><strong>Note:</strong>
+    If this instruction needs to throw an exception, it must do
+    so as if the pc has already advanced past the instruction.
+    It may be useful to think of this as the instruction successfully
+    executing (in a sense), and the exception getting thrown <i>after</i>
+    the instruction but <i>before</i> the next one gets a chance to
+    run. This definition makes it possible for a method to use
+    a monitor cleanup catch-all (e.g., <code translate="no" dir="ltr">finally</code>) block as
+    the monitor cleanup for that block itself, as a way to handle the
+    arbitrary exceptions that might get thrown due to the historical
+    implementation of <code translate="no" dir="ltr">Thread.stop()</code>, while still managing
+    to have proper monitor hygiene.</p>
+  </td>
+</tr>
+<tr>
+  <td>1f 21c</td>
+  <td>check-cast vAA, type@BBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> reference-bearing register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> type index (16 bits)</td>
+  <td>Throw a <code translate="no" dir="ltr"><span>ClassCastException</span></code> if the reference in the
+    given register cannot be cast to the indicated type.
+    <p class="note"><strong>Note:</strong> Since <code translate="no" dir="ltr">A</code> must always be a reference
+    (and not a primitive value), this will necessarily fail at runtime
+    (that is, it will throw an exception) if <code translate="no" dir="ltr">B</code> refers to a
+    primitive type.</p>
+  </td>
+</tr>
+<tr>
+  <td>20 22c</td>
+  <td>instance-of vA, vB, type@CCCC</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> reference-bearing register (4 bits)<br>
+    <code translate="no" dir="ltr"><span>C:</span></code> type index (16 bits)</td>
+  <td>Store in the given destination register <code translate="no" dir="ltr"><span>1</span></code>
+    if the indicated reference is an instance of the given type,
+    or <code translate="no" dir="ltr"><span>0</span></code> if not.
+    <p class="note"><strong>Note:</strong> Since <code translate="no" dir="ltr">B</code> must always be a reference
+    (and not a primitive value), this will always result
+    in <code translate="no" dir="ltr">0</code> being stored if <code translate="no" dir="ltr">C</code> refers to a primitive
+    type.</p></td>
+</tr>
+<tr>
+  <td>21 12x</td>
+  <td>array-length vA, vB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> array reference-bearing register (4 bits)</td>
+  <td>Store in the given destination register the length of the indicated
+    array, in entries</td>
+</tr>
+<tr>
+  <td>22 21c</td>
+  <td>new-instance vAA, type@BBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> type index</td>
+  <td>Construct a new instance of the indicated type, storing a
+    reference to it in the destination. The type must refer to a
+    non-array class.</td>
+</tr>
+<tr>
+  <td>23 22c</td>
+  <td>new-array vA, vB, type@CCCC</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> size register<br>
+    <code translate="no" dir="ltr"><span>C:</span></code> type index</td>
+  <td>Construct a new array of the indicated type and size. The type
+    must be an array type.</td>
+</tr>
+<tr>
+  <td>24 35c</td>
+  <td>filled-new-array {vC, vD, vE, vF, vG}, type@BBBB</td>
+  <td>
+    <code translate="no" dir="ltr"><span>A:</span></code> array size and argument word count (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> type index (16 bits)<br>
+    <code translate="no" dir="ltr"><span>C.<wbr>.<wbr>G:</span></code> argument registers (4 bits each)
+  </td>
+  <td>Construct an array of the given type and size, filling it with the
+    supplied contents. The type must be an array type. The array's
+    contents must be single-word (that is,
+    no arrays of <code translate="no" dir="ltr"><span>long</span></code> or <code translate="no" dir="ltr"><span>double</span></code>, but reference
+    types are acceptable). The constructed
+    instance is stored as a "result" in the same way that the method invocation
+    instructions store their results, so the constructed instance must
+    be moved to a register with an immediately subsequent
+    <code translate="no" dir="ltr"><span>move-result-object</span></code> instruction (if it is to be used).</td>
+</tr>
+<tr>
+  <td>25 3rc</td>
+  <td>filled-new-array/range {vCCCC .. vNNNN}, type@BBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> array size and argument word count (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> type index (16 bits)<br>
+    <code translate="no" dir="ltr"><span>C:</span></code> first argument register (16 bits)<br>
+    <code translate="no" dir="ltr"><span>N = A + C - 1</span></code></td>
+  <td>Construct an array of the given type and size, filling it with
+    the supplied contents. Clarifications and restrictions are the same
+    as <code translate="no" dir="ltr"><span>filled-new-array</span></code>, described above.</td>
+</tr>
+<tr>
+  <td>26 31t</td>
+  <td>fill-array-data vAA, +BBBBBBBB <i>(with supplemental data as specified
+    below in "<code translate="no" dir="ltr">fill-array-data-payload</code> Format")</i></td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> array reference (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> signed "branch" offset to table data pseudo-instruction
+    (32 bits)
+  </td>
+  <td>Fill the given array with the indicated data. The reference must be
+    to an array of primitives, and the data table must match it in type and
+    must contain no more elements than will fit in the array. That is,
+    the array may be larger than the table, and if so, only the initial
+    elements of the array are set, leaving the remainder alone.
+  </td>
+</tr>
+<tr>
+  <td>27 11x</td>
+  <td>throw vAA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> exception-bearing register (8 bits)<br></td>
+  <td>Throw the indicated exception.</td>
+</tr>
+<tr>
+  <td>28 10t</td>
+  <td>goto +AA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> signed branch offset (8 bits)</td>
+  <td>Unconditionally jump to the indicated instruction.
+    <p class="note"><strong>Note:</strong>
+    The branch offset must not be <code translate="no" dir="ltr">0</code>. (A spin
+    loop may be legally constructed either with <code translate="no" dir="ltr">goto/32</code> or
+    by including a <code translate="no" dir="ltr">nop</code> as a target before the branch.)</p>
+  </td>
+</tr>
+<tr>
+  <td>29 20t</td>
+  <td>goto/16 +AAAA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> signed branch offset (16 bits)<br></td>
+  <td>Unconditionally jump to the indicated instruction.
+    <p class="note"><strong>Note:</strong>
+    The branch offset must not be <code translate="no" dir="ltr">0</code>. (A spin
+    loop may be legally constructed either with <code translate="no" dir="ltr">goto/32</code> or
+    by including a <code translate="no" dir="ltr">nop</code> as a target before the branch.)</p>
+  </td>
+</tr>
+<tr>
+  <td>2a 30t</td>
+  <td>goto/32 +AAAAAAAA</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> signed branch offset (32 bits)<br></td>
+  <td>Unconditionally jump to the indicated instruction.</td>
+</tr>
+<tr>
+  <td>2b 31t</td>
+  <td>packed-switch vAA, +BBBBBBBB <i>(with supplemental data as
+    specified below in "<code translate="no" dir="ltr">packed-switch-payload</code> Format")</i></td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> register to test<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> signed "branch" offset to table data pseudo-instruction
+    (32 bits)
+  </td>
+  <td>Jump to a new instruction based on the value in the
+    given register, using a table of offsets corresponding to each value
+    in a particular integral range, or fall through to the next
+    instruction if there is no match.
+  </td>
+</tr>
+<tr>
+  <td>2c 31t</td>
+  <td>sparse-switch vAA, +BBBBBBBB <i>(with supplemental data as
+    specified below in "<code translate="no" dir="ltr">sparse-switch-payload</code> Format")</i></td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> register to test<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> signed "branch" offset to table data pseudo-instruction
+    (32 bits)
+  </td>
+  <td>Jump to a new instruction based on the value in the given
+    register, using an ordered table of value-offset pairs, or fall
+    through to the next instruction if there is no match.
+  </td>
+</tr>
+<tr>
+  <td>2d..31 23x</td>
+  <td>cmp<i>kind</i> vAA, vBB, vCC<br>
+    2d: cmpl-float <i>(lt bias)</i><br>
+    2e: cmpg-float <i>(gt bias)</i><br>
+    2f: cmpl-double <i>(lt bias)</i><br>
+    30: cmpg-double <i>(gt bias)</i><br>
+    31: cmp-long
+  </td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> first source register or pair<br>
+    <code translate="no" dir="ltr"><span>C:</span></code> second source register or pair</td>
+  <td>Perform the indicated floating point or <code translate="no" dir="ltr"><span>long</span></code> comparison,
+    setting <code translate="no" dir="ltr"><span>a</span></code> to <code translate="no" dir="ltr"><span>0</span></code> if <code translate="no" dir="ltr"><span>b == c</span></code>,
+    <code translate="no" dir="ltr"><span>1</span></code> if <code translate="no" dir="ltr"><span>b &gt; c</span></code>,
+    or <code translate="no" dir="ltr"><span>-1</span></code> if <code translate="no" dir="ltr"><span>b &lt; c</span></code>.
+    The "bias" listed for the floating point operations
+    indicates how <code translate="no" dir="ltr"><span>NaN</span></code> comparisons are treated: "gt bias"
+    instructions return <code translate="no" dir="ltr"><span>1</span></code> for <code translate="no" dir="ltr"><span>NaN</span></code> comparisons,
+    and "lt bias" instructions return <code translate="no" dir="ltr"><span>-1</span></code>.
+    <p>For example, to check to see if floating point
+    <code translate="no" dir="ltr">x &lt; y</code> it is advisable to use
+    <code translate="no" dir="ltr">cmpg-float</code>; a result of <code translate="no" dir="ltr">-1</code> indicates that
+    the test was true, and the other values indicate it was false either
+    due to a valid comparison or because one of the values was
+    <code translate="no" dir="ltr">NaN</code>.</p>
+  </td>
+</tr>
+<tr>
+  <td>32..37 22t</td>
+  <td>if-<i>test</i> vA, vB, +CCCC<br>
+    32: if-eq<br>
+    33: if-ne<br>
+    34: if-lt<br>
+    35: if-ge<br>
+    36: if-gt<br>
+    37: if-le<br>
+  </td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> first register to test (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> second register to test (4 bits)<br>
+    <code translate="no" dir="ltr"><span>C:</span></code> signed branch offset (16 bits)</td>
+  <td>Branch to the given destination if the given two registers' values
+    compare as specified.
+    <p class="note"><strong>Note:</strong>
+    The branch offset must not be <code translate="no" dir="ltr">0</code>. (A spin
+    loop may be legally constructed either by branching around a
+    backward <code translate="no" dir="ltr">goto</code> or by including a <code translate="no" dir="ltr">nop</code> as
+    a target before the branch.)</p>
+  </td>
+</tr>
+<tr>
+  <td>38..3d 21t</td>
+  <td>if-<i>test</i>z vAA, +BBBB<br>
+    38: if-eqz<br>
+    39: if-nez<br>
+    3a: if-ltz<br>
+    3b: if-gez<br>
+    3c: if-gtz<br>
+    3d: if-lez<br>
+  </td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> register to test (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> signed branch offset (16 bits)</td>
+  <td>Branch to the given destination if the given register's value compares
+    with 0 as specified.
+    <p class="note"><strong>Note:</strong>
+    The branch offset must not be <code translate="no" dir="ltr">0</code>. (A spin
+    loop may be legally constructed either by branching around a
+    backward <code translate="no" dir="ltr">goto</code> or by including a <code translate="no" dir="ltr">nop</code> as
+    a target before the branch.)</p>
+  </td>
+</tr>
+<tr>
+  <td>3e..43 10x</td>
+  <td><i>(unused)</i></td>
+  <td>&nbsp;</td>
+  <td><i>(unused)</i></td>
+</tr>
+<tr>
+  <td>44..51 23x</td>
+  <td><i>arrayop</i> vAA, vBB, vCC<br>
+    44: aget<br>
+    45: aget-wide<br>
+    46: aget-object<br>
+    47: aget-boolean<br>
+    48: aget-byte<br>
+    49: aget-char<br>
+    4a: aget-short<br>
+    4b: aput<br>
+    4c: aput-wide<br>
+    4d: aput-object<br>
+    4e: aput-boolean<br>
+    4f: aput-byte<br>
+    50: aput-char<br>
+    51: aput-short
+  </td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> value register or pair; may be source or dest
+      (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> array register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>C:</span></code> index register (8 bits)</td>
+  <td>Perform the identified array operation at the identified index of
+    the given array, loading or storing into the value register.</td>
+</tr>
+<tr>
+  <td>52..5f 22c</td>
+  <td>i<i>instanceop</i> vA, vB, field@CCCC<br>
+    52: iget<br>
+    53: iget-wide<br>
+    54: iget-object<br>
+    55: iget-boolean<br>
+    56: iget-byte<br>
+    57: iget-char<br>
+    58: iget-short<br>
+    59: iput<br>
+    5a: iput-wide<br>
+    5b: iput-object<br>
+    5c: iput-boolean<br>
+    5d: iput-byte<br>
+    5e: iput-char<br>
+    5f: iput-short
+  </td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> value register or pair; may be source or dest
+      (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> object register (4 bits)<br>
+    <code translate="no" dir="ltr"><span>C:</span></code> instance field reference index (16 bits)</td>
+  <td>Perform the identified object instance field operation with
+    the identified field, loading or storing into the value register.
+    <p class="note"><strong>Note:</strong> These opcodes are reasonable candidates for static linking,
+    altering the field argument to be a more direct offset.</p>
+  </td>
+</tr>
+<tr>
+  <td>60..6d 21c</td>
+  <td>s<i>staticop</i> vAA, field@BBBB<br>
+    60: sget<br>
+    61: sget-wide<br>
+    62: sget-object<br>
+    63: sget-boolean<br>
+    64: sget-byte<br>
+    65: sget-char<br>
+    66: sget-short<br>
+    67: sput<br>
+    68: sput-wide<br>
+    69: sput-object<br>
+    6a: sput-boolean<br>
+    6b: sput-byte<br>
+    6c: sput-char<br>
+    6d: sput-short
+  </td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> value register or pair; may be source or dest
+      (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> static field reference index (16 bits)</td>
+  <td>Perform the identified object static field operation with the identified
+    static field, loading or storing into the value register.
+    <p class="note"><strong>Note:</strong> These opcodes are reasonable candidates for static linking,
+    altering the field argument to be a more direct offset.</p>
+  </td>
+</tr>
+<tr>
+  <td>6e..72 35c</td>
+  <td>invoke-<i>kind</i> {vC, vD, vE, vF, vG}, meth@BBBB<br>
+    6e: invoke-virtual<br>
+    6f: invoke-super<br>
+    70: invoke-direct<br>
+    71: invoke-static<br>
+    72: invoke-interface
+  </td>
+  <td>
+    <code translate="no" dir="ltr"><span>A:</span></code> argument word count (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> method reference index (16 bits)<br>
+    <code translate="no" dir="ltr"><span>C.<wbr>.<wbr>G:</span></code> argument registers (4 bits each)
+  </td>
+  <td>Call the indicated method. The result (if any) may be stored
+    with an appropriate <code translate="no" dir="ltr"><span>move-result*</span></code> variant as the immediately
+    subsequent instruction.
+    <p><code translate="no" dir="ltr">invoke-virtual</code> is used to invoke a normal virtual
+    method (a method that is not <code translate="no" dir="ltr">private</code>, <code translate="no" dir="ltr">static</code>,
+    or <code translate="no" dir="ltr">final</code>, and is also not a constructor).</p>
+    <p>When the <code translate="no" dir="ltr">method_id</code> references a method of a non-interface
+    class, <code translate="no" dir="ltr">invoke-super</code> is used to invoke the closest superclass's
+    virtual method (as opposed to the one with the same <code translate="no" dir="ltr">method_id</code>
+    in the calling class). The same method restrictions hold as for
+    <code translate="no" dir="ltr">invoke-virtual</code>.</p>
+    <p>In Dex files version <code translate="no" dir="ltr">037</code> or later, if the
+    <code translate="no" dir="ltr">method_id</code> refers to an interface method,
+    <code translate="no" dir="ltr">invoke-super</code> is used to invoke the most specific,
+    non-overridden version of that method defined on that interface.  The same
+    method restrictions hold as for <code translate="no" dir="ltr">invoke-virtual</code>. In Dex files
+    prior to version <code translate="no" dir="ltr">037</code>, having an interface
+    <code translate="no" dir="ltr">method_id</code> is illegal and undefined.</p>
+    <p><code translate="no" dir="ltr">invoke-direct</code> is used to invoke a non-<code translate="no" dir="ltr">static</code>
+    direct method (that is, an instance method that is by its nature
+    non-overridable, namely either a <code translate="no" dir="ltr">private</code> instance method or a
+    constructor).</p>
+    <p><code translate="no" dir="ltr">invoke-static</code> is used to invoke a <code translate="no" dir="ltr">static</code>
+    method (which is always considered a direct method).</p>
+    <p><code translate="no" dir="ltr">invoke-interface</code> is used to invoke an
+    <code translate="no" dir="ltr">interface</code> method, that is, on an object whose concrete
+    class isn't known, using a <code translate="no" dir="ltr">method_id</code> that refers to
+    an <code translate="no" dir="ltr">interface</code>.</p>
+    <p class="note"><strong>Note:</strong> These opcodes are reasonable candidates for static linking,
+    altering the method argument to be a more direct offset
+    (or pair thereof).</p>
+  </td>
+</tr>
+<tr>
+  <td>73 10x</td>
+  <td><i>(unused)</i></td>
+  <td>&nbsp;</td>
+  <td><i>(unused)</i></td>
+</tr>
+<tr>
+  <td>74..78 3rc</td>
+  <td>invoke-<i>kind</i>/range {vCCCC .. vNNNN}, meth@BBBB<br>
+    74: invoke-virtual/range<br>
+    75: invoke-super/range<br>
+    76: invoke-direct/range<br>
+    77: invoke-static/range<br>
+    78: invoke-interface/range
+  </td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> argument word count (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> method reference index (16 bits)<br>
+    <code translate="no" dir="ltr"><span>C:</span></code> first argument register (16 bits)<br>
+    <code translate="no" dir="ltr"><span>N = A + C - 1</span></code></td>
+  <td>Call the indicated method. See first <code translate="no" dir="ltr"><span>invoke-</span><i><span>kind</span></i></code>
+    description above for details, caveats, and suggestions.
+  </td>
+</tr>
+<tr>
+  <td>79..7a 10x</td>
+  <td><i>(unused)</i></td>
+  <td>&nbsp;</td>
+  <td><i>(unused)</i></td>
+</tr>
+<tr>
+  <td>7b..8f 12x</td>
+  <td><i>unop</i> vA, vB<br>
+    7b: neg-int<br>
+    7c: not-int<br>
+    7d: neg-long<br>
+    7e: not-long<br>
+    7f: neg-float<br>
+    80: neg-double<br>
+    81: int-to-long<br>
+    82: int-to-float<br>
+    83: int-to-double<br>
+    84: long-to-int<br>
+    85: long-to-float<br>
+    86: long-to-double<br>
+    87: float-to-int<br>
+    88: float-to-long<br>
+    89: float-to-double<br>
+    8a: double-to-int<br>
+    8b: double-to-long<br>
+    8c: double-to-float<br>
+    8d: int-to-byte<br>
+    8e: int-to-char<br>
+    8f: int-to-short
+  </td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register or pair (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> source register or pair (4 bits)</td>
+  <td>Perform the identified unary operation on the source register,
+    storing the result in the destination register.</td>
+</tr>
+
+<tr>
+  <td>90..af 23x</td>
+  <td><i>binop</i> vAA, vBB, vCC<br>
+    90: add-int<br>
+    91: sub-int<br>
+    92: mul-int<br>
+    93: div-int<br>
+    94: rem-int<br>
+    95: and-int<br>
+    96: or-int<br>
+    97: xor-int<br>
+    98: shl-int<br>
+    99: shr-int<br>
+    9a: ushr-int<br>
+    9b: add-long<br>
+    9c: sub-long<br>
+    9d: mul-long<br>
+    9e: div-long<br>
+    9f: rem-long<br>
+    a0: and-long<br>
+    a1: or-long<br>
+    a2: xor-long<br>
+    a3: shl-long<br>
+    a4: shr-long<br>
+    a5: ushr-long<br>
+    a6: add-float<br>
+    a7: sub-float<br>
+    a8: mul-float<br>
+    a9: div-float<br>
+    aa: rem-float<br>
+    ab: add-double<br>
+    ac: sub-double<br>
+    ad: mul-double<br>
+    ae: div-double<br>
+    af: rem-double
+  </td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register or pair (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> first source register or pair (8 bits)<br>
+    <code translate="no" dir="ltr"><span>C:</span></code> second source register or pair (8 bits)</td>
+  <td>Perform the identified binary operation on the two source registers,
+    storing the result in the destination register.
+    <p class="note"><strong>Note:</strong>
+    Contrary to other <code translate="no" dir="ltr">-long</code> mathematical operations (which
+    take register pairs for both their first and their second source),
+    <code translate="no" dir="ltr">shl-long</code>, <code translate="no" dir="ltr">shr-long</code>, and <code translate="no" dir="ltr">ushr-long</code>
+    take a register pair for their first source (the value to be shifted),
+    but a single register for their second source (the shifting distance).
+    </p>
+</td>
+</tr>
+<tr>
+  <td>b0..cf 12x</td>
+  <td><i>binop</i>/2addr vA, vB<br>
+    b0: add-int/2addr<br>
+    b1: sub-int/2addr<br>
+    b2: mul-int/2addr<br>
+    b3: div-int/2addr<br>
+    b4: rem-int/2addr<br>
+    b5: and-int/2addr<br>
+    b6: or-int/2addr<br>
+    b7: xor-int/2addr<br>
+    b8: shl-int/2addr<br>
+    b9: shr-int/2addr<br>
+    ba: ushr-int/2addr<br>
+    bb: add-long/2addr<br>
+    bc: sub-long/2addr<br>
+    bd: mul-long/2addr<br>
+    be: div-long/2addr<br>
+    bf: rem-long/2addr<br>
+    c0: and-long/2addr<br>
+    c1: or-long/2addr<br>
+    c2: xor-long/2addr<br>
+    c3: shl-long/2addr<br>
+    c4: shr-long/2addr<br>
+    c5: ushr-long/2addr<br>
+    c6: add-float/2addr<br>
+    c7: sub-float/2addr<br>
+    c8: mul-float/2addr<br>
+    c9: div-float/2addr<br>
+    ca: rem-float/2addr<br>
+    cb: add-double/2addr<br>
+    cc: sub-double/2addr<br>
+    cd: mul-double/2addr<br>
+    ce: div-double/2addr<br>
+    cf: rem-double/2addr
+  </td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination and first source register or pair
+      (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> second source register or pair (4 bits)</td>
+  <td>Perform the identified binary operation on the two source registers,
+    storing the result in the first source register.
+    <p class="note"><strong>Note:</strong>
+    Contrary to other <code translate="no" dir="ltr">-long/2addr</code> mathematical operations
+    (which take register pairs for both their destination/first source and
+    their second source), <code translate="no" dir="ltr">shl-long/2addr</code>,
+    <code translate="no" dir="ltr">shr-long/2addr</code>, and <code translate="no" dir="ltr">ushr-long/2addr</code> take a
+    register pair for their destination/first source (the value to be
+    shifted), but a single register for their second source (the shifting
+    distance).
+    </p>
+  </td>
+</tr>
+<tr>
+  <td>d0..d7 22s</td>
+  <td><i>binop</i>/lit16 vA, vB, #+CCCC<br>
+    d0: add-int/lit16<br>
+    d1: rsub-int (reverse subtract)<br>
+    d2: mul-int/lit16<br>
+    d3: div-int/lit16<br>
+    d4: rem-int/lit16<br>
+    d5: and-int/lit16<br>
+    d6: or-int/lit16<br>
+    d7: xor-int/lit16
+  </td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (4 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> source register (4 bits)<br>
+    <code translate="no" dir="ltr"><span>C:</span></code> signed int constant (16 bits)</td>
+  <td>Perform the indicated binary op on the indicated register (first
+    argument) and literal value (second argument), storing the result in
+    the destination register.
+    <p class="note"><strong>Note:</strong>
+    <code translate="no" dir="ltr">rsub-int</code> does not have a suffix since this version is the
+    main opcode of its family. Also, see below for details on its semantics.
+    </p>
+  </td>
+</tr>
+<tr>
+  <td>d8..e2 22b</td>
+  <td><i>binop</i>/lit8 vAA, vBB, #+CC<br>
+    d8: add-int/lit8<br>
+    d9: rsub-int/lit8<br>
+    da: mul-int/lit8<br>
+    db: div-int/lit8<br>
+    dc: rem-int/lit8<br>
+    dd: and-int/lit8<br>
+    de: or-int/lit8<br>
+    df: xor-int/lit8<br>
+    e0: shl-int/lit8<br>
+    e1: shr-int/lit8<br>
+    e2: ushr-int/lit8
+  </td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> source register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>C:</span></code> signed int constant (8 bits)</td>
+  <td>Perform the indicated binary op on the indicated register (first
+    argument) and literal value (second argument), storing the result
+    in the destination register.
+    <p class="note"><strong>Note:</strong> See below for details on the semantics of
+    <code translate="no" dir="ltr">rsub-int</code>.</p>
+  </td>
+</tr>
+<tr>
+  <td>e3..f9 10x</td>
+  <td><i>(unused)</i></td>
+  <td>&nbsp;</td>
+  <td><i>(unused)</i></td>
+</tr>
+<tr>
+  <td>fa 45cc</td>
+  <td>invoke-polymorphic {vC, vD, vE, vF, vG}, meth@BBBB, proto@HHHH</td>
+  <td>
+    <code translate="no" dir="ltr"><span>A:</span></code> argument word count (4 bits) <br>
+    <code translate="no" dir="ltr"><span>B:</span></code> method reference index (16 bits) <br>
+    <code translate="no" dir="ltr"><span>C:</span></code> receiver (4 bits) <br>
+    <code translate="no" dir="ltr"><span>D.<wbr>.<wbr>G:</span></code> argument registers (4 bits each) <br>
+    <code translate="no" dir="ltr"><span>H:</span></code> prototype reference index (16 bits)
+  </td>
+  <td>
+    Invoke the indicated signature polymorphic method. The result (if any) may be stored
+    with an appropriate <code translate="no" dir="ltr"><span>move-result*</span></code> variant as the immediately
+    subsequent instruction.<br><br>
+      The method reference must be to a signature polymorphic method, such as
+      <code translate="no" dir="ltr"><span>java.<wbr>lang.<wbr>invoke.<wbr>MethodHandle.<wbr>invoke</span></code> or
+      <code translate="no" dir="ltr"><span>java.<wbr>lang.<wbr>invoke.<wbr>MethodHandle.<wbr>invokeExact</span></code>.<br><br>
+      The receiver must be an object supporting the signature polymorphic
+      method being invoked.<br><br>
+      The prototype reference describes the argument types provided
+      and the expected return type.<br><br>
+      The <code translate="no" dir="ltr"><span>invoke-polymorphic</span></code> bytecode may raise exceptions when it
+      executes. The exceptions are described in the API documentation
+      for the signature polymorphic method being invoked.<br><br>
+      Present in Dex files from version <code translate="no" dir="ltr"><span>038</span></code> onwards.
+  </td>
+</tr>
+<tr>
+  <td>fb 4rcc</td>
+  <td>invoke-polymorphic/range {vCCCC .. vNNNN}, meth@BBBB, proto@HHHH</td>
+  <td>
+    <code translate="no" dir="ltr"><span>A:</span></code> argument word count (8 bits) <br>
+    <code translate="no" dir="ltr"><span>B:</span></code> method reference index (16 bits) <br>
+    <code translate="no" dir="ltr"><span>C:</span></code> receiver (16 bits) <br>
+    <code translate="no" dir="ltr"><span>H:</span></code> prototype reference index (16 bits) <br>
+    <code translate="no" dir="ltr"><span>N = A + C - 1</span></code>
+  </td>
+  <td>
+    Invoke the indicated method handle. See the <code translate="no" dir="ltr"><span>invoke-polymorphic</span></code>
+    description above for details.<br><br>
+    Present in Dex files from version <code translate="no" dir="ltr"><span>038</span></code> onwards.
+  </td>
+</tr>
+<tr>
+  <td>fc 35c</td>
+  <td>invoke-custom {vC, vD, vE, vF, vG}, call_site@BBBB</td>
+  <td>
+    <code translate="no" dir="ltr"><span>A:</span></code> argument word count (4 bits) <br>
+    <code translate="no" dir="ltr"><span>B:</span></code> call site reference index (16 bits) <br>
+    <code translate="no" dir="ltr"><span>C.<wbr>.<wbr>G:</span></code> argument registers (4 bits each)
+  </td>
+  <td> Resolves and invokes the indicated call site.
+    The result from the invocation (if any) may be stored with an
+    appropriate <code translate="no" dir="ltr"><span>move-result*</span></code> variant as the immediately
+    subsequent instruction.<br><br>
+
+    This instruction executes in two phases: call site
+    resolution and call site invocation.<br><br>
+
+    Call site resolution checks whether the indicated
+    call site has an associated <code translate="no" dir="ltr"><span>java.<wbr>lang.<wbr>invoke.<wbr>CallSite</span></code> instance.
+    If not, the bootstrap linker method for the indicated call site is
+    invoked using arguments present in the DEX file
+    (see <a href="/devices/tech/dalvik/dex-format#call-site-item">call_site_item</a>). The
+    bootstrap linker method returns
+    a <code translate="no" dir="ltr"><span>java.<wbr>lang.<wbr>invoke.<wbr>CallSite</span></code> instance that will then
+    be associated with the indicated call site if no association
+    exists. Another thread may have already made the association first,
+    and if so execution of the instruction continues with the
+    first associated <code translate="no" dir="ltr"><span>java.<wbr>lang.<wbr>invoke.<wbr>CallSite</span></code> instance.<br><br>
+
+    Call site invocation is made on the
+    <code translate="no" dir="ltr"><span>java.<wbr>lang.<wbr>invoke.<wbr>MethodHandle</span></code> target of the resolved
+    <code translate="no" dir="ltr"><span>java.<wbr>lang.<wbr>invoke.<wbr>CallSite</span></code> instance. The target is invoked as
+    if executing <code translate="no" dir="ltr"><span>invoke-polymorphic</span></code> (described above) using the
+    method handle and arguments to the <code translate="no" dir="ltr"><span>invoke-custom</span></code> instruction
+    as the arguments to an exact method handle invocation.<br><br>
+
+    Exceptions raised by the bootstrap linker method are wrapped
+    in a <code translate="no" dir="ltr"><span>java.<wbr>lang.<wbr>BootstrapMethodError</span></code>.  A
+    <code translate="no" dir="ltr"><span>BootstrapMethodError</span></code> is also raised if:
+      <ul>
+        <li>the bootstrap linker method fails to return a
+          <code translate="no" dir="ltr">java.lang.invoke.CallSite</code> instance.</li>
+        <li>the returned <code translate="no" dir="ltr">java.lang.invoke.CallSite</code> has a
+          <code translate="no" dir="ltr">null</code> method handle target.</li>
+        <li>the method handle target is not of the requested type.</li>
+      </ul>
+    Present in Dex files from version <code translate="no" dir="ltr"><span>038</span></code> onwards.
+  </td>
+</tr>
+<tr>
+  <td>fd 3rc</td>
+  <td>invoke-custom/range {vCCCC .. vNNNN}, call_site@BBBB</td>
+  <td>
+    <code translate="no" dir="ltr"><span>A:</span></code> argument word count (8 bits) <br>
+    <code translate="no" dir="ltr"><span>B:</span></code> call site reference index (16 bits) <br>
+    <code translate="no" dir="ltr"><span>C:</span></code> first argument register (16-bits) <br>
+    <code translate="no" dir="ltr"><span>N = A + C - 1</span></code>
+  </td>
+  <td>
+    Resolve and invoke a call site. See the <code translate="no" dir="ltr"><span>invoke-custom</span></code>
+    description above for details.<br><br>
+    Present in Dex files from version <code translate="no" dir="ltr"><span>038</span></code> onwards.
+  </td>
+</tr>
+<tr>
+  <td>fe 21c</td>
+  <td>const-method-handle vAA, method_handle@BBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> method handle index (16 bits)</td>
+  <td>
+    Move a reference to the method handle specified by the given index into the
+    specified register.<br><br>
+    Present in Dex files from version <code translate="no" dir="ltr"><span>039</span></code> onwards.
+  </td>
+</tr>
+<tr>
+  <td>ff 21c</td>
+  <td>const-method-type vAA, proto@BBBB</td>
+  <td><code translate="no" dir="ltr"><span>A:</span></code> destination register (8 bits)<br>
+    <code translate="no" dir="ltr"><span>B:</span></code> method prototype reference (16 bits)</td>
+  <td>
+    Move a reference to the method prototype specified by the given index into the
+    specified register.<br><br>
+    Present in Dex files from version <code translate="no" dir="ltr"><span>039</span></code> onwards.
+  </td>
+</tr>
