@@ -154,11 +154,8 @@ def request_vt_response(apk_file, upload_url, params, url):
         response = requests.post(upload_url, files=files)
     response.raise_for_status()
     logger.debug('Finished uploading source apk to Virus Total.')
-    if 'scans' not in response.json():  # if request is queued
-        logger.info('Request to Virus Total is queued. Rerun contextual component to get full report')
-        return None, 'Request queued. Rerun to get report'
-    else:
-        return compile_vt_result(response)
+
+    return compile_vt_result(response)
 
 
 def compile_vt_result(response):
@@ -167,6 +164,10 @@ def compile_vt_result(response):
     :param response: a response from virus total scan request
     :return:
     """
+    if 'scans' not in response.json():  # if request is queued
+        logger.info('Request to Virus Total is queued. Rerun contextual component to get full report')
+        return None, 'Request queued. Rerun to get report'
+
     positives_list = []
     for antivirus_name in response.json()['scans']:
         if response.json()['scans'][antivirus_name]['detected']:
