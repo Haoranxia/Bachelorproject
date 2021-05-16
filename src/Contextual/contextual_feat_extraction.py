@@ -264,6 +264,11 @@ def run_contextual(apk_file, app_id):
     :return:
     """
     output_filename = '../output/contextual_out/contextual_features'
+    google_play_key_fields = ['title', 'icon', 'screenshots', 'video', 'category', 'score', 'histogram', 'reviews',
+                              'description', 'description_html', 'recent_changes', 'editors_choice', 'price', 'free',
+                              'iap', 'developer_id', 'updated', 'size', 'installs', 'current_version',
+                              'required_android_version', 'content_rating', 'iap_range', 'interactive_elements',
+                              'developer', 'developer_email', 'developer_url', 'developer_address', 'app_id', 'url']
     try:
         if google_play_enabled:
             app_details = play_scraper.details(app_id)
@@ -272,11 +277,11 @@ def run_contextual(apk_file, app_id):
             logger.debug("Acquired Google Play contextual data for " + str(app_id))
             add_results_to_output(apk_file, app_id, app_details, output_filename)
         else:
-            empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
+            empty_app_details = {k: None for k in google_play_key_fields}
             extend_app_details(None, empty_app_details, False)
             add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
     except (ValueError, requests.exceptions.HTTPError):
         logger.info('AppID not found in the Google Play store')
-        empty_app_details = {k: None for k in play_scraper.details('com.whatsapp').keys()}
+        empty_app_details = {k: None for k in google_play_key_fields}
         extend_app_details(None, empty_app_details, False)
         add_results_to_output(apk_file, app_id, empty_app_details, output_filename)
